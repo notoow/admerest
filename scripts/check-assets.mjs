@@ -2,7 +2,7 @@ import {readFileSync,existsSync} from 'node:fs';
 import assert from 'node:assert/strict';
 const root=new URL('../dist/',import.meta.url);
 const read=path=>readFileSync(new URL(path,root),'utf8');
-for(const file of ['index.html','app.js','scene.js','physics.js','material.js']){
+for(const file of ['index.html','app.js','scene.js','explorer.js','measurements.js','physics.js','material.js']){
  const text=read(file);
  assert(!/(?:["'`])\/(?:assets|vendor|app\.js|styles\.css)/.test(text),`${file}: root-relative URL breaks GitHub project Pages`);
 }

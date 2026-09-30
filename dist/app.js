@@ -2,15 +2,17 @@ import {DOCTORS,LANDMARKS} from './scene.js';
 import {Explorer} from './explorer.js';
 import {SIZES,MAX_QUANTITY,lengthMeters,compareHeight} from './measurements.js';
 import {PhysicsPlayground} from './physics.js';
+import {ScrollJourney} from './journey.js';
 const $=s=>document.querySelector(s),all=s=>[...document.querySelectorAll(s)];
 const format=new Intl.NumberFormat('en-US'),decimal=new Intl.NumberFormat('en-US',{maximumFractionDigits:2});
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 let explorer,playground,selected='kim',quantity=2000,displayCount=2000,size='5x6',displayLength=120,animation=null,raf=null;
 const badge='<span class="verify-badge" aria-hidden="true">✓</span>';
-$('.explorer-main').append($('#live-build'));
+$('.explorer-main').append($('#live-build'),$('#flight-hud'));
+try{new ScrollJourney($('#journey'));}catch(error){console.warn('Scroll scene unavailable:',error.message);$('#journey').classList.add('journey-static');}
 function person(d){return `<span class="person-line">${d.name}<img class="flag" src="./assets/${d.country}.svg" alt="국적 ${d.countryName}"><button class="verify-trigger" aria-label="${d.name} 인증 정보 보기">${badge}</button></span>`;}
 function toast(message){const el=$('#toast');el.textContent=message;el.classList.add('visible');clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.classList.remove('visible'),3000);}
-function selectDoctor(id){selected=id;all('.doctor-card').forEach(card=>{const on=card.dataset.doctor===id;card.classList.toggle('selected',on);card.querySelector('.doctor-select').setAttribute('aria-pressed',String(on));});explorer?.focus(id);$('#all-view').classList.toggle('active',!explorer?.comparison);$('#my-tower').classList.remove('active');$('#comparison-source').value=id;$('#live-build').hidden=true;refreshComparison();}
+function selectDoctor(id){if(explorer?.flight.enabled)explorer.setFlying(false);selected=id;all('.doctor-card').forEach(card=>{const on=card.dataset.doctor===id;card.classList.toggle('selected',on);card.querySelector('.doctor-select').setAttribute('aria-pressed',String(on));});explorer?.focus(id);$('#all-view').classList.toggle('active',!explorer?.comparison);$('#my-tower').classList.remove('active');$('#comparison-source').value=id;$('#live-build').hidden=true;refreshComparison();}
 $('#doctor-list').innerHTML=DOCTORS.map(d=>`<div class="doctor-card ${d.id===selected?'selected':''}" data-doctor="${d.id}"><button class="doctor-select" aria-label="${d.name}의 ${format.format(d.length)}미터 탑 보기" aria-pressed="${d.id===selected}"></button><span class="avatar">${d.initials}</span><div class="doctor-details">${person(d)}<span class="person-value">${format.format(d.length)}<small>m</small></span><span class="person-hint">누적 사용 길이</span></div></div>`).join('');
 all('.doctor-select').forEach(b=>b.addEventListener('click',()=>selectDoctor(b.closest('[data-doctor]').dataset.doctor)));
 function attachBadges(){all('.verify-trigger:not([data-bound])').forEach(b=>{b.dataset.bound='true';b.setAttribute('aria-describedby','verification-popover');const pop=$('#verification-popover');const show=()=>{const rect=b.getBoundingClientRect();pop.style.left=`${Math.max(12,Math.min(rect.left-90,innerWidth-322))}px`;pop.style.top=`${Math.max(12,Math.min(rect.bottom+12,innerHeight-210))}px`;if(!pop.matches(':popover-open'))pop.showPopover();};b.addEventListener('pointerenter',e=>{if(e.pointerType==='mouse')show();});b.addEventListener('focus',show);b.addEventListener('click',e=>{e.stopPropagation();show();});b.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse'&&!b.matches(':focus-visible'))pop.hidePopover();});b.addEventListener('blur',()=>pop.hidePopover());});}
@@ -52,7 +54,7 @@ function enterComparison(){
  explorer?.compare($('#comparison-source').value,$('#comparison-landmark').value);
  $('#all-view').classList.remove('active');syncPairButton();refreshComparison();$('.explorer-main').scrollIntoView({behavior:reduced?'instant':'smooth',block:'start'});
 }
-function overview(){explorer?.overview();$('#all-view').classList.add('active');$('#my-tower').classList.remove('active');syncPairButton();}
+function overview(){if(explorer?.flight.enabled)explorer.setFlying(false);explorer?.overview();$('#all-view').classList.add('active');$('#my-tower').classList.remove('active');syncPairButton();}
 $('#compare-sim').addEventListener('click',()=>{$('#explore').scrollIntoView({behavior:reduced?'instant':'smooth'});showSimulation();enterComparison();});
 $('#all-view').addEventListener('click',overview);$('#reset-camera').addEventListener('click',overview);$('#explorer-canvas').addEventListener('overview-request',overview);
 $('#my-tower').addEventListener('click',showSimulation);
@@ -65,10 +67,11 @@ all('[data-landmark]').forEach(b=>b.addEventListener('click',()=>toggleLandmark(
 $('#live-quantity-form').addEventListener('submit',e=>{e.preventDefault();const raw=$('#live-quantity').value;if(raw.trim()==='')return error('체험할 장수를 입력해 주세요.');setQuantity(Number(raw));});
 all('[data-live-add]').forEach(b=>b.addEventListener('click',()=>setQuantity(quantity+Number(b.dataset.liveAdd))));
 $('#live-size').addEventListener('change',e=>setSize(e.target.value));$('#live-reset').addEventListener('click',()=>setQuantity(0));
+all('[data-start-flight]').forEach(button=>{button.disabled=!explorer;button.addEventListener('click',()=>{if(!explorer)return;toggleLandmark('everest',true);explorer.setFlying(true);syncPairButton();});});
 refreshComparison();
 $('#compare-pair').disabled=!explorer;$('#comparison-source').disabled=!explorer;$('#comparison-landmark').disabled=!explorer;
 const navObserver=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting)all('.site-header nav a').forEach(a=>a.classList.toggle('nav-active',a.hash===`#${e.target.id}`));});},{rootMargin:'-10% 0px -60% 0px'});['explore','play','ranking'].forEach(id=>navObserver.observe($('#'+id)));
-function state(){return {demo:true,quantity,size,thicknessMm:3,unit:'cm',longEdgeMeters:quantity*SIZES[size].length/100,selectedTower:explorer?.selected??selected,comparison:explorer?.comparison??null,landmarks:all('[data-landmark][aria-pressed="true"]').map(b=>b.dataset.landmark),ranking:DOCTORS.map(d=>({id:d.id,name:d.name,rank:d.rank,country:d.country,lengthMeters:d.length,verification:'demo'}))};}
+function state(){return {demo:true,quantity,size,thicknessMm:3,unit:'cm',longEdgeMeters:quantity*SIZES[size].length/100,selectedTower:explorer?.selected??selected,comparison:explorer?.comparison??null,navigation:explorer?.navigationState()??null,landmarks:all('[data-landmark][aria-pressed="true"]').map(b=>b.dataset.landmark),ranking:DOCTORS.map(d=>({id:d.id,name:d.name,rank:d.rank,country:d.country,lengthMeters:d.length,verification:'demo'}))};}
 const result=value=>({content:[{type:'text',text:JSON.stringify(value)}]});
 if(document.modelContext?.registerTool){
  const register=tool=>{try{document.modelContext.registerTool(tool);}catch(error){console.warn('WebMCP registration:',error.message);}};

@@ -34,8 +34,19 @@ export function burj(){
  const top=new THREE.Mesh(new THREE.CylinderGeometry(.025,.15,h*.12,12),mat);top.position.y=h*.83;group.add(top);const spire=new THREE.Mesh(new THREE.CylinderGeometry(.006,.025,h*.13,8),mat);spire.position.y=h*.935;group.add(spire);group.userData.height=h;return group;
 }
 export function everest(){
- const group=new THREE.Group(),height=8848.86*UNIT,size=95,n=65,g=new THREE.PlaneGeometry(size,size,n,n);g.rotateX(-Math.PI/2);const p=g.attributes.position;const colors=[];
- for(let i=0;i<p.count;i++){const x=p.getX(i),z=p.getZ(i);const peak=(px,pz,r,h)=>h*Math.pow(Math.max(0,1-Math.hypot((x-px)*.9,(z-pz)*1.18)/r),1.35);const base=Math.max(peak(0,0,45,1),peak(-16,7,28,.53),peak(19,-11,31,.62));const ridge=1+.12*Math.sin(x*.49+z*.24)+.07*Math.cos(z*.73-x*.26)+.035*Math.sin(x*1.3+z*1.1);const y=height*base*ridge;p.setY(i,y);const c=new THREE.Color().setRGB(.36+y/height*.62,.43+y/height*.55,.52+y/height*.46);colors.push(c.r,c.g,c.b);}
+ const group=new THREE.Group(),height=8848.86*UNIT,size=118,n=140,g=new THREE.PlaneGeometry(size,size,n,n);g.rotateX(-Math.PI/2);const p=g.attributes.position,colors=[];
+ for(let i=0;i<p.count;i++){
+  const x=p.getX(i),z=p.getZ(i),peak=(px,pz,r,h)=>h*Math.pow(Math.max(0,1-(Math.abs(x-px)*.73+Math.abs(z-pz)*.95)/r),1.18);
+  const base=Math.max(peak(0,0,48,1),peak(-24,11,28,.43),peak(23,-16,33,.51));
+  const fold=.04*Math.sin(x*.30+z*.16)+.022*Math.sin(z*.64-x*.28)+.008*Math.sin(x*1.7+z*.9);
+  p.setY(i,height*base*(1+fold));
+ }
  let max=0;for(let i=0;i<p.count;i++)max=Math.max(max,p.getY(i));for(let i=0;i<p.count;i++)p.setY(i,p.getY(i)*height/max);
- g.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));g.computeVertexNormals();const m=new THREE.Mesh(g,new THREE.MeshStandardMaterial({vertexColors:true,roughness:1,flatShading:true}));m.receiveShadow=true;group.add(m);group.userData.height=height;return group;
+ g.computeVertexNormals();const normal=g.attributes.normal,rock=new THREE.Color(0x54657b),snow=new THREE.Color(0xe9f2f7);
+ for(let i=0;i<p.count;i++){
+  const altitude=p.getY(i)/height,x=p.getX(i),z=p.getZ(i),vein=Math.sin(x*1.2+z*.7)*Math.cos(z*1.7-x*.5);
+  const cover=THREE.MathUtils.clamp((altitude-.25)*1.5+(normal.getY(i)-.5)*1.2+vein*.12,0,.93);
+  const c=rock.clone().lerp(snow,cover).multiplyScalar(.78+vein*.05);colors.push(c.r,c.g,c.b);
+ }
+ g.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));const m=new THREE.Mesh(g,new THREE.MeshStandardMaterial({vertexColors:true,roughness:.95}));m.receiveShadow=true;group.add(m);group.userData.height=height;return group;
 }

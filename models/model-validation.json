@@ -1,0 +1,45 @@
+{
+  "reference_size_cm": [
+    5,
+    6
+  ],
+  "thickness_mm": 3,
+  "apertures": {
+    "round": 12,
+    "slit": 83
+  },
+  "detail": {
+    "vertices": 40510,
+    "edges": 122094,
+    "faces": 81396,
+    "nonmanifold_edges": 0,
+    "euler": -188,
+    "open_apertures": 95,
+    "obstructed_feature_indices": [],
+    "solid_margin_hit": true,
+    "measured_solid_thickness_mm": 3.0
+  },
+  "motion": {
+    "vertices": 6224,
+    "edges": 19236,
+    "faces": 12824,
+    "nonmanifold_edges": 0,
+    "euler": -188,
+    "open_apertures": 95,
+    "obstructed_feature_indices": [],
+    "solid_margin_hit": true,
+    "measured_solid_thickness_mm": 3.0
+  },
+  "exported_detail": {
+    "open_apertures": 95,
+    "obstructed_feature_indices": [],
+    "solid_margin_hit": true,
+    "measured_solid_thickness_mm": 3.0001
+  },
+  "exported_motion": {
+    "open_apertures": 95,
+    "obstructed_feature_indices": [],
+    "solid_margin_hit": true,
+    "measured_solid_thickness_mm": 3.0
+  }
+}

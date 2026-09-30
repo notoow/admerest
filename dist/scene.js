@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {OrbitControls} from './vendor/OrbitControls.js';
-import {towerMaterial,createSheet} from './material.js';
+import {createSheet,MODEL_WIDTH,MODEL_DEPTH} from './material.js';
 
 const UNIT=.008;
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -19,8 +19,8 @@ function addBox(group,w,h,d,x,y,z,material){const m=new THREE.Mesh(new THREE.Box
 
 function tower(height){
  const group=new THREE.Group(),h=Math.max(height*UNIT,.035),w=.92,d=.40;
- const panels=Math.max(1,Math.ceil(h/(w/.70)));
- for(let i=0;i<panels;i++){const panel=createSheet();panel.scale.set(w/.70,h/panels,.13/.024);panel.position.y=(i+.5)*h/panels;group.add(panel);}
+ const panels=Math.max(1,Math.ceil(h/(w/MODEL_WIDTH)));
+ for(let i=0;i<panels;i++){const panel=createSheet();panel.scale.set(w/MODEL_WIDTH,h/panels,.13/MODEL_DEPTH);panel.position.y=(i+.5)*h/panels;group.add(panel);}
  const base=addBox(group,1.14,.045,.72,0,.025,0,new THREE.MeshStandardMaterial({color:0xdfe7f3,roughness:.65}));group.userData={height:h,base};return group;
 }
 function lotte(){
@@ -52,14 +52,14 @@ export class Explorer{
   DOCTORS.forEach((d,i)=>this.addObject(d.id,tower(d.length),[i*2.25-5.1,0,0],d.name,d.length,d.country));
   this.addObject('burj',burj(),[2,0,0],LANDMARKS.burj.name,828);this.addObject('lotte',lotte(),[4.2,0,0],LANDMARKS.lotte.name,555);
   const mountain=everest();this.addObject('everest',mountain,[28,0,-18],LANDMARKS.everest.name,8848.86);mountain.visible=false;
-  this.addObject('simulation',tower(140),[-7.5,0,0],'내 체험 탑',140);this.objects.get('simulation').visible=false;
+  this.addObject('simulation',tower(120),[-7.5,0,0],'내 체험 탑',120);this.objects.get('simulation').visible=false;
   this.raycaster=new THREE.Raycaster();let down;
   this.renderer.domElement.addEventListener('pointerdown',e=>{down=[e.clientX,e.clientY];this.transition=null;});
   this.renderer.domElement.addEventListener('pointerup',e=>{if(!down||Math.hypot(e.clientX-down[0],e.clientY-down[1])>6)return;const rect=host.getBoundingClientRect();this.raycaster.setFromCamera(new THREE.Vector2((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1),this.camera);const hit=this.raycaster.intersectObjects([...this.objects.values()].filter(o=>o.visible),true)[0];if(hit){let obj=hit.object;while(obj.parent!==this.scene&&obj.parent)obj=obj.parent;if(DOCTORS.some(d=>d.id===obj.userData.id))this.onSelect(obj.userData.id);}});
   this.renderer.domElement.addEventListener('keydown',e=>{if(['+','=','-','0'].includes(e.key)){e.preventDefault();if(e.key==='0')this.overview();else this.zoom(e.key==='-'?1.15:.87);}});
   this.resizeObserver=new ResizeObserver(()=>this.resize());this.resizeObserver.observe(host);this.resize();this.overview(true);this.markSelected();this.running=true;this.visible=true;new IntersectionObserver(([entry])=>{this.visible=entry.isIntersecting;},{rootMargin:'150px'}).observe(host);this.loop();host.querySelector('.scene-loading')?.remove();
  }
- addObject(id,obj,position,name,value,country){obj.position.set(...position);obj.userData.id=id;this.scene.add(obj);this.objects.set(id,obj);const label=document.createElement('button');label.className='scene-label';label.dataset.object=id;label.setAttribute('aria-label',`${name}, ${value}미터, 탑 보기`);label.innerHTML=`<span class="label-name">${name}${country?`<img class="flag" src="/assets/${country}.svg" alt="${country}">`:''}</span><div class="label-value">${value.toLocaleString('en-US')} <small>m</small></div>`;label.addEventListener('click',()=>{if(DOCTORS.some(d=>d.id===id))this.onSelect(id);else this.focus(id);});this.host.append(label);this.labels.set(id,label);}
+ addObject(id,obj,position,name,value,country){obj.position.set(...position);obj.userData.id=id;this.scene.add(obj);this.objects.set(id,obj);const label=document.createElement('button');label.className='scene-label';label.dataset.object=id;label.setAttribute('aria-label',`${name}, ${value}미터, 탑 보기`);label.innerHTML=`<span class="label-name">${name}${country?`<img class="flag" src="./assets/${country}.svg" alt="${country}">`:''}</span><div class="label-value">${value.toLocaleString('en-US')} <small>m</small></div>`;label.addEventListener('click',()=>{if(DOCTORS.some(d=>d.id===id))this.onSelect(id);else this.focus(id);});this.host.append(label);this.labels.set(id,label);}
  resize(){const w=this.host.clientWidth,h=this.host.clientHeight;if(!w||!h)return;this.renderer.setSize(w,h);this.camera.aspect=w/h;this.camera.updateProjectionMatrix();if(!this.hasResized){this.hasResized=true;}else if(!this.transition)this.overview(true);}
  zoom(factor){this.transition=null;this.camera.position.sub(this.controls.target).multiplyScalar(factor).add(this.controls.target);this.controls.update();}
  animateCamera(position,target,instant=false){if(instant||reduced){this.camera.position.copy(position);this.controls.target.copy(target);this.controls.update();}else this.transition={start:performance.now(),duration:1000,from:this.camera.position.clone(),to:position.clone(),oldTarget:this.controls.target.clone(),target:target.clone()};}
@@ -71,7 +71,7 @@ export class Explorer{
  toggleLandmark(id,on){const obj=this.objects.get(id);if(!obj)return;obj.visible=on;this.overview();}
  showSimulation(){this.objects.get('simulation').visible=true;this.focus('simulation');}
  updateSimulation(meters){this.simTarget=Math.max(0,meters);}
- renderSimulation(){if(this.simTarget===undefined)return;const obj=this.objects.get('simulation'),h=Math.max(.035,this.simTarget*UNIT),old=obj.userData.height,desired=reduced?h:THREE.MathUtils.lerp(old,h,.1);if(Math.abs(old-desired)>.00001){const count=Math.max(1,Math.ceil(desired/(.92/.70)));const panels=obj.children.filter(c=>c!==obj.userData.base);while(panels.length<count){const p=createSheet();obj.add(p);panels.push(p);}panels.forEach((p,i)=>{p.visible=i<count&&this.simTarget>0;if(p.visible){p.scale.set(.92/.70,desired/count,.13/.024);p.position.y=(i+.5)*desired/count;}});obj.userData.height=desired;}this.labels.get('simulation').querySelector('.label-value').innerHTML=`${this.simTarget.toLocaleString('en-US',{maximumFractionDigits:2})} <small>m</small>`;this.labels.get('simulation').setAttribute('aria-label',`내 체험 탑, ${this.simTarget.toFixed(2)}미터, 탑 보기`);}
+ renderSimulation(){if(this.simTarget===undefined)return;const obj=this.objects.get('simulation'),h=Math.max(.035,this.simTarget*UNIT),old=obj.userData.height,desired=reduced?h:THREE.MathUtils.lerp(old,h,.1);if(Math.abs(old-desired)>.00001){const count=Math.max(1,Math.ceil(desired/(.92/MODEL_WIDTH)));const panels=obj.children.filter(c=>c!==obj.userData.base);while(panels.length<count){const p=createSheet();obj.add(p);panels.push(p);}panels.forEach((p,i)=>{p.visible=i<count&&this.simTarget>0;if(p.visible){p.scale.set(.92/MODEL_WIDTH,desired/count,.13/MODEL_DEPTH);p.position.y=(i+.5)*desired/count;}});obj.userData.height=desired;}this.labels.get('simulation').querySelector('.label-value').innerHTML=`${this.simTarget.toLocaleString('en-US',{maximumFractionDigits:2})} <small>m</small>`;this.labels.get('simulation').setAttribute('aria-label',`내 체험 탑, ${this.simTarget.toFixed(2)}미터, 탑 보기`);}
  loop(){if(!this.running)return;requestAnimationFrame(()=>this.loop());if(!this.visible||document.hidden)return;
   if(this.transition){const t=Math.min(1,(performance.now()-this.transition.start)/this.transition.duration),ease=1-Math.pow(1-t,3);this.camera.position.lerpVectors(this.transition.from,this.transition.to,ease);this.controls.target.lerpVectors(this.transition.oldTarget,this.transition.target,ease);if(t===1)this.transition=null;}
   this.controls.autoRotate=this.auto&&!reduced&&!this.transition;this.controls.autoRotateSpeed=.45;this.controls.update();this.renderSimulation();this.renderer.render(this.scene,this.camera);

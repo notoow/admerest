@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f8fc"><meta name="description" content="ADM 한 장의 길이를 세상의 높이로. 전문의별 누적 사용 기록을 3D 탑과 랜드마크로 탐색하는 admerest 데모.">
+  <title>admerest — 기록이 세운 높이</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23074bff'/%3E%3Cpath d='M13 48V33h9v15zm14 0V21h9v27zm14 0V11h9v37z' fill='white'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/styles.css">
+  <script type="importmap">{"imports":{"three":"/vendor/three.module.js"}}</script>
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+ <a class="skip-link" href="#explore">탑 탐색으로 건너뛰기</a>
+ <header class="site-header"><a class="wordmark" href="#" aria-label="admerest 홈">admerest<span class="wordmark-dot">.</span></a><span class="partner">with <b>HIGHST</b></span><nav aria-label="주요 메뉴"><a href="#explore" class="nav-active">탑 탐색</a><a href="#play">직접 쌓기</a><a href="#ranking">전문의 랭킹</a></nav><span class="demo-tag">INTERACTIVE DEMO</span></header>
+ <main>
+  <section id="explore" class="explore-section">
+   <div class="section-intro"><div><span class="eyebrow">A DIFFERENT MEASURE OF EXPERIENCE</span><h1>기록이 세운 <span>높이.</span></h1><p>전문의의 탑을, 세상의 랜드마크와 함께 둘러보세요.</p></div><div class="intro-note"><span class="small-orbit">◎</span><span>작은 한 장에서<br><b>새로운 관점으로</b></span></div></div>
+   <div class="explorer-workspace">
+    <aside class="doctors-panel"><div class="panel-heading"><h2>전문의의 탑</h2><span>03</span></div><div id="doctor-list"></div><div class="panel-bottom"><span class="demo-dot"></span>가상 프로필 · 예시 기록</div></aside>
+    <div class="explorer-main"><div class="scene-toolbar"><div class="segmented"><button class="active" id="all-view">전체 보기</button><button id="my-tower">내 체험 탑</button></div><div class="scene-actions"><button id="auto-rotate" class="icon-button" aria-pressed="false" title="자동 회전">↻ <span>자동 회전</span></button><button id="reset-camera" class="icon-button" title="시점 초기화" aria-label="시점 초기화">⤢</button></div></div><div id="explorer-canvas" class="scene-host" role="img" aria-label="전문의의 ADM 누적 길이 탑과 랜드마크를 비교하는 회전 가능한 3D 장면"><div class="scene-loading">3D 공간을 준비하고 있어요<span></span></div></div><div class="scene-caption"><span><span class="mouse-icon">↔</span> 드래그하여 회전 · 휠 또는 두 손가락으로 확대</span><button id="scale-info" class="text-button" popovertarget="scale-popover">비교 기준 ⓘ</button></div><div id="scale-popover" popover class="info-popover"><strong>길이를 높이로 환산합니다</strong><p>탑 높이 = 규격별 사용 장수 × 해당 진피의 긴 변. 탑의 폭은 식별을 위해 확대했습니다. 적층된 두께와는 다릅니다.</p><p>랜드마크는 높이를 기준으로 만든 축약 모형입니다. 에베레스트는 해발고도 기준의 개념 모형입니다.</p></div></div>
+   </div>
+   <div class="landmark-bar"><span class="bar-label">함께 비교하기</span><div class="landmark-options"><button class="landmark-chip active" data-landmark="lotte" aria-pressed="true"><span class="landmark-glyph">♜</span><span>롯데월드타워<small>555 m</small></span><span class="chip-check">✓</span></button><button class="landmark-chip active" data-landmark="burj" aria-pressed="true"><span class="landmark-glyph">♙</span><span>부르즈 칼리파<small>828 m</small></span><span class="chip-check">✓</span></button><button class="landmark-chip" data-landmark="everest" aria-pressed="false"><span class="landmark-glyph mountain-glyph">△</span><span>에베레스트<small>8,848.86 m</small></span><span class="chip-check">＋</span></button></div><span class="landmark-end">ONE WORLD.<br><b>YOUR PERSPECTIVE.</b></span></div>
+  </section>
+  <section id="play" class="play-section"><div class="section-intro compact"><div><span class="eyebrow">01 / THE MATERIAL PLAYGROUND</span><h2>한 장의 <span>차이까지.</span></h2><p>직접 더하고, 크기를 바꾸며 길이를 경험해 보세요.</p></div><span class="outline-pill">DEMO · 체험 모드</span></div><div id="play-content"></div></section>
+  <section id="ranking" class="ranking-section"><div class="section-intro compact"><div><span class="eyebrow">02 / THE LEADERBOARD</span><h2>전문의 <span>랭킹.</span></h2><p>인증된 누적 사용 길이 기준</p></div><label class="country-filter">국적<select id="country-filter"><option value="all">전체 국가</option><option value="KR">대한민국</option><option value="US">미국</option><option value="JP">일본</option></select></label></div><div id="ranking-content"></div><p class="ranking-note">모든 전문의와 인증 상태, 사용 기록은 가상의 예시입니다. 체험 수량은 랭킹에 반영되지 않습니다.</p></section>
+ </main>
+ <footer><div><a href="#" class="wordmark">admerest<span class="wordmark-dot">.</span></a><span class="footer-copy">한 장의 길이, 새로운 관점.</span></div><div class="footer-partner"><span>with</span><img src="/assets/highst-logo.png" alt="하이스트 비뇨의학과" width="120"></div><span class="footer-meta">CONCEPT PROTOTYPE · 2026</span></footer>
+ <div id="toast" class="toast" role="status" aria-live="polite"></div>
+ <div id="verification-popover" popover class="verify-popover"><span class="verified-large">✓</span><div><strong>인증된 전문의</strong><p>CRM 등 객관적 기록과 전문의 자격증을 확인한 전문의입니다.</p><small>데모 인증 상태 · 실제 심사 이력 아님</small></div></div>
+ <noscript>3D 탐색과 수량 체험에는 JavaScript가 필요합니다.</noscript>
+</body></html>

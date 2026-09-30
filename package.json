@@ -1,0 +1,15 @@
+{
+  "name": "admerest",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "python -m http.server 5173 --bind 127.0.0.1 --directory dist",
+    "check": "node --check dist/app.js && node --check dist/scene.js && node --check dist/material.js && node --check dist/physics.js"
+  },
+  "dependencies": {
+    "@dimforge/rapier3d-compat": "0.21.0",
+    "country-flag-icons": "1.6.20",
+    "three": "0.186.1"
+  }
+}

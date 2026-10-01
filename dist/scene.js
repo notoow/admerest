@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import {createSheet,MODEL_WIDTH,MODEL_DEPTH} from './material.js';
+import {createWorldSheet,MODEL_WIDTH,MODEL_DEPTH} from './material.js';
+import {deviceProfile} from './render-budget.js';
 import {hydrateLandmark} from './landmarks.js';
 import {RoomEnvironment} from './vendor/RoomEnvironment.js';
 
@@ -8,7 +9,7 @@ export {RANKED_DOCTORS as DOCTORS} from './records.js';
 export {LANDMARKS} from './landmark-data.js';
 
 export function rendererFor(host){
- const r=new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:'high-performance'});r.setPixelRatio(Math.min(devicePixelRatio,1.7));r.shadowMap.enabled=true;r.shadowMap.type=THREE.PCFShadowMap;r.outputColorSpace=THREE.SRGBColorSpace;r.toneMapping=THREE.ACESFilmicToneMapping;r.toneMappingExposure=1.1;host.append(r.domElement);r.domElement.tabIndex=0;return r;
+ const profile=deviceProfile(),r=new THREE.WebGLRenderer({antialias:!profile.compact,alpha:true,powerPreference:'high-performance'});r.setPixelRatio(profile.pixelRatio);r.shadowMap.enabled=profile.shadows;r.shadowMap.type=THREE.PCFShadowMap;r.outputColorSpace=THREE.SRGBColorSpace;r.toneMapping=THREE.ACESFilmicToneMapping;r.toneMappingExposure=1.1;r.userData={profile};host.append(r.domElement);r.domElement.tabIndex=0;return r;
 }
 export function lighting(scene,renderer){
  if(renderer){const studio=new RoomEnvironment(),generator=new THREE.PMREMGenerator(renderer);scene.userData.environmentTarget=generator.fromScene(studio,.04);scene.environment=scene.userData.environmentTarget.texture;studio.dispose();generator.dispose();}
@@ -21,7 +22,7 @@ function addBox(group,w,h,d,x,y,z,material){const m=new THREE.Mesh(new THREE.Box
 export function tower(height){
  const group=new THREE.Group(),h=Math.max(height*UNIT,.035),w=.92,d=.40;
  const panels=Math.max(1,Math.ceil(h/(w/MODEL_WIDTH)));
- for(let i=0;i<panels;i++){const panel=createSheet();panel.scale.set(w/MODEL_WIDTH,h/panels,.13/MODEL_DEPTH);panel.position.y=(i+.5)*h/panels;group.add(panel);}
+ for(let i=0;i<panels;i++){const panel=createWorldSheet();panel.scale.set(w/MODEL_WIDTH,h/panels,.13/MODEL_DEPTH);panel.position.y=(i+.5)*h/panels;group.add(panel);}
  const base=addBox(group,1.14,.045,.72,0,.025,0,new THREE.MeshStandardMaterial({color:0xdfe7f3,roughness:.65}));group.userData={height:h,base};return group;
 }
 function lotteFallback(){

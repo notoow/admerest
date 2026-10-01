@@ -35,12 +35,27 @@ test('independent touch pointers allow moving and looking together, and stop on 
 });
 test('blur cancels all touch and keyboard inputs; Q flies and ground button restores eye height',()=>{
  const {camera,canvas,controls,joystick,lift}=setup();
- send(canvas,'keydown',{code:'KeyQ'});assert.equal(controls.walking,false);assert(camera.position.y>EYE_HEIGHT);
+ send(canvas,'keydown',{code:'KeyQ'});controls.step(1/60);assert.equal(controls.walking,false);assert(camera.position.y>EYE_HEIGHT);
  send(window,'keyup',{code:'KeyQ'});controls.setWalking(true);assert.equal(camera.position.y,EYE_HEIGHT);
  send(joystick,'pointerdown',{pointerId:3,clientX:100,clientY:60});
  send(lift,'pointerdown',{pointerId:4});send(canvas,'keydown',{code:'KeyW'});
  send(window,'blur');assert.equal(controls.keys.size,0);assert.equal(controls.touchKeys.size,0);assert.deepEqual(controls.stick,{x:0,y:0});
  const stopped=camera.position.clone();controls.step(.05);assert.deepEqual(camera.position.toArray(),stopped.toArray());
+});
+test('touch look is integrated on animation frames with equal smoothing at 30, 60 and 120 fps',()=>{
+ const rotations=[];
+ for(const fps of [30,60,120]){
+  const {camera,controls}=setup(),before=camera.quaternion.clone();controls.look(100,-20,.004);
+  assert.deepEqual(camera.quaternion.toArray(),before.toArray(),'pointer events must not jump the camera between frames');
+  for(let i=0;i<fps/2;i++)controls.step(1/fps);
+  rotations.push(camera.quaternion);
+ }
+ assert(rotations[0].angleTo(rotations[1])<1e-6);assert(rotations[1].angleTo(rotations[2])<1e-6);
+});
+test('keyboard repeats cannot add movement outside the animation frame',()=>{
+ const {camera,canvas,controls}=setup(),before=camera.position.clone();
+ for(let i=0;i<20;i++)send(canvas,'keydown',{code:'KeyW'});
+ assert.deepEqual(camera.position.toArray(),before.toArray());controls.step(1/60);assert(camera.position.z<before.z);
 });
 test('touch cancellation recentres joystick without clearing a separate look gesture',()=>{
  const {canvas,controls,joystick}=setup();

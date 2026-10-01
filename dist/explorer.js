@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {OrbitControls} from './vendor/OrbitControls.js';
-import {createSheet,MODEL_WIDTH,MODEL_DEPTH} from './material.js';
+import {createWorldSheet,MODEL_WIDTH,MODEL_DEPTH} from './material.js';
+import {ResolutionBudget,sceneSuspended} from './render-budget.js';
 import {DOCTORS,LANDMARKS,rendererFor,lighting,tower,lotte,burj,everest} from './scene.js';
 import {towerPanels} from './measurements.js';
 import {FlightControls} from './flight.js';
@@ -21,17 +22,18 @@ export class Explorer {
   this.labelMetrics=new Map();this.labelLifts=new Map();this.labelPoint=new THREE.Vector3();
   this.labelObserver=new ResizeObserver(entries=>{for(const {target}of entries){const {width,height}=target.getBoundingClientRect();if(width&&height)this.labelMetrics.set(target.dataset.object,{width,height});}});
   this.renderer=rendererFor(host);this.scene=new THREE.Scene();lighting(this.scene,this.renderer);this.atmosphere=createAtmosphere(this.scene);
+  this.beaconButton=document.createElement('button');this.beaconButton.className='secret-orb';this.beaconButton.setAttribute('aria-label','주황색 구슬 살펴보기');this.beaconButton.hidden=true;this.beaconButton.addEventListener('click',()=>this.discover());host.append(this.beaconButton);this.beaconPoint=new THREE.Vector3();
   // Orbiting changes the camera, not the sun or buildings. Reuse their shadow map.
   this.renderer.shadowMap.autoUpdate=false;
-  this.camera=new THREE.PerspectiveCamera(34,1,.001,1000);
+  this.budget=new ResolutionBudget(this.renderer.getPixelRatio());
+  this.camera=new THREE.PerspectiveCamera(34,1,.003,550);
   this.controls=new OrbitControls(this.camera,this.renderer.domElement);
   Object.assign(this.controls,{enableDamping:true,dampingFactor:.07,minPolarAngle:.25,maxPolarAngle:Math.PI/2-.035,minDistance:4,maxDistance:400,enablePan:true});
   this.controls.touches.ONE=THREE.TOUCH.ROTATE;this.controls.touches.TWO=THREE.TOUCH.DOLLY_PAN;
   this.renderer.domElement.style.touchAction='none';
   this.renderer.domElement.setAttribute('aria-label','탑 탐색: 드래그하여 회전, 휠 또는 두 손가락으로 확대. 더하기·빼기 키로 확대·축소, 0 키로 전체 보기.');
-  const floor=new THREE.Mesh(new THREE.PlaneGeometry(500,500),new THREE.ShadowMaterial({opacity:.10}));
-  floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;floor.position.y=.0001;this.scene.add(floor);
-  this.grid=new THREE.GridHelper(80,80,0xc8d7eb,0xe0e9f5);this.grid.material.transparent=true;this.grid.material.opacity=.13;this.grid.position.y=.0002;this.scene.add(this.grid);
+  // The atmosphere has one receiving ground surface. Coplanar shadow/grid planes
+  // used to fight in the depth buffer, especially at human eye height on phones.
   PUBLIC_DOCTORS.forEach((d,i)=>this.addObject(d.id,tower(d.length),[i*2.25-2.5,0,0],d.name,d.length,d.country));
   this.addObject('burj',burj(),[2,0,0],LANDMARKS.burj.name,828);
   this.addObject('lotte',lotte(),[4.2,0,0],LANDMARKS.lotte.name,555);
@@ -46,6 +48,7 @@ export class Explorer {
   this.renderer.domElement.addEventListener('pointerup',e=>{
    if(this.flight?.enabled||!down||Math.hypot(e.clientX-down[0],e.clientY-down[1])>6)return;
    const rect=host.getBoundingClientRect();this.raycaster.setFromCamera(new THREE.Vector2((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1),this.camera);
+   if(this.raycaster.intersectObject(this.atmosphere.beacon,true).length){this.discover();return;}
    const hit=this.raycaster.intersectObjects([...this.objects.values()].filter(o=>o.visible),true)[0];
    if(hit){let obj=hit.object;while(obj.parent!==this.scene&&obj.parent)obj=obj.parent;if(DOCTORS.some(d=>d.id===obj.userData.id))this.onSelect(obj.userData.id);}
   });
@@ -66,12 +69,15 @@ export class Explorer {
  }
  resize(){
   const w=this.host.clientWidth,h=this.host.clientHeight;if(!w||!h)return;
+  if(this.viewWidth===w&&this.viewHeight===h)return;this.viewWidth=w;this.viewHeight=h;
   this.renderer.setSize(w,h);this.camera.aspect=w/h;this.camera.updateProjectionMatrix();
   if(this.objects.size&&!this.flight?.enabled)this.frameVisible(true);
  }
  bindFlightUI(){
   this.main=this.host.closest('.explorer-main');this.hud=document.querySelector('#flight-hud');
   document.querySelector('#exit-flight').addEventListener('click',()=>this.setFlying(false));
+  document.querySelector('#flight-settings').addEventListener('click',e=>{const on=this.hud.classList.toggle('settings-open');e.currentTarget.setAttribute('aria-pressed',String(on));});
+  document.querySelector('#discover-light').addEventListener('click',()=>this.discover());
   document.querySelector('#flight-speed').addEventListener('input',e=>{this.flight.speed=Number(e.target.value);document.querySelector('#flight-speed-value').textContent=`×${this.flight.speed.toFixed(1)}`;});
   document.querySelectorAll('[data-flight-destination]').forEach(button=>button.addEventListener('click',()=>{this.visit(button.dataset.flightDestination);this.renderer.domElement.focus({preventScroll:true});}));
   document.addEventListener('keydown',e=>{
@@ -102,6 +108,10 @@ export class Explorer {
    window.scrollTo({top:this.savedScroll,behavior:'instant'});this.previousFocus?.focus({preventScroll:true});
   }
   this.resize();this.host.dispatchEvent(new CustomEvent('flight-mode-change',{detail:{enabled:on}}));
+ }
+ discover(){
+  if(this.atmosphere.unlocked)return;this.atmosphere.unlock();document.querySelector('#discover-light').hidden=true;
+  const message=document.createElement('div');message.className='egg-toast';message.setAttribute('role','status');message.innerHTML='✦ 노을을 발견했습니다.<small>조금 돌아가면, 보이는 것도 달라지죠. · notoow</small>';this.main.append(message);setTimeout(()=>message.remove(),5500);
  }
  groundHeight(x,z){
   let height=this.atmosphere.groundHeight(x,z);
@@ -145,7 +155,7 @@ export class Explorer {
  landmarkState(){return Object.fromEntries([...this.objects].filter(([id])=>LANDMARKS[id]?.model).map(([id,o])=>[id,{status:o.userData.assetStatus,heightMeters:o.userData.height/UNIT,visible:o.visible}]));}
  renderingState(){
   const samples=this.frameSamples??[],sorted=samples.map(s=>s.interval).sort((a,b)=>a-b);
-  return {autoRotate:this.auto,samples:samples.length,frameIntervalP95Ms:sorted[Math.floor(sorted.length*.95)]??0,renderCostMeanMs:samples.length?samples.reduce((sum,s)=>sum+s.cost,0)/samples.length:0,drawCalls:this.renderer.info.render.calls,triangles:this.renderer.info.render.triangles,azimuth:this.controls.getAzimuthalAngle()};
+  return {pixelRatio:this.renderer.getPixelRatio(),compact:this.renderer.userData.profile.compact,shadows:this.renderer.shadowMap.enabled,easterEggFound:this.atmosphere.unlocked,autoRotate:this.auto,samples:samples.length,frameIntervalP95Ms:sorted[Math.floor(sorted.length*.95)]??0,renderCostMeanMs:samples.length?samples.reduce((sum,s)=>sum+s.cost,0)/samples.length:0,drawCalls:this.renderer.info.render.calls,triangles:this.renderer.info.render.triangles,azimuth:this.controls.getAzimuthalAngle()};
  }
  zoom(factor){this.transition=null;this.camera.position.sub(this.controls.target).multiplyScalar(factor).add(this.controls.target);this.controls.update();}
  animateCamera(position,target,instant=false){
@@ -212,7 +222,7 @@ export class Explorer {
   this.simWidth+=(this.simWidthTarget-this.simWidth)*(reduced?1:1-Math.exp(-dt/180));
   if(Math.abs(this.simWidthTarget-this.simWidth)<.00001)this.simWidth=this.simWidthTarget;
   const panels=obj.children.filter(c=>c!==obj.userData.base);
-  while(panels.length<layout.length){const panel=createSheet();panel.userData.born=now;this.simAnimatingUntil=now+420;obj.add(panel);panels.push(panel);}
+  while(panels.length<layout.length){const panel=createWorldSheet();panel.userData.born=now;this.simAnimatingUntil=now+420;obj.add(panel);panels.push(panel);}
   panels.forEach((p,i)=>{
    const visible=i<layout.length;if(visible&&!p.visible){p.userData.born=now;this.simAnimatingUntil=now+420;}p.visible=visible;if(!visible)return;
    const part=layout[i],age=p.userData.born===undefined?1:Math.min(1,(now-p.userData.born)/420);
@@ -228,16 +238,20 @@ export class Explorer {
   this.renderedSimTarget=this.simTarget;return true;
  }
  loop(){
-  requestAnimationFrame(()=>this.loop());const now=performance.now(),interval=now-(this.loopTime??now),dt=Math.min(.05,interval/1000);this.loopTime=now;if((!this.visible&&!this.flight.enabled)||document.hidden)return;
+  requestAnimationFrame(()=>this.loop());const now=performance.now(),interval=now-(this.loopTime??now),dt=Math.min(.05,interval/1000);this.loopTime=now;if((!this.visible&&!this.flight.enabled)||sceneSuspended('explorer'))return;
+  if(this.renderer.userData.profile.compact){const ratio=this.budget.sample(interval);if(ratio!==null)this.renderer.setPixelRatio(ratio);}
   const simulationChanged=this.renderSimulation();
   if(this.transition){const t=Math.min(1,(performance.now()-this.transition.start)/850),ease=1-Math.pow(1-t,3);this.camera.position.lerpVectors(this.transition.from,this.transition.to,ease);this.controls.target.lerpVectors(this.transition.oldTarget,this.transition.target,ease);if(t===1)this.transition=null;}
   if(this.flight.enabled){
-   this.flight.step(dt);if(now-(this.hudTime??0)>100){document.querySelector('#flight-altitude').textContent=number.format(Math.round(this.camera.position.y/UNIT*10)/10);document.querySelector('#flight-altitude-fill').style.height=`${Math.min(100,this.camera.position.y/(8848.86*UNIT)*100)}%`;const degrees=((this.flight.yaw*180/Math.PI)%360+360)%360;document.querySelector('#flight-heading').textContent=['N','NW','W','SW','S','SE','E','NE'][Math.round(degrees/45)%8];this.hudTime=now;}
+   this.flight.step(dt);document.querySelector('#discover-light').hidden=this.atmosphere.unlocked||this.camera.position.distanceTo(this.atmosphere.beacon.position)>3.5;if(now-(this.hudTime??0)>100){document.querySelector('#flight-altitude').textContent=number.format(Math.round(this.camera.position.y/UNIT*10)/10);document.querySelector('#flight-altitude-fill').style.height=`${Math.min(100,this.camera.position.y/(8848.86*UNIT)*100)}%`;const degrees=((this.flight.yaw*180/Math.PI)%360+360)%360;document.querySelector('#flight-heading').textContent=['N','NW','W','SW','S','SE','E','NE'][Math.round(degrees/45)%8];this.hudTime=now;}
   }else{this.controls.autoRotate=this.auto&&!reduced&&!this.transition;this.controls.autoRotateSpeed=.45;this.controls.dampingFactor=orbitDamping(dt);this.controls.update(dt);}
   const shadowSignature=[...this.objects].map(([id,o])=>`${id}:${o.visible}:${o.userData.assetStatus}:${o.position.toArray()}:${o.scale.toArray()}`).join('|');
   if(simulationChanged||shadowSignature!==this.shadowSignature){this.renderer.shadowMap.needsUpdate=true;this.shadowSignature=shadowSignature;}
   this.atmosphere.update(this.camera,now,reduced);this.renderer.render(this.scene,this.camera);
-  const placedLabels=[],width=this.host.clientWidth,height=this.host.clientHeight;
+  const placedLabels=[],width=this.viewWidth,height=this.viewHeight;
+  const beacon=this.beaconPoint.copy(this.atmosphere.beacon.position).project(this.camera);
+  this.beaconButton.hidden=this.flight.enabled||this.atmosphere.unlocked||Math.abs(beacon.x)>.98||Math.abs(beacon.y)>.94||Math.abs(beacon.z)>1;
+  if(!this.beaconButton.hidden)this.beaconButton.style.transform=`translate(${(beacon.x*.5+.5)*width-24}px,${(-beacon.y*.5+.5)*height-24}px)`;
   const farMountain=this.objects.get('everest').visible&&this.camera.position.distanceTo(this.controls.target)>90;
   // Label sizes come from ResizeObserver. No interleaved DOM measurements/writes.
   for(const [id,obj]of this.objects){

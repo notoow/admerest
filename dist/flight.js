@@ -7,11 +7,12 @@ export class FlightControls {
   this.joystick=document.querySelector('#flight-joystick');this.knob=this.joystick.querySelector('i');
   canvas.addEventListener('keydown',e=>{
    if(!this.enabled||!FLIGHT_CODES.has(e.code)||e.ctrlKey||e.metaKey||e.altKey)return;
-   e.preventDefault();if(!this.keys.has(e.code)){this.keys.add(e.code);this.step(.025,true);}
+   e.preventDefault();this.keys.add(e.code);
   });
   window.addEventListener('keyup',e=>this.keys.delete(e.code));
   canvas.addEventListener('blur',()=>{this.keys.clear();this.velocity.set(0,0,0);this.hover=null;});
   window.addEventListener('blur',()=>this.pause());
+  window.addEventListener('resize',()=>{if(this.enabled)this.clear();});
   document.addEventListener('visibilitychange',()=>{if(document.hidden)this.pause();});
   document.addEventListener('pointerlockchange',()=>{if(!this.locked){this.clear();this.unlockedAt=performance.now();this.hoverLook=false;}this.updateUI();});
   document.addEventListener('pointerlockerror',()=>this.allowHoverLook());
@@ -33,19 +34,19 @@ export class FlightControls {
   ['pointerup','pointercancel','lostpointercapture'].forEach(type=>canvas.addEventListener(type,endLook));
   canvas.addEventListener('pointerleave',()=>{this.hover=null;});
   const updateStick=e=>{
-   const r=this.joystick.getBoundingClientRect(),radius=r.width*.34,x=e.clientX-(r.left+r.width/2),y=e.clientY-(r.top+r.height/2);
+   const r=this.stickRect,radius=r.width*.34,x=e.clientX-(r.left+r.width/2),y=e.clientY-(r.top+r.height/2);
    this.stick=joystickVector(x,y,radius);const scale=Math.min(1,radius/(Math.hypot(x,y)||1));this.knob.style.transform=`translate(${x*scale}px,${y*scale}px)`;
   };
   this.joystick.addEventListener('pointerdown',e=>{
    if(!this.enabled||this.stickId!==undefined)return;e.preventDefault();this.stickId=e.pointerId;
-   this.joystick.setPointerCapture(e.pointerId);this.joystick.classList.add('held');updateStick(e);
+   this.stickRect=this.joystick.getBoundingClientRect();this.joystick.setPointerCapture(e.pointerId);this.joystick.classList.add('held');updateStick(e);
   });
   this.joystick.addEventListener('pointermove',e=>{if(e.pointerId===this.stickId){e.preventDefault();updateStick(e);}});
   const endStick=e=>{if(e.pointerId===this.stickId)this.resetStick();};
   ['pointerup','pointercancel','lostpointercapture'].forEach(type=>this.joystick.addEventListener(type,endStick));
   document.querySelectorAll('[data-flight-key]').forEach(button=>{
    const release=()=>{this.touchKeys.delete(button.dataset.flightKey);button.classList.remove('held');};
-   button.addEventListener('pointerdown',e=>{if(!this.enabled)return;e.preventDefault();button.setPointerCapture(e.pointerId);this.touchKeys.add(button.dataset.flightKey);button.classList.add('held');this.step(.025,true);});
+   button.addEventListener('pointerdown',e=>{if(!this.enabled)return;e.preventDefault();button.setPointerCapture(e.pointerId);this.touchKeys.add(button.dataset.flightKey);button.classList.add('held');});
    ['pointerup','pointercancel','lostpointercapture'].forEach(type=>button.addEventListener(type,release));
    button.addEventListener('click',e=>{if(this.enabled&&e.detail===0){this.touchKeys.add(button.dataset.flightKey);this.step(.05,true);release();}});
   });
@@ -72,11 +73,13 @@ export class FlightControls {
   document.querySelector('#flight-look').textContent=this.locked?'마우스 시점 연결됨':this.hoverLook?'마우스 시점 · Esc 메뉴':'클릭하여 마우스 시점 연결';
   document.querySelector('#flight-hud').classList.toggle('mouse-locked',this.locked);
  }
- syncAngles(){const dir=this.camera.getWorldDirection(new THREE.Vector3());this.yaw=Math.atan2(-dir.x,-dir.z);this.pitch=Math.asin(Math.max(-1,Math.min(1,dir.y)));this.orient();}
- look(dx,dy,sensitivity){this.yaw-=dx*sensitivity;this.pitch=Math.max(-1.48,Math.min(1.48,this.pitch-dy*sensitivity));this.orient();}
- orient(){this.camera.quaternion.setFromEuler(new THREE.Euler(this.pitch,this.yaw,0,'YXZ'));}
+ syncAngles(){const dir=this.camera.getWorldDirection(new THREE.Vector3());this.yaw=Math.atan2(-dir.x,-dir.z);this.pitch=Math.asin(Math.max(-1,Math.min(1,dir.y)));this.viewYaw=this.yaw;this.viewPitch=this.pitch;this.orient();}
+ look(dx,dy,sensitivity){this.yaw-=dx*sensitivity;this.pitch=Math.max(-1.48,Math.min(1.48,this.pitch-dy*sensitivity));}
+ orient(){this.euler??=new THREE.Euler(0,0,0,'YXZ');this.euler.set(this.viewPitch,this.viewYaw,0,'YXZ');this.camera.quaternion.setFromEuler(this.euler);}
  step(dt,immediate=false){
-  if(!this.enabled)return;dt=Math.min(dt,.05);const keys=new Set([...this.keys,...this.touchKeys]),vector=flightVector(keys,this.yaw,this.stick);
+  if(!this.enabled)return;dt=Math.min(dt,.05);
+  const lookBlend=1-Math.exp(-dt/0.035);this.viewYaw+=(this.yaw-this.viewYaw)*lookBlend;this.viewPitch+=(this.pitch-this.viewPitch)*lookBlend;
+  const keys=new Set([...this.keys,...this.touchKeys]),vector=flightVector(keys,this.viewYaw,this.stick);
   if(vector.y>0&&this.walking)this.setWalking(false);
   const boost=keys.has('ShiftLeft')||keys.has('ShiftRight')?3:1;
   this.target.set(vector.x,this.walking?0:vector.y,vector.z).multiplyScalar(MOVE_SPEED*this.speed*boost);

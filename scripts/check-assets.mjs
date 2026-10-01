@@ -4,7 +4,7 @@ import {createHash} from 'node:crypto';
 import {LANDMARKS} from '../dist/landmark-data.js';
 const root=new URL('../dist/',import.meta.url);
 const read=path=>readFileSync(new URL(path,root),'utf8');
-for(const file of ['record.html','record.css','record.js','draft-record.js','draft-preview.js','render-budget.js','record-motion.js','record-reveal.js','immersive.css','game.html','stack-game.js','stack-rules.js','game.css','community.css','size-comparison.js','explorer-motion.js','notes.html','notes.js','notes.css','index.html','app.js','scene.js','landmarks.js','landmark-data.js','explorer.js','measurements.js','flight.js','flight-motion.js','journey.js','atmosphere.js','experience.css','physics.js','material.js']){
+for(const file of ['video-player.js','video-player.css','record.html','record.css','record.js','draft-record.js','draft-preview.js','render-budget.js','record-motion.js','record-reveal.js','immersive.css','game.html','stack-game.js','stack-rules.js','game.css','community.css','size-comparison.js','explorer-motion.js','notes.html','notes.js','notes.css','index.html','app.js','scene.js','landmarks.js','landmark-data.js','explorer.js','measurements.js','flight.js','flight-motion.js','journey.js','atmosphere.js','experience.css','physics.js','material.js']){
  const text=read(file);
  assert(!/(?:["'`])\/(?:assets|vendor|app\.js|styles\.css)/.test(text),`${file}: root-relative URL breaks GitHub project Pages`);
 }

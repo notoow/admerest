@@ -71,7 +71,7 @@ export class Explorer {
   const w=this.host.clientWidth,h=this.host.clientHeight;if(!w||!h)return;
   if(this.viewWidth===w&&this.viewHeight===h)return;this.viewWidth=w;this.viewHeight=h;
   this.renderer.setSize(w,h);this.camera.aspect=w/h;this.camera.updateProjectionMatrix();
-  if(this.objects.size&&!this.flight?.enabled)this.frameVisible(true);
+  if(this.objects.size&&!this.flight?.enabled){if(this.host.dataset.view==='focus')this.focus(this.selected,true);else this.frameVisible(true);}
  }
  bindFlightUI(){
   this.main=this.host.closest('.explorer-main');this.hud=document.querySelector('#flight-hud');
@@ -155,7 +155,7 @@ export class Explorer {
  landmarkState(){return Object.fromEntries([...this.objects].filter(([id])=>LANDMARKS[id]?.model).map(([id,o])=>[id,{status:o.userData.assetStatus,heightMeters:o.userData.height/UNIT,visible:o.visible}]));}
  renderingState(){
   const samples=this.frameSamples??[],sorted=samples.map(s=>s.interval).sort((a,b)=>a-b);
-  return {pixelRatio:this.renderer.getPixelRatio(),compact:this.renderer.userData.profile.compact,shadows:this.renderer.shadowMap.enabled,easterEggFound:this.atmosphere.unlocked,autoRotate:this.auto,samples:samples.length,frameIntervalP95Ms:sorted[Math.floor(sorted.length*.95)]??0,renderCostMeanMs:samples.length?samples.reduce((sum,s)=>sum+s.cost,0)/samples.length:0,drawCalls:this.renderer.info.render.calls,triangles:this.renderer.info.render.triangles,azimuth:this.controls.getAzimuthalAngle()};
+  return {inViewport:this.visible,suspended:sceneSuspended('explorer'),target:this.controls.target.toArray(),pixelRatio:this.renderer.getPixelRatio(),compact:this.renderer.userData.profile.compact,shadows:this.renderer.shadowMap.enabled,easterEggFound:this.atmosphere.unlocked,autoRotate:this.auto,samples:samples.length,frameIntervalP95Ms:sorted[Math.floor(sorted.length*.95)]??0,renderCostMeanMs:samples.length?samples.reduce((sum,s)=>sum+s.cost,0)/samples.length:0,drawCalls:this.renderer.info.render.calls,triangles:this.renderer.info.render.triangles,azimuth:this.controls.getAzimuthalAngle()};
  }
  zoom(factor){this.transition=null;this.camera.position.sub(this.controls.target).multiplyScalar(factor).add(this.controls.target);this.controls.update();}
  animateCamera(position,target,instant=false){
@@ -196,12 +196,12 @@ export class Explorer {
   this.guide.geometry.dispose();this.guide.geometry=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(a.position.x-(mountain?3:1),y,.5),new THREE.Vector3(b.position.x,y,.5)]);
   this.guide.computeLineDistances();this.guide.visible=true;this.markSelected();this.host.dataset.view='comparison';this.frameVisible();
  }
- focus(id){
+ focus(id,instant=false){
   if(this.comparison&&(DOCTORS.some(d=>d.id===id)||id==='simulation')){this.compare(id,this.comparison.landmarkId);return;}
   const obj=this.objects.get(id);if(!obj?.visible)return;
-  this.selected=id;this.markSelected();const h=id==='simulation'?Math.max(.035,this.simFinalTarget*UNIT):obj.userData.height;
+  this.selected=id;this.host.dataset.view='focus';this.markSelected();const h=id==='simulation'?Math.max(.035,this.simFinalTarget*UNIT):obj.userData.height;
   const center=obj.position.clone().add(new THREE.Vector3(0,h*.48,0)),distance=Math.max(h*2.25,8);
-  this.animateCamera(center.clone().add(new THREE.Vector3(distance*.3,distance*.12,distance)),center);
+  this.animateCamera(center.clone().add(new THREE.Vector3(distance*.3,distance*.12,distance)),center,instant);
  }
  markSelected(){for(const [id,o]of this.objects){if(o.userData.base)o.userData.base.material.color.set(id===this.selected?0x3975ff:0xdfe7f3);this.labels.get(id)?.classList.toggle('selected',id===this.selected);}}
  toggleLandmark(id,on){this.clearComparison();this.objects.get(id).visible=on;this.overview();}

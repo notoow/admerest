@@ -66,7 +66,7 @@ function enterComparison(){
  explorer?.compare($('#comparison-source').value,$('#comparison-landmark').value);
  $('#all-view').classList.remove('active');syncPairButton();refreshComparison();$('.explorer-main').scrollIntoView({behavior:reduced?'instant':'smooth',block:'start'});
 }
-function overview(){if(explorer?.flight.enabled)explorer.setFlying(false);explorer?.overview();$('#all-view').classList.add('active');$('#my-tower').classList.remove('active');syncPairButton();}
+function overview(){if(explorer?.flight.enabled)explorer.setFlying(false);explorer?.overview();$('#live-build').hidden=true;$('#all-view').classList.add('active');$('#my-tower').classList.remove('active');syncPairButton();}
 $('#compare-sim').addEventListener('click',()=>{$('#explore').scrollIntoView({behavior:reduced?'instant':'smooth'});showSimulation();enterComparison();});
 $('#all-view').addEventListener('click',overview);$('#reset-camera').addEventListener('click',overview);$('#explorer-canvas').addEventListener('overview-request',overview);
 $('#my-tower').addEventListener('click',showSimulation);

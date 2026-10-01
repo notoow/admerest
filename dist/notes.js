@@ -1,5 +1,6 @@
 import {SIZES,lengthMeters} from './measurements.js?v=20261001-material-types';
 import {EVERYDAY_OBJECTS,comparisonDimensions} from './size-comparison.js?v=20261001-comparison';
+import {VideoRoom} from './video-player.js?v=20261002-usability';
 const sizeButtons=[...document.querySelectorAll('[data-note-size]')];
 const objectButtons=[...document.querySelectorAll('[data-compare-object]')];
 let selectedSize='5x6',selectedObject='iphone';
@@ -45,27 +46,10 @@ for(const button of document.querySelectorAll('[data-quiz-answer]'))button.addEv
  document.querySelectorAll('[data-quiz-answer]').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));
  const answer=document.querySelector('#quiz-answer');answer.hidden=false;answer.textContent=quizAnswers[button.dataset.quizAnswer];
 });
-const videoIds=new Set(['tM3rcIBuNds','sMoM10ZrBmE','zuDulrtI15k','3oIgGvZx4JE']);
-function stopVideo(card){
- const frame=card.querySelector('iframe');if(!frame)return;
- frame.remove();card.querySelector('.video-poster').hidden=false;card.querySelector('[data-video-close]').hidden=true;
-}
-for(const card of document.querySelectorAll('[data-video-id]')){
- const button=card.querySelector('.video-poster');
- button.addEventListener('click',()=>{
-  const id=card.dataset.videoId;if(!videoIds.has(id))return;
-  document.querySelectorAll('[data-video-id]').forEach(stopVideo);
-  const iframe=document.createElement('iframe');
-  iframe.title=card.querySelector('h3').textContent+' — 하이스트 비뇨의학과 YouTube';
-  iframe.src='https://www.youtube-nocookie.com/embed/'+id+'?autoplay=1&playsinline=1&rel=0';
-  iframe.allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
-  iframe.allowFullscreen=true;iframe.referrerPolicy='strict-origin-when-cross-origin';
-  button.hidden=true;card.querySelector('.video-stage').append(iframe);card.querySelector('[data-video-close]').hidden=false;iframe.focus();
- });
- card.querySelector('[data-video-close]').addEventListener('click',()=>{stopVideo(card);button.focus();});
-}
+const videoRoom=new VideoRoom(document.querySelectorAll('[data-video-id]'));
+if(document.modelContext?.registerTool){try{document.modelContext.registerTool({name:'get_notes_state',description:'Read selected comparison size/object and the current video room status. No playback changes.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true},execute:async()=>({content:[{type:'text',text:JSON.stringify({selectedSize,selectedObject,video:videoRoom.state()})}]})});}catch(error){console.warn('Notes state tool:',error.message);}}
 function openHashArticle(){
- const id=decodeURIComponent(location.hash.slice(1));const target=document.getElementById(id);
+ let id;try{id=decodeURIComponent(location.hash.slice(1));}catch{return;}const target=document.getElementById(id);
  if(target?.matches('.note-article')){const detail=target.querySelector('details');if(detail)detail.open=true;}
 }
 openHashArticle();addEventListener('hashchange',openHashArticle);

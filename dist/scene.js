@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {createSheet,MODEL_WIDTH,MODEL_DEPTH} from './material.js';
 
 const UNIT=.008;
-export const DOCTORS=[{id:'kim',name:'김하늘',initials:'KH',country:'KR',countryName:'대한민국',length:1240,rank:1},{id:'alex',name:'Alex Kim',initials:'AK',country:'US',countryName:'미국',length:980,rank:2},{id:'haruto',name:'Haruto Sato',initials:'HS',country:'JP',countryName:'일본',length:760,rank:3}];
+export {RANKED_DOCTORS as DOCTORS} from './records.js';
 export const LANDMARKS={lotte:{name:'롯데월드타워',height:555},burj:{name:'부르즈 칼리파',height:828},everest:{name:'에베레스트',height:8848.86}};
 
 export function rendererFor(host){

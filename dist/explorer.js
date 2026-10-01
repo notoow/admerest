@@ -7,6 +7,7 @@ import {FlightControls} from './flight.js';
 import {WORLD_UNIT} from './flight-motion.js';
 import {createAtmosphere} from './atmosphere.js';
 import {extraLandmark} from './landmarks.js';
+import {orbitDamping,easeLabelLift,placeLabelBottom} from './explorer-motion.js';
 
 const UNIT=WORLD_UNIT, PANEL_HEIGHT=.92/MODEL_WIDTH;
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -16,7 +17,11 @@ export class Explorer {
  constructor(host,onSelect){
   this.host=host;this.onSelect=onSelect;this.selected='kim';this.auto=false;
   this.objects=new Map();this.labels=new Map();this.home=new Map();this.simCases=2000;this.simTarget=120;this.simFinalTarget=120;this.simWidth=.92;this.simWidthTarget=.92;
+  this.labelMetrics=new Map();this.labelLifts=new Map();this.labelPoint=new THREE.Vector3();
+  this.labelObserver=new ResizeObserver(entries=>{for(const {target}of entries){const {width,height}=target.getBoundingClientRect();if(width&&height)this.labelMetrics.set(target.dataset.object,{width,height});}});
   this.renderer=rendererFor(host);this.scene=new THREE.Scene();lighting(this.scene,this.renderer);this.atmosphere=createAtmosphere(this.scene);
+  // Orbiting changes the camera, not the sun or buildings. Reuse their shadow map.
+  this.renderer.shadowMap.autoUpdate=false;
   this.camera=new THREE.PerspectiveCamera(34,1,.001,1000);
   this.controls=new OrbitControls(this.camera,this.renderer.domElement);
   Object.assign(this.controls,{enableDamping:true,dampingFactor:.07,minPolarAngle:.25,maxPolarAngle:Math.PI/2-.035,minDistance:4,maxDistance:400,enablePan:true});
@@ -54,9 +59,9 @@ export class Explorer {
   const label=document.createElement('button');label.className='scene-label';label.dataset.object=id;
   const doctor=DOCTORS.find(d=>d.id===id);
   label.setAttribute('aria-label',`${name}, ${doctor?`수술 ${number.format(doctor.cases)}건, `:''}${number.format(value)}미터, 탑 보기`);
-  label.innerHTML=`<span class="label-name">${name}${country?`<img class="flag" src="./assets/${country}.svg" alt="${country}">`:''}</span><div class="label-value">${number.format(doctor?doctor.cases:id==='simulation'?this.simCases:value)} <small>${doctor||id==='simulation'?'건':'m'}</small></div>${doctor||id==='simulation'?`<span class="label-length">진피 ${number.format(value)} m</span>`:''}`;
+  label.innerHTML=`<span class="label-name">${name}${country?`<img class="flag" src="./assets/${country}.svg" alt="${country}">`:''}${doctor?.verification==='demo'?'<span class="verify-badge" title="데모 인증 표시 · 실제 심사 이력 아님" aria-hidden="true">✓</span>':''}</span><div class="label-value">${number.format(doctor?doctor.cases:id==='simulation'?this.simCases:value)} <small>${doctor||id==='simulation'?'건':'m'}</small></div>${doctor||id==='simulation'?`<span class="label-length">진피 ${number.format(value)} m</span>`:''}`;
   label.addEventListener('click',()=>{if(this.flight?.enabled)return;if(DOCTORS.some(d=>d.id===id))this.onSelect(id);else if(!this.comparison)this.focus(id);});
-  this.host.append(label);this.labels.set(id,label);
+  this.host.append(label);this.labels.set(id,label);this.labelObserver.observe(label);
  }
  resize(){
   const w=this.host.clientWidth,h=this.host.clientHeight;if(!w||!h)return;
@@ -137,6 +142,10 @@ export class Explorer {
  }
  navigationState(){return {mode:this.flight.enabled?'flight':'orbit',locomotion:this.flight.walking?'walk':'fly',position:this.camera.position.toArray().map(n=>Number(n.toFixed(5))),eyeHeightMeters:Number(((this.camera.position.y-this.groundHeight(this.camera.position.x,this.camera.position.z))/UNIT).toFixed(2)),yaw:this.flight.yaw,pitch:this.flight.pitch,pointerLocked:this.flight.locked,lookMode:this.flight.locked?'locked':this.flight.hoverLook?'hover':'paused',joystick:{...this.flight.stick},speed:this.flight.speed};}
  landmarkState(){return Object.fromEntries([...this.objects].filter(([id])=>LANDMARKS[id]?.model).map(([id,o])=>[id,{status:o.userData.assetStatus,heightMeters:o.userData.height/UNIT,visible:o.visible}]));}
+ renderingState(){
+  const samples=this.frameSamples??[],sorted=samples.map(s=>s.interval).sort((a,b)=>a-b);
+  return {autoRotate:this.auto,samples:samples.length,frameIntervalP95Ms:sorted[Math.floor(sorted.length*.95)]??0,renderCostMeanMs:samples.length?samples.reduce((sum,s)=>sum+s.cost,0)/samples.length:0,drawCalls:this.renderer.info.render.calls,triangles:this.renderer.info.render.triangles,azimuth:this.controls.getAzimuthalAngle()};
+ }
  zoom(factor){this.transition=null;this.camera.position.sub(this.controls.target).multiplyScalar(factor).add(this.controls.target);this.controls.update();}
  animateCamera(position,target,instant=false){
   if(instant||reduced){this.camera.position.copy(position);this.controls.target.copy(target);this.controls.update();this.transition=null;}
@@ -194,13 +203,17 @@ export class Explorer {
  setSize({width,length}){this.simWidthTarget=PANEL_HEIGHT*width/length;}
  refit(){if(this.flight.enabled)return;if(this.comparison)this.frameVisible();else if(this.selected==='simulation')this.focus('simulation');}
  renderSimulation(){
-  const obj=this.objects.get('simulation'),height=this.simTarget*UNIT,layout=towerPanels(height,PANEL_HEIGHT),now=performance.now();
+  const obj=this.objects.get('simulation'),height=this.simTarget*UNIT,now=performance.now();
+  if(!obj.visible)return false;
+  if(this.renderedSimTarget===this.simTarget&&Math.abs(this.simWidthTarget-this.simWidth)<.00001&&now>(this.simAnimatingUntil??0)&&this.lastLabelCases===this.simCases)return false;
+  const layout=towerPanels(height,PANEL_HEIGHT);
   const dt=this.lastFrameTime===undefined?16:Math.min(100,now-this.lastFrameTime);this.lastFrameTime=now;
   this.simWidth+=(this.simWidthTarget-this.simWidth)*(reduced?1:1-Math.exp(-dt/180));
+  if(Math.abs(this.simWidthTarget-this.simWidth)<.00001)this.simWidth=this.simWidthTarget;
   const panels=obj.children.filter(c=>c!==obj.userData.base);
-  while(panels.length<layout.length){const panel=createSheet();panel.userData.born=now;obj.add(panel);panels.push(panel);}
+  while(panels.length<layout.length){const panel=createSheet();panel.userData.born=now;this.simAnimatingUntil=now+420;obj.add(panel);panels.push(panel);}
   panels.forEach((p,i)=>{
-   const visible=i<layout.length;if(visible&&!p.visible)p.userData.born=now;p.visible=visible;if(!visible)return;
+   const visible=i<layout.length;if(visible&&!p.visible){p.userData.born=now;this.simAnimatingUntil=now+420;}p.visible=visible;if(!visible)return;
    const part=layout[i],age=p.userData.born===undefined?1:Math.min(1,(now-p.userData.born)/420);
    p.scale.set(this.simWidth/MODEL_WIDTH,part.height,.13/MODEL_DEPTH);
    p.position.y=part.center+(reduced?0:.7*Math.pow(1-age,3));
@@ -211,35 +224,38 @@ export class Explorer {
    this.labels.get('simulation').querySelector('.label-length').textContent=`진피 ${number.format(this.simTarget)} m`;
    this.labels.get('simulation').setAttribute('aria-label',`내 체험 탑, 수술 ${number.format(this.simCases)}건, ${number.format(this.simTarget)}미터, 탑 보기`);this.lastLabelValue=this.simTarget;this.lastLabelCases=this.simCases;
   }
+  this.renderedSimTarget=this.simTarget;return true;
  }
  loop(){
-  requestAnimationFrame(()=>this.loop());const now=performance.now(),dt=Math.min(.05,(now-(this.loopTime??now))/1000);this.loopTime=now;if((!this.visible&&!this.flight.enabled)||document.hidden)return;
-  this.renderSimulation();
+  requestAnimationFrame(()=>this.loop());const now=performance.now(),interval=now-(this.loopTime??now),dt=Math.min(.05,interval/1000);this.loopTime=now;if((!this.visible&&!this.flight.enabled)||document.hidden)return;
+  const simulationChanged=this.renderSimulation();
   if(this.transition){const t=Math.min(1,(performance.now()-this.transition.start)/850),ease=1-Math.pow(1-t,3);this.camera.position.lerpVectors(this.transition.from,this.transition.to,ease);this.controls.target.lerpVectors(this.transition.oldTarget,this.transition.target,ease);if(t===1)this.transition=null;}
   if(this.flight.enabled){
    this.flight.step(dt);if(now-(this.hudTime??0)>100){document.querySelector('#flight-altitude').textContent=number.format(Math.round(this.camera.position.y/UNIT*10)/10);document.querySelector('#flight-altitude-fill').style.height=`${Math.min(100,this.camera.position.y/(8848.86*UNIT)*100)}%`;const degrees=((this.flight.yaw*180/Math.PI)%360+360)%360;document.querySelector('#flight-heading').textContent=['N','NW','W','SW','S','SE','E','NE'][Math.round(degrees/45)%8];this.hudTime=now;}
-  }else{this.controls.autoRotate=this.auto&&!reduced&&!this.transition;this.controls.autoRotateSpeed=.45;this.controls.update();}
+  }else{this.controls.autoRotate=this.auto&&!reduced&&!this.transition;this.controls.autoRotateSpeed=.45;this.controls.dampingFactor=orbitDamping(dt);this.controls.update(dt);}
+  const shadowSignature=[...this.objects].map(([id,o])=>`${id}:${o.visible}:${o.userData.assetStatus}:${o.position.toArray()}:${o.scale.toArray()}`).join('|');
+  if(simulationChanged||shadowSignature!==this.shadowSignature){this.renderer.shadowMap.needsUpdate=true;this.shadowSignature=shadowSignature;}
   this.atmosphere.update(this.camera,now,reduced);this.renderer.render(this.scene,this.camera);
-  const placedLabels=[];
+  const placedLabels=[],width=this.host.clientWidth,height=this.host.clientHeight;
+  const farMountain=this.objects.get('everest').visible&&this.camera.position.distanceTo(this.controls.target)>90;
+  // Label sizes come from ResizeObserver. No interleaved DOM measurements/writes.
   for(const [id,obj]of this.objects){
-   const label=this.labels.get(id),farMountain=this.objects.get('everest').visible&&this.camera.position.distanceTo(this.controls.target)>90;
-   if(!obj.visible||(!this.flight.enabled&&!this.comparison&&farMountain&&id!=='everest'&&id!==this.selected)||(!this.flight.enabled&&!this.comparison&&this.host.clientWidth<600&&DOCTORS.some(d=>d.id===id)&&id!==this.selected)){label.style.display='none';continue;}
-   const point=obj.position.clone().add(new THREE.Vector3(0,obj.userData.height+.42,0)).project(this.camera);
-   label.style.display=point.z<1&&point.z>-1&&Math.abs(point.x)<1.15&&Math.abs(point.y)<1.1?'block':'none';
-   const halfLabel=label.offsetWidth/2+8;
-   const left=THREE.MathUtils.clamp((point.x*.5+.5)*this.host.clientWidth,halfLabel,this.host.clientWidth-halfLabel),anchor=(-point.y*.5+.5)*this.host.clientHeight;
+   const label=this.labels.get(id),metrics=this.labelMetrics.get(id);
+   if(!metrics||!obj.visible||(!this.flight.enabled&&!this.comparison&&farMountain&&id!=='everest'&&id!==this.selected)||(!this.flight.enabled&&!this.comparison&&width<600&&DOCTORS.some(d=>d.id===id)&&id!==this.selected)){label.style.visibility='hidden';this.labelLifts.delete(id);continue;}
+   const point=this.labelPoint.copy(obj.position);point.y+=obj.userData.height+.42;point.project(this.camera);
+   if(point.z>=1||point.z<=-1||Math.abs(point.x)>=1.15||Math.abs(point.y)>=1.1){label.style.visibility='hidden';this.labelLifts.delete(id);continue;}
+   const halfLabel=metrics.width/2+8;
+   const left=THREE.MathUtils.clamp((point.x*.5+.5)*width,halfLabel,width-halfLabel),anchor=(-point.y*.5+.5)*height;
    let top=anchor;
-   if(!this.flight.enabled&&label.style.display!=='none'){
-    const height=label.offsetHeight;
-    // Lift overlapping labels and connect them back to their actual tower tip.
-    for(let attempt=0;attempt<placedLabels.length+1;attempt++){
-     const overlap=placedLabels.find(r=>left+halfLabel>r.left&&left-halfLabel<r.right&&top>r.top-8&&top-height<r.bottom+8);
-     if(!overlap)break;top=overlap.top-8;
-    }
-    placedLabels.push({left:left-halfLabel,right:left+halfLabel,top:top-height,bottom:top});
+   if(!this.flight.enabled){
+    top=placeLabelBottom(anchor,left,halfLabel,metrics.height,height,placedLabels);
+    placedLabels.push({left:left-halfLabel,right:left+halfLabel,top:top-metrics.height,bottom:top});
    }
-   label.style.left=`${left}px`;label.style.top=`${top}px`;label.style.setProperty('--leader-length',`${Math.max(0,anchor-top)}px`);
-   if(this.flight.enabled&&top<195)label.style.display='none';
+   const lift=easeLabelLift(this.labelLifts.get(id),anchor-top,reduced?1:dt);this.labelLifts.set(id,lift);
+   top=anchor-lift;label.style.transform=`translate3d(${left}px,${top}px,0) translate(-50%,-100%)`;
+   const leader=Math.max(0,lift,-lift-metrics.height);
+   label.style.setProperty('--leader-length',`${leader}px`);label.style.setProperty('--leader-top',lift>=0?'100%':`${-leader}px`);label.style.visibility=this.flight.enabled&&top<195?'hidden':'visible';
   }
+  this.frameSamples??=[];this.frameSamples.push({interval,cost:performance.now()-now});if(this.frameSamples.length>120)this.frameSamples.shift();
  }
 }

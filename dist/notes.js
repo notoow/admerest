@@ -1,4 +1,4 @@
-import {SIZES,lengthMeters} from './measurements.js?v=20261001-notes';
+import {SIZES,lengthMeters} from './measurements.js?v=20261001-material-types';
 const format=new Intl.NumberFormat('ko-KR');
 const sizeButtons=[...document.querySelectorAll('[data-note-size]')];
 for(const button of sizeButtons)button.addEventListener('click',()=>{

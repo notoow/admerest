@@ -6,6 +6,7 @@ import {towerPanels} from './measurements.js';
 import {FlightControls} from './flight.js';
 import {WORLD_UNIT} from './flight-motion.js';
 import {createAtmosphere} from './atmosphere.js';
+import {extraLandmark} from './landmarks.js';
 
 const UNIT=WORLD_UNIT, PANEL_HEIGHT=.92/MODEL_WIDTH;
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -15,7 +16,7 @@ export class Explorer {
  constructor(host,onSelect){
   this.host=host;this.onSelect=onSelect;this.selected='kim';this.auto=false;
   this.objects=new Map();this.labels=new Map();this.home=new Map();this.simCases=2000;this.simTarget=120;this.simFinalTarget=120;this.simWidth=.92;this.simWidthTarget=.92;
-  this.renderer=rendererFor(host);this.scene=new THREE.Scene();lighting(this.scene);this.atmosphere=createAtmosphere(this.scene);
+  this.renderer=rendererFor(host);this.scene=new THREE.Scene();lighting(this.scene,this.renderer);this.atmosphere=createAtmosphere(this.scene);
   this.camera=new THREE.PerspectiveCamera(34,1,.001,1000);
   this.controls=new OrbitControls(this.camera,this.renderer.domElement);
   Object.assign(this.controls,{enableDamping:true,dampingFactor:.07,minPolarAngle:.25,maxPolarAngle:Math.PI/2-.035,minDistance:4,maxDistance:400,enablePan:true});
@@ -28,6 +29,8 @@ export class Explorer {
   DOCTORS.forEach((d,i)=>this.addObject(d.id,tower(d.length),[i*2.25-5.1,0,0],d.name,d.length,d.country));
   this.addObject('burj',burj(),[2,0,0],LANDMARKS.burj.name,828);
   this.addObject('lotte',lotte(),[4.2,0,0],LANDMARKS.lotte.name,555);
+  this.addObject('shanghai',extraLandmark('shanghai'),[6.4,0,0],LANDMARKS.shanghai.name,632);
+  this.addObject('eiffel',extraLandmark('eiffel'),[8.8,0,0],LANDMARKS.eiffel.name,330);
   this.addObject('everest',everest(),[55,0,-85],LANDMARKS.everest.name,8848.86);this.objects.get('everest').visible=false;
   this.addObject('simulation',tower(120),[-7.5,0,0],'내 체험 탑',120);this.objects.get('simulation').visible=false;
   this.guide=new THREE.Line(new THREE.BufferGeometry(),new THREE.LineDashedMaterial({color:0x5987dc,dashSize:.16,gapSize:.11,transparent:true,opacity:.65}));
@@ -113,7 +116,9 @@ export class Explorer {
  blocked(x,z,y){
   for(const [id,o]of this.objects){
    if(!o.visible||id==='everest'||y>o.userData.height+.03)continue;
-   const halfX=(id==='lotte'?.44:id==='burj'?.65:.59)*o.scale.x+.012,halfZ=(id==='lotte'?.44:id==='burj'?.65:.37)*o.scale.z+.012;
+   const halfX=(o.userData.halfWidth??(id==='lotte'?.44:id==='burj'?.65:.59))*o.scale.x+.012,halfZ=(o.userData.halfDepth??(id==='lotte'?.44:id==='burj'?.65:.37))*o.scale.z+.012;
+   // The Eiffel arch is open: keep four footings solid, allow walking underneath.
+   if(id==='eiffel'&&y<.25&&Math.min(Math.abs(x-o.position.x)/halfX,Math.abs(z-o.position.z)/halfZ)<.55)continue;
    if(Math.abs(x-o.position.x)<halfX&&Math.abs(z-o.position.z)<halfZ)return true;
   }
   return false;
@@ -131,6 +136,7 @@ export class Explorer {
   this.flight.syncAngles();document.querySelectorAll('[data-flight-destination]').forEach(b=>b.classList.toggle('active',b.dataset.flightDestination===destination));
  }
  navigationState(){return {mode:this.flight.enabled?'flight':'orbit',locomotion:this.flight.walking?'walk':'fly',position:this.camera.position.toArray().map(n=>Number(n.toFixed(5))),eyeHeightMeters:Number(((this.camera.position.y-this.groundHeight(this.camera.position.x,this.camera.position.z))/UNIT).toFixed(2)),yaw:this.flight.yaw,pitch:this.flight.pitch,pointerLocked:this.flight.locked,lookMode:this.flight.locked?'locked':this.flight.hoverLook?'hover':'paused',joystick:{...this.flight.stick},speed:this.flight.speed};}
+ landmarkState(){return Object.fromEntries([...this.objects].filter(([id])=>LANDMARKS[id]?.model).map(([id,o])=>[id,{status:o.userData.assetStatus,heightMeters:o.userData.height/UNIT,visible:o.visible}]));}
  zoom(factor){this.transition=null;this.camera.position.sub(this.controls.target).multiplyScalar(factor).add(this.controls.target);this.controls.update();}
  animateCamera(position,target,instant=false){
   if(instant||reduced){this.camera.position.copy(position);this.controls.target.copy(target);this.controls.update();this.transition=null;}
@@ -214,13 +220,25 @@ export class Explorer {
    this.flight.step(dt);if(now-(this.hudTime??0)>100){document.querySelector('#flight-altitude').textContent=number.format(Math.round(this.camera.position.y/UNIT*10)/10);document.querySelector('#flight-altitude-fill').style.height=`${Math.min(100,this.camera.position.y/(8848.86*UNIT)*100)}%`;const degrees=((this.flight.yaw*180/Math.PI)%360+360)%360;document.querySelector('#flight-heading').textContent=['N','NW','W','SW','S','SE','E','NE'][Math.round(degrees/45)%8];this.hudTime=now;}
   }else{this.controls.autoRotate=this.auto&&!reduced&&!this.transition;this.controls.autoRotateSpeed=.45;this.controls.update();}
   this.atmosphere.update(this.camera,now,reduced);this.renderer.render(this.scene,this.camera);
+  const placedLabels=[];
   for(const [id,obj]of this.objects){
    const label=this.labels.get(id),farMountain=this.objects.get('everest').visible&&this.camera.position.distanceTo(this.controls.target)>90;
    if(!obj.visible||(!this.flight.enabled&&!this.comparison&&farMountain&&id!=='everest'&&id!==this.selected)||(!this.flight.enabled&&!this.comparison&&this.host.clientWidth<600&&DOCTORS.some(d=>d.id===id)&&id!==this.selected)){label.style.display='none';continue;}
    const point=obj.position.clone().add(new THREE.Vector3(0,obj.userData.height+.42,0)).project(this.camera);
    label.style.display=point.z<1&&point.z>-1&&Math.abs(point.x)<1.15&&Math.abs(point.y)<1.1?'block':'none';
    const halfLabel=label.offsetWidth/2+8;
-   label.style.left=`${THREE.MathUtils.clamp((point.x*.5+.5)*this.host.clientWidth,halfLabel,this.host.clientWidth-halfLabel)}px`;const top=(-point.y*.5+.5)*this.host.clientHeight;label.style.top=`${top}px`;
+   const left=THREE.MathUtils.clamp((point.x*.5+.5)*this.host.clientWidth,halfLabel,this.host.clientWidth-halfLabel),anchor=(-point.y*.5+.5)*this.host.clientHeight;
+   let top=anchor;
+   if(!this.flight.enabled&&label.style.display!=='none'){
+    const height=label.offsetHeight;
+    // Lift overlapping labels and connect them back to their actual tower tip.
+    for(let attempt=0;attempt<placedLabels.length+1;attempt++){
+     const overlap=placedLabels.find(r=>left+halfLabel>r.left&&left-halfLabel<r.right&&top>r.top-8&&top-height<r.bottom+8);
+     if(!overlap)break;top=overlap.top-8;
+    }
+    placedLabels.push({left:left-halfLabel,right:left+halfLabel,top:top-height,bottom:top});
+   }
+   label.style.left=`${left}px`;label.style.top=`${top}px`;label.style.setProperty('--leader-length',`${Math.max(0,anchor-top)}px`);
    if(this.flight.enabled&&top<195)label.style.display='none';
   }
  }

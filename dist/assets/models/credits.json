@@ -1,0 +1,118 @@
+{
+  "lotte": {
+    "title": "Lotte World Tower",
+    "author": "NanoRay",
+    "source": "https://sketchfab.com/3d-models/a1fffe81ef5b419a92e423f59cd32f10",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "input_sha256": "25628f19d2cb5e20cf2884b7303078b65451144210ab57931d8c0e641a9bb4cc",
+    "output_sha256": "f7e5c3cb2acd7285531d03dd3bd3f8768c7e164d8cc2b48d0ee9fccb16f56c83",
+    "input_bytes": 376468,
+    "output_bytes": 80028,
+    "triangles": 9766,
+    "meshes": 4,
+    "bounds_y_up": {
+      "min": [
+        -0.06383229047060013,
+        -2.3508047837922194e-17,
+        -0.06382445991039276
+      ],
+      "max": [
+        0.06382583826780319,
+        1.0,
+        0.06381991505622864
+      ]
+    },
+    "modifications": "Uniform height normalization, transform baking, Draco compression; no geometry simplification. Website adjusts material roughness and environment reflections.",
+    "distribution": "Sketchfab official GLB download",
+    "distribution_url": "https://sketchfab.com/3d-models/a1fffe81ef5b419a92e423f59cd32f10",
+    "downloaded_on": "2026-10-01"
+  },
+  "burj": {
+    "title": "Burj Khalifa",
+    "author": "ManySince910",
+    "source": "https://sketchfab.com/3d-models/59e6dd74e5f647158de568b5a7f9cab7",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "input_sha256": "f33e61a8e948b83e6c93a77d0dd7cc5900ce119b28f22a9ca50d7b20c3e02d98",
+    "output_sha256": "3edbc9864c99db553753b763985c502e30322e20846104db96e94ffe38d41111",
+    "input_bytes": 962004,
+    "output_bytes": 144376,
+    "triangles": 16650,
+    "meshes": 2,
+    "bounds_y_up": {
+      "min": [
+        -0.08766051381826401,
+        0.0,
+        -0.08238526433706284
+      ],
+      "max": [
+        0.08766566962003708,
+        1.0000001192092896,
+        0.08238167315721512
+      ]
+    },
+    "modifications": "Uniform height normalization, transform baking, Draco compression; no geometry simplification. Website adjusts material roughness and environment reflections.",
+    "distribution": "Smart UI public model demo with Sketchfab author attribution",
+    "distribution_url": "https://www.htmlelements.com/demos/images/burj_khalifa.glb",
+    "downloaded_on": "2026-10-01"
+  },
+  "shanghai": {
+    "title": "Shanghai Tower",
+    "author": "NanoRay",
+    "source": "https://sketchfab.com/3d-models/e24fd5a66bbb4faaa7a8e26d3e7478fa",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "input_sha256": "c706244b1ae46cc0c0ccd15b52e7fde2bff03b0097569af2924c6597db737900",
+    "output_sha256": "e0a1935837ba948480e5e3824d21f74850efa2bc3ff1166b0dbcae3e91887d2b",
+    "input_bytes": 4508508,
+    "output_bytes": 667248,
+    "triangles": 121254,
+    "meshes": 7,
+    "bounds_y_up": {
+      "min": [
+        -0.08673475682735443,
+        -6.205622775425101e-17,
+        -0.07759176939725876
+      ],
+      "max": [
+        0.08673837780952454,
+        1.0,
+        0.07759300619363785
+      ]
+    },
+    "modifications": "Uniform height normalization, transform baking, Draco compression; no geometry simplification. Website adjusts material roughness and environment reflections.",
+    "distribution": "Smart UI public model demo with Sketchfab author attribution",
+    "distribution_url": "https://www.htmlelements.com/demos/images/shanghai_tower.glb",
+    "downloaded_on": "2026-10-01"
+  },
+  "eiffel": {
+    "title": "( FREE ) La tour Eiffel",
+    "author": "SDC PERFORMANCE",
+    "source": "https://sketchfab.com/3d-models/8553f94d06e24cb4b0fde1080f281674",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "input_sha256": "e6fa25808035c9bfbc06e5ac4e8f385db3f20f0a8a1aec74d8a35e03e919d656",
+    "output_sha256": "10f6f0f026186d2419e2bcbd055b78ea133bb5e7ff2dc13feb9e7a0cbfab6734",
+    "input_bytes": 5696208,
+    "output_bytes": 822316,
+    "triangles": 147604,
+    "meshes": 3,
+    "bounds_y_up": {
+      "min": [
+        -0.22598053514957428,
+        0.0,
+        -0.22598060965538025
+      ],
+      "max": [
+        0.22597303986549377,
+        1.0,
+        0.22598594427108765
+      ]
+    },
+    "modifications": "Uniform height normalization, transform baking, Draco compression; no geometry simplification. Website adjusts material roughness and environment reflections. Eiffel color changed to warm bronze; comparison height calibrated to 330m (current height, older model appearance).",
+    "distribution": "Smart UI public model demo with Sketchfab author attribution",
+    "distribution_url": "https://www.htmlelements.com/demos/images/free__la_tour_eiffel.glb",
+    "downloaded_on": "2026-10-01"
+  }
+}

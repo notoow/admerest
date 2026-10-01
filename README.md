@@ -25,7 +25,8 @@
 - 전문의별 탑 선택, 카메라 이동, 회전·확대, 자동 회전
 - 전문의/내 체험 탑과 랜드마크를 같은 기준선·높이 비율로 나란히 비교, 높이 차이와 비율 실시간 표시
 - 탑 화면 안에서 체험 수술 건수 입력·추가·초기화·규격 전환, 아래쪽을 유지하며 위로 자라는 대표 시트
-- 롯데월드타워 555m, 부르즈 칼리파 828m, 에베레스트 8,848.86m 비교
+- Sketchfab 공개 모델: 롯데월드타워 555m, 부르즈 칼리파 828m, 상하이타워 632m, 에펠탑 330m. 에베레스트 8,848.86m 비교도 유지
+- 제작자 모델의 창문·정상부·철골 보존, 환경 반사, 4개 GLB 합계 약 1.64 MiB. 원본 형상 축소 없이 Draco 압축, 공통 바닥·높이 정규화, 로딩 실패 시 대체 모형
 - +10/+100/+500/+1,000, 직접 입력, 초기화, 4×6/5×6/6×8cm 규격 전환
 - 사진 기반 ADM 표면과 옆면, 실제 관통 구멍 및 절개 형상
 - 사용자 확인 규격 **5×6cm, 두께 3mm**를 적용한 Blender 모델
@@ -54,9 +55,18 @@ PC는 클릭 시 브라우저의 Pointer Lock을 요청하며 마우스 이동�
 
 ## 파일
 
+### 외부 건물 모델
+
+4개 건물은 CC BY 4.0 자산입니다. 사이트 하단 **3D 모델 출처**에 원본 모델, 제작자, 라이선스와 변경 내역을 표시합니다. 원작자의 서비스 보증이나 제휴를 뜻하지 않습니다. 상세 출처와 SHA-256은 [`dist/assets/models/credits.json`](dist/assets/models/credits.json), Blender 재수입 검증은 [`models/landmark-validation.json`](models/landmark-validation.json)에 있습니다.
+
+롯데월드타워는 Sketchfab 공식 GLB 다운로드, 나머지는 원작자 크레딧을 포함하는 [Smart UI 공개 데모](https://www.htmlelements.com/demos/3d-chart/custom-models/index.htm)의 배포본입니다. `scripts/optimize-landmarks.py`는 `qa/<id>-source.glb`를 Blender에서 읽어 변환합니다. 원본은 저장소에 중복 포함하지 않습니다. 에펠탑 모델의 외형은 제작 당시 표현이며, 비교 높이는 [현재 330m](https://www.toureiffel.paris/en/news/history-and-culture/300-330-meters-story-towers-height)로 맞춥니다.
+
+### 구현 파일
+
 - `dist/app.js`: UI, 상태, 계산, 입력 검증, 랭킹, WebMCP
 - `dist/records.js`: 독립된 수술 건수·길이 기록, 합계, 수술 건수 랭킹
-- `dist/scene.js`: 랜드마크 모형, 조명
+- `dist/scene.js`: 대체 랜드마크 모형, 조명과 환경 반사
+- `dist/landmarks.js`, `dist/landmark-data.js`: 공유 GLB 로딩, 캐시, 재질, 랜드마크 높이
 - `dist/explorer.js`: 3D 탐색, 비교 배치, 카메라, 체험 탑 성장
 - `dist/flight.js`, `dist/flight-motion.js`: 키보드·터치 자유 이동과 시점 제어
 - `dist/journey.js`, `dist/experience.css`: 스크롤 연출과 몰입형 탐색 화면

@@ -11,7 +11,7 @@ export class ScrollJourney {
   this.section=section;this.stage=section.querySelector('.journey-stage');this.host=section.querySelector('.journey-canvas');this.progress=0;this.visible=true;
   this.copy=[...section.querySelectorAll('.journey-copy')];this.steps=[...section.querySelectorAll('[data-journey-step]')];
   this.renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:'low-power'});this.renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));this.renderer.setClearColor(0x000000,0);this.renderer.outputColorSpace=THREE.SRGBColorSpace;this.renderer.toneMapping=THREE.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.1;this.host.append(this.renderer.domElement);
-  this.scene=new THREE.Scene();lighting(this.scene);this.camera=new THREE.PerspectiveCamera(34,1,.1,100);this.camera.position.set(0,0,13);
+  this.scene=new THREE.Scene();lighting(this.scene,this.renderer);this.camera=new THREE.PerspectiveCamera(34,1,.1,100);this.camera.position.set(0,0,13);
   this.sheets=Array.from({length:9},(_,i)=>{const sheet=createSheet(i===0);this.scene.add(sheet);return sheet;});
   this.city=new THREE.Group();const a=lotte(),b=burj();a.position.set(1.8,-2.6,-1.5);b.position.set(3.25,-2.6,-2.6);a.scale.setScalar(.68);b.scale.setScalar(.68);this.city.add(a,b);this.scene.add(this.city);
   this.resizeObserver=new ResizeObserver(()=>this.resize());this.resizeObserver.observe(this.host);

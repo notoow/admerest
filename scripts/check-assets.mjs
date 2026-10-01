@@ -1,8 +1,10 @@
 import {readFileSync,existsSync} from 'node:fs';
 import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
+import {LANDMARKS} from '../dist/landmark-data.js';
 const root=new URL('../dist/',import.meta.url);
 const read=path=>readFileSync(new URL(path,root),'utf8');
-for(const file of ['index.html','app.js','scene.js','explorer.js','measurements.js','flight.js','flight-motion.js','journey.js','atmosphere.js','experience.css','physics.js','material.js']){
+for(const file of ['index.html','app.js','scene.js','landmarks.js','landmark-data.js','explorer.js','measurements.js','flight.js','flight-motion.js','journey.js','atmosphere.js','experience.css','physics.js','material.js']){
  const text=read(file);
  assert(!/(?:["'`])\/(?:assets|vendor|app\.js|styles\.css)/.test(text),`${file}: root-relative URL breaks GitHub project Pages`);
 }
@@ -33,3 +35,24 @@ for(const name of ['exported_detail','exported_motion']){
  assert(Math.abs(report[name].measured_solid_thickness_mm-3)<.02,`${name}: exported thickness`);
 }
 console.log(`GitHub Pages paths valid; Blender GLB ${(glb.length/1024).toFixed(0)} KiB, ${model.meshes.length} mesh.`);
+const credits=JSON.parse(read('assets/models/credits.json'));
+let landmarkBytes=0;
+for(const [id,landmark]of Object.entries(LANDMARKS)){
+ if(!landmark.model)continue;
+ const bytes=readFileSync(new URL(`assets/models/${landmark.model}`,root));landmarkBytes+=bytes.length;
+ assert.equal(bytes.readUInt32LE(0),0x46546c67,`${id}: GLB magic`);
+ assert.equal(bytes.readUInt32LE(8),bytes.length,`${id}: complete GLB`);
+ const asset=JSON.parse(bytes.subarray(20,20+bytes.readUInt32LE(12)).toString());
+ assert(asset.meshes?.length>0,`${id}: authored geometry`);
+ assert(asset.extensionsRequired.includes('KHR_draco_mesh_compression'),`${id}: compressed geometry`);
+ assert(asset.buffers.every(b=>!b.uri)&&(!asset.images||asset.images.every(i=>i.bufferView!==undefined)),`${id}: self-contained asset`);
+ assert.equal(createHash('sha256').update(bytes).digest('hex'),credits[id].output_sha256,`${id}: matches validated export`);
+ assert.equal(credits[id].license,'CC BY 4.0');
+ assert(Math.abs(credits[id].bounds_y_up.min[1])<.0001&&Math.abs(credits[id].bounds_y_up.max[1]-1)<.0001,`${id}: normalized and grounded after Draco roundtrip`);
+ const doc=read('index.html');
+ assert(doc.includes(`data-landmark="${id}"`)&&doc.includes(`<option value="${id}">`),`${id}: visibility and comparison controls`);
+ assert(doc.includes(credits[id].source.split('/').at(-1)),`${id}: public attribution`);
+}
+assert(landmarkBytes<2_000_000,'Four landmark assets under 2 MB');
+assert(existsSync(new URL('vendor/RoomEnvironment.js',root)),'Bundled reflection environment');
+console.log(`4 licensed, grounded landmark GLBs: ${(landmarkBytes/1024).toFixed(0)} KiB total.`);

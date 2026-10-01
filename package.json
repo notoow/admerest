@@ -5,7 +5,7 @@
   "version": "0.1.0",
   "scripts": {
     "dev": "python -m http.server 5173 --bind 127.0.0.1 --directory dist",
-    "check": "node --check dist/app.js && node --check dist/scene.js && node --check dist/explorer.js && node --check dist/flight.js && node --check dist/atmosphere.js && node --check dist/journey.js && node --check dist/material.js && node --check dist/physics.js && node --check dist/adm-geometry.js && node scripts/check-assets.mjs && node --test scripts/measurements.test.mjs scripts/flight.test.mjs scripts/records.test.mjs scripts/controls.test.mjs"
+    "check": "node --check dist/landmarks.js && node --check dist/landmark-data.js && node --check dist/app.js && node --check dist/scene.js && node --check dist/explorer.js && node --check dist/flight.js && node --check dist/atmosphere.js && node --check dist/journey.js && node --check dist/material.js && node --check dist/physics.js && node --check dist/adm-geometry.js && node scripts/check-assets.mjs && node --test scripts/measurements.test.mjs scripts/flight.test.mjs scripts/records.test.mjs scripts/controls.test.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "0.21.0",

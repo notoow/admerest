@@ -4,7 +4,7 @@ import {createHash} from 'node:crypto';
 import {LANDMARKS} from '../dist/landmark-data.js';
 const root=new URL('../dist/',import.meta.url);
 const read=path=>readFileSync(new URL(path,root),'utf8');
-for(const file of ['index.html','app.js','scene.js','landmarks.js','landmark-data.js','explorer.js','measurements.js','flight.js','flight-motion.js','journey.js','atmosphere.js','experience.css','physics.js','material.js']){
+for(const file of ['notes.html','notes.js','notes.css','index.html','app.js','scene.js','landmarks.js','landmark-data.js','explorer.js','measurements.js','flight.js','flight-motion.js','journey.js','atmosphere.js','experience.css','physics.js','material.js']){
  const text=read(file);
  assert(!/(?:["'`])\/(?:assets|vendor|app\.js|styles\.css)/.test(text),`${file}: root-relative URL breaks GitHub project Pages`);
 }

@@ -1,5 +1,5 @@
 export const MAX_QUANTITY=100000;
-export const SIZES={'4x6':{width:4,length:6},'5x6':{width:5,length:6},'6x8':{width:6,length:8}};
+export const SIZES={'5x6':{width:5,length:6},'5x10':{width:5,length:10},'6x12':{width:6,length:12}};
 export const lengthMeters=(quantity,size)=>quantity*SIZES[size].length/100;
 export function compareHeight(meters,landmarkHeight){
  const difference=meters-landmarkHeight;

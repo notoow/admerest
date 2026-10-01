@@ -1,11 +1,11 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {lengthMeters,compareHeight,towerPanels,MAX_QUANTITY} from '../dist/measurements.js';
-test('confirmed long edge drives length while width-only changes preserve it',()=>{
+test('each supplied sheet size uses its long edge for accumulated length',()=>{
  assert.equal(lengthMeters(2000,'5x6'),120);
- assert.equal(lengthMeters(2000,'4x6'),120);
- assert.equal(lengthMeters(2000,'6x8'),160);
- assert.equal(lengthMeters(MAX_QUANTITY,'6x8'),8000);
+ assert.equal(lengthMeters(2000,'5x10'),200);
+ assert.equal(lengthMeters(2000,'6x12'),240);
+ assert.equal(lengthMeters(MAX_QUANTITY,'6x12'),12000);
 });
 test('landmark comparisons preserve equal, shorter, taller and empty states',()=>{
  assert.deepEqual(compareHeight(0,555),{percent:0,difference:-555});

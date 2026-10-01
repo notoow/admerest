@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ko"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f5f8fc"><meta name="author" content="notoow">
+<title>내 기록 만들기 · admerest</title><meta name="description" content="수술 건수와 규격별 진피 사용 장수로 내 기록의 탑을 미리 보세요. 이 기기에 저장하는 비공개 미리보기.">
+<link rel="canonical" href="https://notoow.github.io/admerest/record.html"><meta property="og:title" content="내 기록이 세울 탑은? · admerest"><meta property="og:description" content="수술 건수와 진피 사용 장수로 만드는 나만의 기록 미리보기."><meta property="og:type" content="website"><meta property="og:url" content="https://notoow.github.io/admerest/record.html"><meta property="og:image" content="https://notoow.github.io/admerest/assets/brand/og-admerest-adm-eiffel-v3.png"><meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="./favicon.ico?v=notoow-1"><link rel="apple-touch-icon" href="./assets/brand/icon-180.png">
+<link rel="stylesheet" href="./styles.css?v=20261001-notes"><link rel="stylesheet" href="./experience.css?v=20261001-comparison"><link rel="stylesheet" href="./community.css?v=20261001-draft"><link rel="stylesheet" href="./immersive.css?v=20261001-reveal"><link rel="stylesheet" href="./record.css?v=20261001-draft">
+<script type="importmap">{"imports":{"three":"./vendor/three.module.js","./scene.js":"./scene.js?v=20261001-reveal","./material.js":"./material.js?v=20261001-reveal","./adm-geometry.js":"./adm-geometry.js?v=20261001-reveal","./record-reveal.js":"./record-reveal.js?v=20261001-draft"}}</script><script type="module" src="./record.js?v=20261001-draft"></script>
+</head><body>
+<a class="skip-link" href="#record-form">기록 입력으로 건너뛰기</a>
+<header class="site-header"><div class="site-brand"><a class="wordmark" href="./" aria-label="admerest 홈">admerest<span class="wordmark-dot">.</span></a><span class="brand-credit">by <img src="./assets/brand/notoow-2d.png" alt="" width="20" height="21"><b>notoow</b></span></div><nav aria-label="주요 메뉴"><a href="./#explore">탑 탐색</a><a href="./#play">직접 쌓기</a><a href="./#ranking">전문의 랭킹</a><a href="./notes.html">ADM 노트</a><a href="./game.html">미니게임</a></nav></header>
+<main class="record-layout">
+ <div class="record-intro"><div><span class="eyebrow">YOUR RECORD. YOUR PERSPECTIVE.</span><h1>내 기록이<br>세울 <span>탑은?</span></h1><p>한 건 한 건의 경험과 작은 한 장의 길이.<br>직접 입력하고, 세상의 높이와 비교해 보세요.</p></div><div class="privacy-stamp"><span>◎</span><strong>나만 보는 미리보기</strong><p>입력한 내용은 서버로 전송되지 않습니다.<br>저장을 누르면 이 브라우저에만 보관됩니다.</p></div></div>
+ <div id="restored-notice" class="restored-notice" hidden>이 기기에 저장한 초안을 불러왔습니다. <button type="button" id="reset-draft">새로 작성하기</button></div>
+ <div class="record-columns"><section class="editor-card" aria-label="내 기록 입력">
+  <ol class="record-steps" aria-label="기록 작성 단계"><li aria-current="step"><span>01</span>내 정보</li><li><span>02</span>진피 기록</li><li><span>03</span>확인과 감상</li></ol>
+  <form id="record-form" novalidate>
+   <section class="record-step" data-step="1" aria-labelledby="step-one-title"><span class="step-kicker">01 / THE PERSON</span><h2 id="step-one-title" tabindex="-1">누구의 기록인가요?</h2><p class="step-description">수술 건수가 이 기록의 중심입니다.</p>
+    <div class="record-field"><label for="draft-name">표시 이름 <span>필수</span></label><input id="draft-name" name="name" type="text" maxlength="40" autocomplete="off" placeholder="예: 홍길동" aria-describedby="error-name"><p id="error-name" class="field-error" hidden></p></div>
+    <div class="field-pair"><div class="record-field"><label for="draft-clinic">소속 <span>선택</span></label><input id="draft-clinic" name="clinic" type="text" maxlength="80" autocomplete="off" placeholder="병원 또는 기관" aria-describedby="error-clinic"><p id="error-clinic" class="field-error" hidden></p></div><div class="record-field"><label for="draft-country">국적</label><select id="draft-country" name="country" aria-describedby="error-country"><option value="KR">대한민국</option><option value="US">미국</option><option value="JP">일본</option></select><p id="error-country" class="field-error" hidden></p></div></div>
+    <div class="record-field case-field"><label for="draft-cases">총 수술 케이스 <span>필수 · 1–100,000건</span></label><div class="unit-input"><input id="draft-cases" name="cases" type="text" inputmode="numeric" maxlength="12" autocomplete="off" placeholder="0" aria-describedby="error-cases"><span>건</span></div><p id="error-cases" class="field-error" hidden></p></div>
+    <button type="button" id="fill-example" class="example-button">일단 예시로 둘러보기 ↗</button>
+   </section>
+   <section class="record-step" data-step="2" aria-labelledby="step-two-title" hidden><span class="step-kicker">02 / EVERY PIECE COUNTS</span><h2 id="step-two-title" tabindex="-1">어떤 진피를 사용했나요?</h2><p class="step-description">규격과 타입별 실제 사용 장수를 입력해 주세요.<br>수술 건수와 사용 장수는 따로 집계합니다.</p>
+    <div class="material-ledger"><table><caption class="sr-only">규격 및 타입별 진피 사용 장수</caption><thead><tr><th scope="col">규격 <small>cm</small></th><th scope="col">수화 타입 <small>장</small></th><th scope="col">건조 타입 <small>장</small></th></tr></thead><tbody id="material-inputs"></tbody></table></div><p id="error-materials" class="field-error" hidden></p><p class="ledger-note">사용하지 않은 칸은 비워두세요. 전체 100,000장까지 미리 볼 수 있습니다.</p>
+    <div class="ledger-totals"><span>전체 사용 장수 <b id="ledger-sheets">0장</b></span><span>긴 변을 이은 길이 <b id="ledger-length">0 m</b></span></div><p class="calculation-note">각 규격의 장수 × 긴 변의 길이를 더합니다.<br>예: 5×6cm 100장 = 6m · 두께를 쌓은 높이와는 다릅니다.</p>
+   </section>
+   <section class="record-step" data-step="3" aria-labelledby="step-three-title" hidden><span class="step-kicker">03 / YOUR MOMENT</span><h2 id="step-three-title" tabindex="-1">이만큼의 경험을,<br>하나의 탑으로.</h2><p class="step-description">입력한 기록을 확인하고, 나의 순간을 감상해 보세요.</p>
+    <div class="review-person"><img id="review-flag" src="./assets/KR.svg" alt="대한민국"><div><strong id="review-name"></strong><span id="review-clinic"></span></div><span class="private-label">미인증 · 비공개</span></div>
+    <dl class="review-details"><div><dt>수술 케이스</dt><dd id="review-cases"></dd></div><div><dt>진피 사용 장수</dt><dd id="review-sheets"></dd></div><div><dt>진피 누적 길이</dt><dd id="review-length"></dd></div></dl>
+    <div class="draft-rank"><span>데모 기록과 비교하면</span><strong id="draft-rank-value"></strong><p>가상 전문의 3명과 비교한 순서입니다.<br>실제 공개 랭킹에는 반영되지 않습니다.</p></div>
+    <div class="publication-preview"><b>공개 탑은 인증 다음에.</b><p>정식 등록 시에는 미인증 기록은 랭킹에만,<br>자격·기록 확인 후에는 배지와 공개 탑으로 표시됩니다.</p><span>현재 화면은 등록 접수·인증 신청 기능이 아닙니다.</span></div>
+   </section>
+   <p id="record-form-status" class="record-form-status" role="status" aria-live="polite"></p>
+   <div class="record-actions"><button type="button" id="previous-step" hidden>← 이전</button><button type="submit" id="next-step" class="primary-button">진피 기록 입력하기 →</button><button type="button" id="reveal-draft" class="primary-button" hidden disabled>3D 준비 중…</button></div>
+  </form>
+  <div class="draft-storage"><button type="button" id="save-draft">이 기기에 초안 저장</button><button type="button" id="delete-draft" hidden>저장한 초안 삭제</button><span id="draft-storage-status" role="status" aria-live="polite">공유 기기에서는 저장에 주의하세요.</span></div>
+ </section>
+ <aside class="draft-preview-card" aria-label="입력 기록 요약과 탑 미리보기"><div class="draft-preview-heading"><span>PRIVATE PREVIEW</span><span class="preview-pin">● 나만 보기</span></div><div class="draft-summary"><span id="summary-name">당신의 기록</span><strong><span id="summary-cases">—</span><small>건</small></strong><p>진피 <b id="summary-sheets">0장</b><i></i>누적 길이 <b id="summary-length">0 m</b></p></div>
+  <div class="preview-viewport"><div id="draft-canvas" aria-label="내 기록과 랜드마크의 3D 높이 비교"></div><div id="preview-placeholder"><div class="preview-paper" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div><strong>한 장에서 시작되는 기록.</strong><span>입력을 마치면 이곳에 탑이 생깁니다.</span></div><div class="preview-object-labels" id="preview-object-labels" hidden><span>내 기록 <b id="preview-height">0 m</b></span><span id="landmark-height">에펠탑 · 330 m</span></div></div>
+  <div id="draft-view-controls" hidden><label for="draft-landmark" class="sr-only">비교할 랜드마크</label><select id="draft-landmark"><option value="eiffel">에펠탑 · 330m</option><option value="lotte">롯데월드타워 · 555m</option><option value="burj">부르즈 칼리파 · 828m</option><option value="shanghai">상하이타워 · 632m</option></select><button type="button" id="reset-draft-view">시점 초기화 ↻</button><p id="draft-comparison"></p><small>드래그로 회전 · 두 손가락으로 확대<br>높이는 같은 비율, 탑의 폭과 시트 수는 확대·축약한 표현입니다.</small></div>
+  <p class="preview-footnote">입력한 기록은 검증되지 않았습니다.<br>파란 인증 배지나 공개 탑을 부여하지 않습니다.</p>
+ </aside></div>
+ <p class="record-exit"><a href="./#ranking">← 공개 랭킹으로 돌아가기</a><span>Created by notoow</span></p>
+</main><dialog id="discard-draft" class="discard-draft" aria-labelledby="discard-title"><h2 id="discard-title">초안을 지울까요?</h2><p>이 기기에 저장한 내용과 현재 입력을 초기화합니다.</p><div><button type="button" id="cancel-discard">계속 작성</button><button type="button" id="confirm-discard">초안 지우기</button></div></dialog>
+<noscript><p>기록 입력과 미리보기에는 JavaScript가 필요합니다. <a href="./notes.html">ADM 노트 읽기 ↗</a></p></noscript>
+</body></html>

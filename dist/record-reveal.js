@@ -3,7 +3,7 @@ import {createSheet,createLightSheet,MODEL_WIDTH,MODEL_DEPTH} from './material.j
 import {lighting} from './scene.js';
 
 import {clamp,revealProgress} from './record-motion.js';
-const format=new Intl.NumberFormat('en-US');
+const format=new Intl.NumberFormat('en-US'),decimal=new Intl.NumberFormat('en-US',{maximumFractionDigits:2});
 export class RecordReveal {
  constructor(playground,onTower){
   this.playground=playground;this.onTower=onTower;this.elapsed=0;this.reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -27,22 +27,27 @@ export class RecordReveal {
   if(this.dialog.open)return;
   this.record=record;this.elapsed=0;this.announced=false;this.previousFocus=document.activeElement;
   const host=this.playground.host;this.home=host.parentNode;this.next=host.nextSibling;this.placeholder=document.createElement('div');this.placeholder.style.height=`${host.clientHeight}px`;host.before(this.placeholder);
+  this.shadowAutoUpdate=this.playground.renderer.shadowMap.autoUpdate;this.playground.renderer.shadowMap.autoUpdate=true;this.playground.renderer.shadowMap.needsUpdate=true;
   document.body.classList.add('record-open');this.dialog.showModal();this.stage.append(host);this.playground.presentation=this;this.playground.controls.enabled=false;this.playground.resize();
-  this.dialog.querySelector('.record-person').textContent=`${record.name} · ${record.countryName} · 데모 인증`;
+  const privatePreview=record.preview===true;
+  this.dialog.querySelector('.record-kicker').textContent=privatePreview?'THE MAKING OF YOUR RECORD · PRIVATE PREVIEW':'THE MAKING OF A RECORD · DEMO';
+  this.dialog.querySelector('.record-person').textContent=`${record.name} · ${record.countryName} · ${privatePreview?'미인증 · 나만 보기':'데모 인증'}`;
+  this.dialog.querySelector('.record-note').textContent=privatePreview?'입력한 기록의 비공개 미리보기 · 진피 소나기는 규모를 표현한 연출입니다.':'가상 전문의의 예시 기록 · 진피 소나기는 규모를 표현한 연출입니다.';
+  this.dialog.querySelector('.record-tower').textContent=privatePreview?'내 탑 비교하기 ↗':'공개 탑 보러 가기 ↗';
   this.dialog.querySelector('.record-close').focus();this.step(0);
  }
  close(){
   if(!this.dialog.open)return;
-  this.playground.presentation=null;this.playground.controls.enabled=true;this.home.insertBefore(this.playground.host,this.next);this.placeholder.remove();this.dialog.close();document.body.classList.remove('record-open');this.playground.resize();this.previousFocus?.focus({preventScroll:true});
+  this.playground.presentation=null;this.playground.controls.enabled=true;this.playground.renderer.shadowMap.autoUpdate=this.shadowAutoUpdate;this.playground.renderer.shadowMap.needsUpdate=true;this.home.insertBefore(this.playground.host,this.next);this.placeholder.remove();this.dialog.close();document.body.classList.remove('record-open');this.playground.resize();this.previousFocus?.focus({preventScroll:true});
  }
  state(){return {open:this.dialog.open,professionalId:this.record?.id??null,elapsedSeconds:this.elapsed,finished:revealProgress(this.elapsed,this.reduced).done};}
  step(dt){
   this.elapsed+=dt;const t=this.elapsed,p=revealProgress(t,this.reduced),mobile=this.camera.aspect<.8;
-  const count=Math.round(this.record.cases*p.count),length=Math.round(this.record.length*p.count);
-  this.dialog.querySelector('.record-count b').textContent=format.format(count);this.dialog.querySelector('.record-length strong').textContent=`${format.format(length)} m`;
+  const count=Math.round(this.record.cases*p.count),length=p.done?this.record.length:Math.round(this.record.length*p.count*100)/100;
+  this.dialog.querySelector('.record-count b').textContent=format.format(count);this.dialog.querySelector('.record-length strong').textContent=`${decimal.format(length)} m`;
   this.dialog.querySelector('#record-title').textContent=p.phase;this.dialog.querySelector('.record-timeline i').style.transform=`scaleX(${(this.reduced?1:clamp(t/6.4))})`;
   this.dialog.querySelector('.record-skip').hidden=p.done;this.dialog.querySelector('.record-replay').hidden=!p.done;this.dialog.querySelector('.record-tower').hidden=!p.done;
-  if(p.done&&!this.announced){this.dialog.querySelector('.record-sr').textContent=`${this.record.name}, 총 수술 ${format.format(this.record.cases)}건, 진피 누적 길이 ${format.format(this.record.length)}미터. 가상 예시입니다.`;this.announced=true;}
+  if(p.done&&!this.announced){this.dialog.querySelector('.record-sr').textContent=`${this.record.name}, 총 수술 ${format.format(this.record.cases)}건, 진피 누적 길이 ${decimal.format(this.record.length)}미터. ${this.record.preview?'검증되지 않은 비공개 미리보기입니다.':'가상 예시입니다.'}`;this.announced=true;}
   this.hero.visible=t<1.3&&!this.reduced;this.hero.position.set(0,2.5,0);this.hero.scale.setScalar(2.3);this.hero.rotation.set(.1,-.4+t*.9,-.16);
   this.pieces.forEach((mesh,i)=>{
    const age=t-.75-i*.055;mesh.visible=age>=0||this.reduced;

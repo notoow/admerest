@@ -55,9 +55,10 @@ PC는 클릭 시 브라우저의 Pointer Lock을 요청하며 마우스 이동�
 
 ## 공유 이미지와 브랜딩
 
-- `dist/assets/brand/og-admerest-notoow-v1.png`: 1200×630 공유 카드. OG 및 X/Twitter 메타데이터는 배포된 절대 HTTPS 주소를 사용하므로 JavaScript 없이도 읽힙니다.
+- `dist/assets/brand/og-admerest-adm-eiffel-v2.png`: 1200×630 공유 카드. 천공된 ADM 시트를 에펠탑 옆으로 이어 배치하고 notoow는 하단 서명으로 표시합니다. OG 및 X/Twitter 메타데이터는 버전이 포함된 절대 HTTPS 주소를 사용하므로 JavaScript 없이도 읽힙니다.
 - `dist/assets/brand/notoow-2d.png`, `notoow-3d.png`: 제공한 원본 그대로 보관. 헤더·푸터에는 2D, PNG/ICO 파비콘과 기기 아이콘에는 3D를 사용합니다.
-- `design/og-card.html`: OG 카드의 편집 가능한 HTML/CSS 원본. `qa/pages/og-preview.html`로 복사하고 `qa/pages/admerest`를 `dist`에 연결한 로컬 서버에서 1200×630으로 캡처합니다. 글자와 원본 로고를 그대로 합성한 그래픽이며 AI로 로고를 다시 그리지 않습니다.
+- `design/og-card.html`: OG 카드의 편집 가능한 HTML/CSS 원본. `qa/pages/og-preview.html`로 복사하고 `qa/pages/admerest`를 `dist`에 연결한 로컬 서버에서 1200×630으로 캡처합니다. 글자와 원본 notoow 로고를 그대로 배치하며 로고를 다시 그리지 않습니다.
+- `dist/assets/brand/og-adm-eiffel-art.png`: 사용자 제공 진피 사진을 참조해 built-in image_gen으로 만든 투명 배경 연출 이미지. 웹사이트의 실제 GLB를 렌더링한 이미지가 아니며, 장수·높이의 실제 축척을 나타내지 않습니다. 카드에 이 점을 표시하고 생성 프롬프트는 `design/og-art-prompt.txt`에 보관합니다.
 - `scripts/package-brand-assets.py <3D PNG> <2D PNG>`: 원본 복사, 투명 정사각 여백과 크기별 PNG/ICO 패키징. 원본 내용은 수정하지 않습니다.
 
 ## 파일

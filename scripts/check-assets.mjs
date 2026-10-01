@@ -8,7 +8,7 @@ for(const file of ['index.html','app.js','scene.js','landmarks.js','landmark-dat
  const text=read(file);
  assert(!/(?:["'`])\/(?:assets|vendor|app\.js|styles\.css)/.test(text),`${file}: root-relative URL breaks GitHub project Pages`);
 }
-for(const asset of ['assets/alpine-panorama.png','assets/adm-front.png','assets/highst-logo.png','assets/KR.svg','assets/US.svg','assets/JP.svg','vendor/three.module.js','vendor/three.core.js','vendor/rapier.mjs','vendor/loaders/GLTFLoader.js','vendor/utils/BufferGeometryUtils.js','vendor/utils/SkeletonUtils.js'])assert(existsSync(new URL(asset,root)),`Missing ${asset}`);
+for(const asset of ['assets/alpine-panorama.png','assets/adm-front.png','assets/brand/notoow-2d.png','assets/KR.svg','assets/US.svg','assets/JP.svg','vendor/three.module.js','vendor/three.core.js','vendor/rapier.mjs','vendor/loaders/GLTFLoader.js','vendor/utils/BufferGeometryUtils.js','vendor/utils/SkeletonUtils.js'])assert(existsSync(new URL(asset,root)),`Missing ${asset}`);
 const glb=readFileSync(new URL('assets/models/adm-sheet.glb',root));
 assert.equal(glb.readUInt32LE(0),0x46546c67,'GLB magic');
 assert.equal(glb.readUInt32LE(4),2,'glTF version');

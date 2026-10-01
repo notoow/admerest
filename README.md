@@ -51,7 +51,14 @@ PC는 클릭 시 브라우저의 Pointer Lock을 요청하며 마우스 이동�
 
 5×6cm와 3mm는 사용자가 확인한 기준 규격입니다. 4×6cm와 6×8cm는 크기 전환을 위한 예시이며 두께는 3mm로 유지됩니다. 구멍 패턴은 제공된 사진에서 추출했습니다. 사진의 원근·촬영 비율은 확인된 5:6 비율로 보정하며, 뒷면의 표면과 미세한 굽힘은 시각화용 근사입니다. 낙하는 강체 충돌 근사이며 생체 조직의 변형 해석은 아닙니다.
 
-독립 브랜드 `admerest`에 `with HIGHST`를 보조 표기했습니다. 이 표기가 권리 귀속을 확정하지는 않습니다. 사진과 병원 로고는 사용자가 제공한 자료입니다.
+독립 브랜드 `admerest`의 제작자는 `by notoow`로 표기합니다. 회사 로고와 제휴 표기는 제거했습니다. 사용자가 제공한 2D notoow 원본은 웹과 OG 카드에, 3D 원본은 파비콘과 기기 아이콘에 사용합니다. 이 표기는 별도의 권리 귀속 합의를 대신하지 않습니다. 진피 사진은 사용자가 제공한 자료입니다.
+
+## 공유 이미지와 브랜딩
+
+- `dist/assets/brand/og-admerest-notoow-v1.png`: 1200×630 공유 카드. OG 및 X/Twitter 메타데이터는 배포된 절대 HTTPS 주소를 사용하므로 JavaScript 없이도 읽힙니다.
+- `dist/assets/brand/notoow-2d.png`, `notoow-3d.png`: 제공한 원본 그대로 보관. 헤더·푸터에는 2D, PNG/ICO 파비콘과 기기 아이콘에는 3D를 사용합니다.
+- `design/og-card.html`: OG 카드의 편집 가능한 HTML/CSS 원본. `qa/pages/og-preview.html`로 복사하고 `qa/pages/admerest`를 `dist`에 연결한 로컬 서버에서 1200×630으로 캡처합니다. 글자와 원본 로고를 그대로 합성한 그래픽이며 AI로 로고를 다시 그리지 않습니다.
+- `scripts/package-brand-assets.py <3D PNG> <2D PNG>`: 원본 복사, 투명 정사각 여백과 크기별 PNG/ICO 패키징. 원본 내용은 수정하지 않습니다.
 
 ## 파일
 

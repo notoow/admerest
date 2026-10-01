@@ -1,0 +1,16 @@
+{
+  "name": "admerest by notoow",
+  "short_name": "admerest",
+  "description": "수술 케이스와 진피 길이를 탐험하는 3D 공간. by notoow.",
+  "lang": "ko",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "browser",
+  "background_color": "#f5f8fc",
+  "theme_color": "#f5f8fc",
+  "icons": [
+    {"src": "./assets/brand/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "./assets/brand/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"}
+  ]
+}

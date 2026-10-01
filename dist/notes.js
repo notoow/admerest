@@ -1,6 +1,5 @@
 import {SIZES,lengthMeters} from './measurements.js?v=20261001-material-types';
 import {EVERYDAY_OBJECTS,comparisonDimensions} from './size-comparison.js?v=20261001-comparison';
-const format=new Intl.NumberFormat('ko-KR');
 const sizeButtons=[...document.querySelectorAll('[data-note-size]')];
 const objectButtons=[...document.querySelectorAll('[data-compare-object]')];
 let selectedSize='5x6',selectedObject='iphone';
@@ -10,33 +9,31 @@ const objectArt={
  card:'<rect width="86" height="54" rx="4" fill="#e87955"/><path d="M49 0H86V54H35C66 37 66 18 49 0" fill="#efad93" opacity=".6"/><rect x="9" y="19" width="13" height="10" rx="2" fill="#f1d6ac"/><path d="M15.5 19V29M9 24H22" stroke="#b59876" stroke-width=".6"/><text x="9" y="42" style="fill:#fff4ea;font-size:4px;letter-spacing:1px">0000  0000  0000</text><text x="9" y="10" style="fill:#fff4ea;font-size:4px">EVERYDAY CARD</text>'
 };
 function renderSizeComparison(announce=false){
- const size=SIZES[selectedSize],object=EVERYDAY_OBJECTS[selectedObject],dims=comparisonDimensions(selectedSize,selectedObject);
+ const size=SIZES[selectedSize],object=EVERYDAY_OBJECTS[selectedObject];
  const label=size.width+' × '+size.length+' cm';
  for(const button of sizeButtons)button.setAttribute('aria-pressed',String(button.dataset.noteSize===selectedSize));
+ for(const specimen of document.querySelectorAll('[data-highlight-size]'))specimen.dataset.selected=String(specimen.dataset.highlightSize===selectedSize);
+ for(const cell of document.querySelectorAll('[data-size-cell]'))cell.dataset.selected=String(cell.dataset.sizeCell===selectedSize);
  for(const button of objectButtons)button.setAttribute('aria-pressed',String(button.dataset.compareObject===selectedObject));
- document.querySelector('#selected-size-label').textContent=label;
- document.querySelector('#note-area').textContent=format.format(size.width*size.length);
- document.querySelector('#note-length').textContent=format.format(lengthMeters(1000,selectedSize));
- document.querySelector('#note-formula').textContent='1,000장 × '+size.length+' cm = '+format.format(lengthMeters(1000,selectedSize))+' m';
- const image=document.querySelector('#comparison-sheet-photo'),x=150-dims.sheet.width/2,y=260-dims.sheet.height;
- for(const [key,value]of Object.entries({x,y,width:dims.sheet.width,height:dims.sheet.height}))image.style[key]=value+'px';
- document.querySelector('#sheet-width-rule').setAttribute('d',`M${x} ${y-10}H${x+dims.sheet.width}M${x} ${y-14}V${y-6}M${x+dims.sheet.width} ${y-14}V${y-6}`);
- const widthText=document.querySelector('#sheet-width-text');widthText.setAttribute('y',y-20);widthText.textContent=size.width+' cm';
- document.querySelector('#sheet-stage-label').textContent='ADM · '+label;
- const art=document.querySelector('#comparison-object');
+ for(const key of Object.keys(SIZES)){
+  const dims=comparisonDimensions(key,selectedObject);
+  document.querySelector(`[data-size-ratio="${key}"]`).innerHTML=dims.heightPercent.toFixed(1)+'<small>%</small>';
+ }
+ const dims=comparisonDimensions(selectedSize,selectedObject),art=document.querySelector('#comparison-object');
  if(art.dataset.object!==selectedObject){
-  art.innerHTML=`<svg x="${340-dims.object.width/2}" y="${260-dims.object.height}" width="${dims.object.width}" height="${dims.object.height}" viewBox="0 0 ${object.width*10} ${object.height*10}">${objectArt[selectedObject]}</svg><text x="340" y="${260-dims.object.height-15}" text-anchor="middle">${object.height} cm</text>`;
+  art.innerHTML=`<svg x="${565-dims.object.width/2}" y="${260-dims.object.height}" width="${dims.object.width}" height="${dims.object.height}" viewBox="0 0 ${object.width*10} ${object.height*10}">${objectArt[selectedObject]}</svg><text x="565" y="${260-dims.object.height-15}" text-anchor="middle">${object.height} cm</text>`;
   art.dataset.object=selectedObject;
  }
  document.querySelector('#object-stage-label').textContent=object.name;
- document.querySelector('#comparison-svg-title').textContent=label+' 진피와 '+object.name+'의 같은 축척 크기 비교';
- document.querySelector('#object-ratio').textContent=dims.heightPercent.toFixed(1);
- document.querySelector('#object-ratio-caption').textContent=(selectedObject==='iphone'?'아이폰 16 본체':selectedObject==='card'?'가로로 놓은 카드':object.name)+' 높이의';
+ document.querySelector('#comparison-svg-title').textContent='5×6, 5×8, 5×10, 6×12cm 진피 네 규격과 '+object.name+'의 같은 축척 크기 비교';
+ document.querySelector('#object-ratio-caption').textContent=(selectedObject==='iphone'?'아이폰':object.name)+' 대비';
  document.querySelector('#object-dimensions').textContent=object.note;
  const source=document.querySelector('#object-source');source.hidden=!object.source;if(object.source)source.href=object.source;
- if(announce)document.querySelector('#note-size-status').textContent=label+' 선택. '+object.name+' 높이의 '+dims.heightPercent.toFixed(1)+'%. 면적 '+size.width*size.length+'제곱센티미터, 1,000장을 이은 길이 '+lengthMeters(1000,selectedSize)+'미터.';
+ if(announce)document.querySelector('#note-size-status').textContent='네 규격 모두 표시. '+label+' 강조. 비교 물건 '+object.name+'. '+label+'는 '+object.name+' 높이의 '+dims.heightPercent.toFixed(1)+'%, 면적 '+size.width*size.length+'제곱센티미터, 1,000장 길이 '+lengthMeters(1000,selectedSize)+'미터.';
 }
-for(const button of sizeButtons)button.addEventListener('click',()=>{if(!SIZES[button.dataset.noteSize])return;selectedSize=button.dataset.noteSize;renderSizeComparison(true);});
+function highlightSize(key){if(!SIZES[key])return;selectedSize=key;renderSizeComparison(true);}
+for(const button of sizeButtons)button.addEventListener('click',()=>highlightSize(button.dataset.noteSize));
+for(const specimen of document.querySelectorAll('[data-highlight-size]'))specimen.addEventListener('click',()=>highlightSize(specimen.dataset.highlightSize));
 for(const button of objectButtons)button.addEventListener('click',()=>{if(!EVERYDAY_OBJECTS[button.dataset.compareObject])return;selectedObject=button.dataset.compareObject;renderSizeComparison(true);});
 renderSizeComparison();
 const quizAnswers={

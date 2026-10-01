@@ -8,6 +8,7 @@ import {WORLD_UNIT} from './flight-motion.js';
 import {createAtmosphere} from './atmosphere.js';
 import {extraLandmark} from './landmarks.js';
 import {orbitDamping,easeLabelLift,placeLabelBottom} from './explorer-motion.js';
+import {PUBLIC_DOCTORS} from './records.js';
 
 const UNIT=WORLD_UNIT, PANEL_HEIGHT=.92/MODEL_WIDTH;
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -31,7 +32,7 @@ export class Explorer {
   const floor=new THREE.Mesh(new THREE.PlaneGeometry(500,500),new THREE.ShadowMaterial({opacity:.10}));
   floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;floor.position.y=.0001;this.scene.add(floor);
   this.grid=new THREE.GridHelper(80,80,0xc8d7eb,0xe0e9f5);this.grid.material.transparent=true;this.grid.material.opacity=.13;this.grid.position.y=.0002;this.scene.add(this.grid);
-  DOCTORS.forEach((d,i)=>this.addObject(d.id,tower(d.length),[i*2.25-5.1,0,0],d.name,d.length,d.country));
+  PUBLIC_DOCTORS.forEach((d,i)=>this.addObject(d.id,tower(d.length),[i*2.25-2.5,0,0],d.name,d.length,d.country));
   this.addObject('burj',burj(),[2,0,0],LANDMARKS.burj.name,828);
   this.addObject('lotte',lotte(),[4.2,0,0],LANDMARKS.lotte.name,555);
   this.addObject('shanghai',extraLandmark('shanghai'),[6.4,0,0],LANDMARKS.shanghai.name,632);

@@ -7,3 +7,6 @@ export const DOCTORS=[
 export function rankRecords(records){return [...records].sort((a,b)=>b.cases-a.cases||a.id.localeCompare(b.id)).map((d,i)=>({...d,rank:i+1}));}
 export function recordTotals(records){return records.reduce((total,d)=>({cases:total.cases+d.cases,length:total.length+d.length}),{cases:0,length:0});}
 export const RANKED_DOCTORS=rankRecords(DOCTORS);
+// Demo approval previews the same publication rule without claiming real credential review.
+export function isTowerPublished(record){return record?.verification==='verified'||record?.verification==='demo';}
+export const PUBLIC_DOCTORS=RANKED_DOCTORS.filter(isTowerPublished);

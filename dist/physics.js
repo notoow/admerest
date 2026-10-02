@@ -50,7 +50,7 @@ export class PhysicsPlayground {
  drop(count){if(!this.ready||this.queue+count>80)return;this.setInspect(false);if(reduced){const total=this.totalDropped+count;this.seed(Math.min(this.limit,this.pieces.length+count));this.totalDropped=total;this.report();return;}this.queue+=count;this.nextDrop=performance.now();this.report();}
  clear(){this.seed(0);this.totalDropped=0;this.report();}
  report(){this.host.dispatchEvent(new CustomEvent('playground-change',{detail:this.state()}));}
- state(){return {ready:this.ready,totalDropped:this.totalDropped,activePieces:this.pieces.length,queued:this.queue,mode:this.presentation?'record':this.inspect?'inspect':'free'};}
+ state(){return {ready:this.ready,totalDropped:this.totalDropped,activePieces:this.pieces.length,queued:this.queue,mode:this.presentation?(this.presentation.kind??'record'):this.inspect?'inspect':'free'};}
  setSize(size){this.size=size;for(const p of this.pieces)p.body.wakeUp();if(this.inspect)this.setView(this.host.dataset.materialView||'oblique');}
  setInspect(on){
   this.inspect=on;this.specimen.visible=on;this.trayGroup.visible=!on;
@@ -71,7 +71,7 @@ export class PhysicsPlayground {
 
  resize(){const w=this.host.clientWidth,h=this.host.clientHeight;if(!w||!h)return;this.renderer.setSize(w,h);this.camera.aspect=w/h;this.camera.updateProjectionMatrix();if(this.presentation){this.presentation.camera.aspect=w/h;this.presentation.camera.updateProjectionMatrix();}}
  loop(){
-  requestAnimationFrame(()=>this.loop());const now=performance.now(),dt=Math.min((now-this.previous)/1000,.05);this.previous=now;if((!this.visible&&!this.presentation)||sceneSuspended('playground'))return;
+  requestAnimationFrame(()=>this.loop());const now=performance.now(),dt=Math.min((now-this.previous)/1000,.05);this.previous=now;if((!this.visible&&(!this.presentation||this.presentation.inline))||sceneSuspended('playground'))return;
   if(this.presentation){this.presentation.step(dt);this.renderer.render(this.presentation.scene,this.presentation.camera);return;}
   if(this.cameraTransition){const a=this.cameraTransition,t=reduced?1:Math.min(1,(now-a.start)/650),k=1-Math.pow(1-t,3);this.camera.position.lerpVectors(a.from,a.to,k);this.controls.target.lerpVectors(a.targetFrom,a.targetTo,k);if(t===1)this.cameraTransition=null;}
   const resizing=this.displaySize.width!==this.size.width||this.displaySize.length!==this.size.length;

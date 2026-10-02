@@ -6,21 +6,21 @@ import {SIZES,MAX_QUANTITY,lengthMeters} from '../dist/measurements.js';
 
 function setup(reduced=false){
  const source=readFileSync(new URL('../dist/app.js',import.meta.url),'utf8');
- const nodes=new Map(),frames=new Map(),updates=[],visits=[];let clock=0,id=0;
+ const nodes=new Map(),frames=new Map(),updates=[],visits=[],views=[];let clock=0,id=0;
  const element=selector=>{if(!nodes.has(selector))nodes.set(selector,{style:{},focus(){this.focused=true;}});return nodes.get(selector);};
  const explorer={flight:{enabled:false},selected:'kim',updateSimulation(meters,cases){updates.push({meters,cases});},prepareSimulation(meters){this.finalMeters=meters;},refit(){}};
- const context=vm.createContext({quantity:2000,displayCount:2000,displayLength:120,size:'5x6',animation:null,raf:null,reduced,explorer,SIZES,MAX_QUANTITY,lengthMeters,$:element,
+ const context=vm.createContext({quantity:2000,displayCount:2000,displayLength:120,size:'5x6',animation:null,raf:null,reduced,explorer,document:{activeElement:null},inlineStack:{update(){},prepare(){}},setPlayView(view){views.push(view);},SIZES,MAX_QUANTITY,lengthMeters,$:element,
   format:new Intl.NumberFormat('en-US'),decimal:new Intl.NumberFormat('en-US',{maximumFractionDigits:2}),performance:{now:()=>clock},
   requestAnimationFrame:fn=>{frames.set(++id,fn);return id;},refreshComparison(){},clearError(){},error(message){context.lastError=message;},showSimulation(options){visits.push(options);explorer.selected='simulation';}});
  vm.runInContext(source.slice(source.indexOf('function paintMetrics('),source.indexOf('function setSize(')),context);
  const frame=time=>{clock=time;const pending=[...frames.values()];frames.clear();pending.forEach(fn=>fn(time));};
- return {context,nodes,updates,visits,frames,frame,apply:(count,replay=true)=>context.setQuantity(count,{replay})};
+ return {context,nodes,updates,visits,views,frames,frame,apply:(count,replay=true)=>context.setQuantity(count,{replay})};
 }
 
-test('Apply resets an existing tower to zero, opens it immediately and reaches the exact input',()=>{
+test('Apply resets an existing tower to zero, shows it in place and reaches the exact input',()=>{
  const s=setup();s.apply(3100);
  assert.equal(s.context.displayCount,0);assert.equal(s.context.displayLength,0);
- assert.deepEqual(s.updates.at(-1),{meters:0,cases:0});assert.equal(s.visits[0].instant,true);assert.equal(s.context.explorer.finalMeters,186);
+ assert.deepEqual(s.updates.at(-1),{meters:0,cases:0});assert.deepEqual(s.views,['tower']);assert.equal(s.visits.length,0,'inline Apply must not move to the explorer');assert.equal(s.context.explorer.finalMeters,186);
  s.frame(400);assert.equal(s.context.displayCount,0,'arrival gives the empty tower a visible frame');
  s.frame(1800);assert(s.context.displayCount>0&&s.context.displayCount<3100);
  s.frame(3650);assert.equal(s.context.displayCount,3100);assert.equal(s.context.displayLength,186);assert.equal(s.context.animation,null);
@@ -39,4 +39,10 @@ test('zero, maximum, invalid input and reduced motion keep deterministic final c
  s.apply(0);s.frame(0);assert.equal(s.context.displayLength,0);assert.equal(s.context.animation,null);
  s.context.size='6x12';s.apply(MAX_QUANTITY);s.frame(3650);assert.equal(s.context.displayCount,MAX_QUANTITY);assert.equal(s.context.displayLength,12000);
  const calm=setup(true);calm.apply(231);calm.frame(0);assert.equal(calm.context.displayCount,231);assert.equal(calm.context.displayLength,13.86);assert.equal(calm.frames.size,0);
+});
+
+test('explorer Apply keeps its own surface and never scrolls the page',()=>{
+ const s=setup();s.context.setQuantity(231,{replay:true,surface:'explorer'});
+ assert.equal(s.visits.length,1);assert.equal(s.visits[0].instant,true);assert.equal(s.visits[0].scroll,false);assert.equal(s.views.length,0);
+ s.frame(3650);assert.equal(s.context.displayCount,231);
 });

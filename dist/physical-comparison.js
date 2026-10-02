@@ -4,9 +4,13 @@ import {SCREEN_SCALE_KEY,MIN_SCALE,MAX_SCALE,physicalPixels,screenProfile,readSc
 
 export class PhysicalComparison {
  constructor(art,onRequestCard){
-  this.art=art;this.objectKey='card';this.mode='physical';this.scale=1;this.confirmed=false;this.persisted=false;
+  this.art=art;this.objectKey='card';this.mode='overview';this.scale=1;this.confirmed=false;this.persisted=false;
   this.root=document.querySelector('#physical-stage');this.panel=document.querySelector('#screen-calibration');
   this.range=document.querySelector('#screen-scale');this.status=document.querySelector('#screen-scale-status');
+  this.dialog=document.querySelector('#physical-dialog');
+  this.dialog.addEventListener('close',()=>{this.mode='overview';document.body.classList.remove('physical-open');this.opener?.focus({preventScroll:true});});
+  document.querySelector('#physical-close').onclick=()=>this.dialog.close();
+  for(const button of document.querySelectorAll('[data-open-physical]'))button.onclick=()=>{this.opener=button;this.mode='physical';this.dialog.showModal();document.body.classList.add('physical-open');document.querySelector('#physical-close').focus({preventScroll:true});};
   this.profile=this.currentProfile();this.restore();
   const specimens=this.root.querySelector('.physical-sheets');
   for(const [key,size]of Object.entries(SIZES)){
@@ -24,29 +28,22 @@ export class PhysicalComparison {
    this.status.textContent='기본 크기로 되돌렸습니다. 실물 카드에 맞춘 뒤 저장해 주세요.';
   };
   this.panel.addEventListener('toggle',()=>{if(this.panel.open)onRequestCard();});
-  for(const button of document.querySelectorAll('[data-size-view]'))button.onclick=()=>this.setMode(button.dataset.sizeView);
   addEventListener('resize',()=>this.checkScreen());window.visualViewport?.addEventListener('resize',()=>this.checkScreen());
-  this.setMode('physical');this.setObject('card');
+  this.setObject('card');this.setSize('5x6');
  }
  currentProfile(){return screenProfile({width:screen.width,height:screen.height,pixelRatio:devicePixelRatio});}
  restore(){
   let saved=null;try{saved=readScreenScale(localStorage.getItem(SCREEN_SCALE_KEY),this.profile);}catch{}
   this.scale=saved??1;this.confirmed=saved!==null;this.persisted=this.confirmed;
  }
- setMode(mode){
-  this.mode=mode==='overview'?'overview':'physical';const physical=this.mode==='physical';
-  this.root.hidden=!physical;this.panel.hidden=!physical;document.querySelector('#overview-stage').hidden=physical;
-  document.querySelector('#screen-scale-status').hidden=!physical;
-  document.querySelector('#physical-overflow-hint').hidden=!physical;
-  for(const button of document.querySelectorAll('[data-size-view]'))button.setAttribute('aria-pressed',String(button.dataset.sizeView===this.mode));
- }
+ setSize(key){if(!SIZES[key])return;for(const button of this.root.querySelectorAll('[data-highlight-size]'))button.hidden=button.dataset.highlightSize!==key;}
  setObject(key){
   if(!EVERYDAY_OBJECTS[key])return;this.objectKey=key;if(key!=='card')this.panel.open=false;const object=EVERYDAY_OBJECTS[key];
   const art=this.root.querySelector('#physical-object-art');
   const markup=this.art[key].replaceAll('phone-screen','physical-phone-screen');
   art.innerHTML=`<svg role="img" aria-label="${object.name}" viewBox="0 0 ${object.width*10} ${object.height*10}"><defs><linearGradient id="physical-phone-screen" x2="1" y2="1"><stop stop-color="#192d4d"/><stop offset="1" stop-color="#668afa"/></linearGradient></defs>${markup}</svg>`;
   this.root.querySelector('#physical-object-label').textContent=key==='card'?'카드 · 85.60 × 53.98 mm':`${object.name} · ${object.width} × ${object.height} cm`;
-  this.root.querySelector('#physical-reference-hint').textContent=key==='card'?'실제 카드를 이 도형에 겹쳐 보세요. 모서리가 일치하도록 화면 크기를 맞추면 아래 진피도 같은 배율로 보입니다.':'아래 진피 네 규격도 같은 보정값을 사용합니다. 화면 크기를 다시 맞출 때는 카드로 돌아옵니다.';
+  this.root.querySelector('#physical-reference-hint').textContent=key==='card'?'실제 카드를 이 도형에 겹쳐 보세요. 모서리가 일치하도록 화면 크기를 맞추면 아래 진피도 같은 배율로 보입니다.':'선택한 진피에도 같은 보정값을 사용합니다. 화면 크기를 다시 맞출 때는 카드로 돌아옵니다.';
   this.render();
  }
  changeScale(scale){this.scale=Math.round(Math.min(MAX_SCALE,Math.max(MIN_SCALE,scale))*1000)/1000;this.confirmed=false;this.persisted=false;this.render();}

@@ -1,0 +1,57 @@
+.play-grid{align-items:start;overflow:visible}
+.play-visual{min-height:0;border-radius:16px 0 0 16px;background:#edf3fa}
+.play-preview-tabs{display:flex;gap:5px;padding:10px 16px 0}
+.play-preview-tabs button{min-height:42px;padding:9px 16px;color:#7387a2;font-size:13px;font-weight:700;border-radius:10px}
+.play-preview-tabs button[aria-pressed=true]{background:white;color:#155dde;box-shadow:0 2px 8px #30557e0d}
+.play-stage{position:relative}
+.play-stage .play-canvas{height:360px;min-height:0}
+.play-stage .material-label{top:13px;left:18px;right:18px;justify-content:space-between}
+.play-stage .material-caption{bottom:10px;left:16px;right:16px}
+.play-stage .material-views{top:42px}
+.play-visual .free-play-tools{position:static;padding:8px 16px 10px}
+.play-visual .free-play-kicker{display:none}
+.play-visual .free-play-tools>div{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.play-visual .free-play-tools button{min-height:44px;padding:9px 3px;font-size:11px;white-space:nowrap}
+.play-visual .free-play-tools p{margin:6px 0 0;font-size:10px;min-height:16px}
+.play-size-dock{padding:12px 16px 16px;border-top:1px solid #dbe5f2;background:#f7faff;border-radius:0 0 0 16px}
+.play-size-dock .control-title{margin-bottom:8px;font-size:12px}.play-size-dock .control-title small{font-size:10px}
+.play-size-dock .size-options button{min-height:44px;padding:8px 4px;font-size:14px}
+.play-visual [hidden]{display:none!important}
+.inline-build{position:absolute;inset:16px auto auto 18px;display:flex;flex-direction:column;gap:6px;pointer-events:none;color:#35557d;font-size:11px}
+.inline-build>span:first-child{font-weight:700;color:#175dde}
+.inline-build strong{font-size:28px;letter-spacing:-.8px;color:#17416e;font-variant-numeric:tabular-nums}
+.inline-build small{font-size:12px;font-weight:500;letter-spacing:0;color:#7388a3}
+.inline-build i{height:3px;width:110px;background:#d7e2f2;border-radius:3px;overflow:hidden;margin-top:4px}
+.inline-build i b{display:block;width:0;height:100%;background:#256ced}
+.inline-build em{font-size:9px;font-style:normal;color:#8194ab;max-width:126px;line-height:1.6}
+@media(max-width:760px){
+ .play-grid{display:flex;flex-direction:column;min-height:0}
+ .play-visual{position:sticky;top:112px;z-index:6;width:100%;border:0;border-bottom:1px solid #d7e3f1;border-radius:16px 16px 0 0;box-shadow:0 9px 15px #2545680c}
+ .play-preview-tabs{padding:5px 12px 0}.play-preview-tabs button{font-size:12px;min-height:38px;padding:8px 13px}
+ .play-stage .play-canvas{height:clamp(180px,27svh,265px);min-height:0}
+ .play-stage .material-label{top:8px;left:14px;right:14px}.play-stage .material-label b{font-size:10px}.play-stage .material-label span{font-size:10px}
+ .play-stage .material-caption{left:12px;right:12px;bottom:6px;font-size:10px}.play-stage .material-caption button{min-height:36px;font-size:11px;padding:7px 9px}
+ .play-stage .material-views{top:33px}.play-stage .material-views button{font-size:11px;padding:7px 10px}
+ .play-visual .free-play-tools{padding:4px 12px 7px}.play-visual .free-play-tools p{font-size:9px;margin-top:4px}
+ .play-size-dock{padding:8px 12px 10px;border-radius:0}.play-size-dock .control-title{margin-bottom:5px}
+ .play-controls{width:100%;padding:18px 16px 22px}.play-controls .rule{margin:14px 0}.play-controls .metric-row{margin-top:15px}
+ .inline-build{left:14px;top:12px;font-size:10px;gap:4px}.inline-build strong{font-size:24px}.inline-build em{font-size:8px;max-width:108px}
+}
+@media(max-height:650px) and (max-width:760px){.play-visual{position:relative;top:auto}.play-stage .play-canvas{height:190px}}
+
+@media(max-width:760px){
+ .play-stage .play-canvas{height:clamp(175px,23svh,225px)}
+ .play-inputs{padding:12px 12px 10px;background:#fff;border-top:1px solid #dce5f1}
+ .play-inputs .control-title{font-size:12px;margin-bottom:8px}.play-inputs .control-title small{font-size:10px}
+ .play-inputs .quantity-field input{padding:9px 0;font-size:24px}.play-inputs .primary-button{padding:10px 20px}
+ .play-inputs .quick-buttons{margin:8px 0}.play-inputs .quick-buttons button{padding:8px 3px;min-height:38px;font-size:12px}
+ .play-inputs .reset-row{display:flex}.play-inputs .reset-row button{min-height:28px;font-size:11px}.play-controls>.rule{display:none}
+ .play-size-dock{padding-top:6px;padding-bottom:8px}.play-size-dock .control-title{margin-bottom:4px}
+ .play-visual .free-play-tools p{display:block;font-size:9px;line-height:1.5;min-height:0}.play-visual .free-play-tools{height:76px;padding:4px 12px 6px}
+
+}
+
+.inline-actions{height:84px;padding:8px 16px 10px;display:flex;gap:10px;align-items:center;justify-content:space-between}
+.inline-actions button{min-height:44px;border:1px solid #cfdef3;background:#fff;border-radius:24px;padding:9px 18px;color:#2462c4;font-size:12px;font-weight:650}
+.inline-actions span{font-size:11px;color:#7d94b0}
+@media(max-width:760px){.inline-actions{height:76px;padding:4px 12px 6px}.inline-actions button{padding:8px 14px;font-size:11px}.inline-actions span{font-size:10px}}

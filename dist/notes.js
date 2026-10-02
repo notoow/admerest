@@ -1,6 +1,6 @@
 import {SIZES,lengthMeters} from './measurements.js?v=20261001-material-types';
 import {EVERYDAY_OBJECTS,comparisonDimensions} from './size-comparison.js?v=20261002-physical';
-import {PhysicalComparison} from './physical-comparison.js?v=20261002-physical';
+import {PhysicalComparison} from './physical-comparison.js?v=20261002-dialog';
 import {VideoRoom} from './video-player.js?v=20261002-usability';
 const sizeButtons=[...document.querySelectorAll('[data-note-size]')];
 const objectButtons=[...document.querySelectorAll('[data-compare-object]')];
@@ -31,7 +31,7 @@ function renderSizeComparison(announce=false){
  document.querySelector('#comparison-svg-title').textContent='5×6, 5×8, 5×10, 6×12cm 진피 네 규격과 '+object.name+'의 같은 축척 크기 비교';
  document.querySelector('#object-ratio-caption').textContent=(selectedObject==='iphone'?'아이폰':object.name)+' 대비';
  document.querySelector('#object-dimensions').textContent=object.note;
- physicalComparison.setObject(selectedObject);
+ physicalComparison.setObject(selectedObject);physicalComparison.setSize(selectedSize);
  const source=document.querySelector('#object-source');source.hidden=!object.source;if(object.source)source.href=object.source;
  if(announce)document.querySelector('#note-size-status').textContent='네 규격 모두 표시. '+label+' 강조. 비교 물건 '+object.name+'. '+label+'는 '+object.name+' 높이의 '+dims.heightPercent.toFixed(1)+'%, 면적 '+size.width*size.length+'제곱센티미터, 1,000장 길이 '+lengthMeters(1000,selectedSize)+'미터.';
 }

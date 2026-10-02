@@ -10,7 +10,7 @@ export class PhysicalComparison {
   this.dialog=document.querySelector('#physical-dialog');
   this.dialog.addEventListener('close',()=>{this.mode='overview';document.body.classList.remove('physical-open');this.opener?.focus({preventScroll:true});});
   document.querySelector('#physical-close').onclick=()=>this.dialog.close();
-  for(const button of document.querySelectorAll('[data-open-physical]'))button.onclick=()=>{this.opener=button;this.mode='physical';this.dialog.showModal();document.body.classList.add('physical-open');document.querySelector('#physical-close').focus({preventScroll:true});};
+  for(const button of document.querySelectorAll('[data-open-physical]'))button.onclick=()=>{this.opener=button;if(this.objectKey==='toothbrush')onRequestCard();this.mode='physical';this.dialog.showModal();document.body.classList.add('physical-open');document.querySelector('#physical-close').focus({preventScroll:true});};
   this.profile=this.currentProfile();this.restore();
   const specimens=this.root.querySelector('.physical-sheets');
   for(const [key,size]of Object.entries(SIZES)){

@@ -11,8 +11,8 @@ function setup(reduced=false){
  const explorer={flight:{enabled:false},selected:'kim',updateSimulation(meters,cases){updates.push({meters,cases});},prepareSimulation(meters){this.finalMeters=meters;},refit(){}};
  const context=vm.createContext({quantity:2000,displayCount:2000,displayLength:120,size:'5x6',animation:null,raf:null,reduced,explorer,document:{activeElement:null},inlineStack:{update(){},prepare(){}},setPlayView(view){views.push(view);},SIZES,MAX_QUANTITY,lengthMeters,$:element,
   format:new Intl.NumberFormat('en-US'),decimal:new Intl.NumberFormat('en-US',{maximumFractionDigits:2}),performance:{now:()=>clock},
-  requestAnimationFrame:fn=>{frames.set(++id,fn);return id;},refreshComparison(){},clearError(){},error(message){context.lastError=message;},showSimulation(options){visits.push(options);explorer.selected='simulation';}});
- vm.runInContext(source.slice(source.indexOf('function paintMetrics('),source.indexOf('function setSize(')),context);
+  requestAnimationFrame:fn=>{frames.set(++id,fn);return id;},refreshComparison(){},toast(){},clearError(){},error(message){context.lastError=message;},showSimulation(options){visits.push(options);explorer.selected='simulation';}});
+ vm.runInContext(source.slice(source.indexOf('function syncRegisterButton('),source.indexOf('function setSize(')),context);
  const frame=time=>{clock=time;const pending=[...frames.values()];frames.clear();pending.forEach(fn=>fn(time));};
  return {context,nodes,updates,visits,views,frames,frame,apply:(count,replay=true)=>context.setQuantity(count,{replay})};
 }
@@ -45,4 +45,11 @@ test('explorer Apply keeps its own surface and never scrolls the page',()=>{
  const s=setup();s.context.setQuantity(231,{replay:true,surface:'explorer'});
  assert.equal(s.visits.length,1);assert.equal(s.visits[0].instant,true);assert.equal(s.visits[0].scroll,false);assert.equal(s.views.length,0);
  s.frame(3650);assert.equal(s.context.displayCount,231);
+});
+
+test('registration opens the upper tower only after building a nonzero record',()=>{
+ const s=setup();s.apply(3100);assert.equal(s.context.registerBuiltTower(),false);assert.equal(s.nodes.get('#register-tower').disabled,true);assert.equal(s.visits.length,0);
+ s.frame(3650);assert.equal(s.nodes.get('#register-tower').disabled,false);assert.equal(s.visits.length,0,'completion alone does not jump upward');
+ assert.equal(s.context.registerBuiltTower(),true);assert.equal(s.visits.length,1);
+ s.apply(0);s.frame(3650);assert.equal(s.context.registerBuiltTower(),false);assert.equal(s.nodes.get('#register-tower').disabled,true);
 });

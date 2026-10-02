@@ -5,7 +5,8 @@
 <link rel="canonical" href="https://notoow.github.io/admerest/record.html"><meta property="og:title" content="내 기록이 세울 탑은? · admerest"><meta property="og:description" content="수술 건수와 진피 사용 장수로 만드는 나만의 기록 미리보기."><meta property="og:type" content="website"><meta property="og:url" content="https://notoow.github.io/admerest/record.html"><meta property="og:image" content="https://notoow.github.io/admerest/assets/brand/og-admerest-adm-eiffel-v3.png"><meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="./favicon.ico?v=notoow-1"><link rel="apple-touch-icon" href="./assets/brand/icon-180.png">
 <link rel="stylesheet" href="./styles.css?v=20261001-notes"><link rel="stylesheet" href="./experience.css?v=20261001-comparison"><link rel="stylesheet" href="./community.css?v=20261001-draft"><link rel="stylesheet" href="./immersive.css?v=20261001-reveal"><link rel="stylesheet" href="./record.css?v=20261001-draft">
-<script type="importmap">{"imports":{"three":"./vendor/three.module.js","./scene.js":"./scene.js?v=20261001-reveal","./material.js":"./material.js?v=20261001-reveal","./adm-geometry.js":"./adm-geometry.js?v=20261001-reveal","./record-reveal.js":"./record-reveal.js?v=20261001-draft"}}</script><script type="module" src="./record.js?v=20261001-draft"></script>
+<link rel="stylesheet" href="./contact-dialog.css?v=20261002-registration">
+<script type="importmap">{"imports":{"three":"./vendor/three.module.js","./scene.js":"./scene.js?v=20261001-reveal","./material.js":"./material.js?v=20261001-reveal","./adm-geometry.js":"./adm-geometry.js?v=20261001-reveal","./record-reveal.js":"./record-reveal.js?v=20261001-draft"}}</script><script type="module" src="./record.js?v=20261002-registration"></script>
 </head><body>
 <a class="skip-link" href="#record-form">기록 입력으로 건너뛰기</a>
 <header class="site-header"><div class="site-brand"><a class="wordmark" href="./" aria-label="admerest 홈">admerest<span class="wordmark-dot">.</span></a><span class="brand-credit">by <img src="./assets/brand/notoow-2d.png" alt="" width="20" height="21"><b>notoow</b></span></div><nav aria-label="주요 메뉴"><a href="./#explore">탑 탐색</a><a href="./#play">직접 쌓기</a><a href="./#ranking">전문의 랭킹</a><a href="./notes.html">ADM 노트</a><a href="./game.html">미니게임</a></nav></header>
@@ -29,7 +30,7 @@
     <div class="review-person"><img id="review-flag" src="./assets/KR.svg" alt="대한민국"><div><strong id="review-name"></strong><span id="review-clinic"></span></div><span class="private-label">미인증 · 비공개</span></div>
     <dl class="review-details"><div><dt>수술 케이스</dt><dd id="review-cases"></dd></div><div><dt>진피 사용 장수</dt><dd id="review-sheets"></dd></div><div><dt>진피 누적 길이</dt><dd id="review-length"></dd></div></dl>
     <div class="draft-rank"><span>데모 기록과 비교하면</span><strong id="draft-rank-value"></strong><p>가상 전문의 3명과 비교한 순서입니다.<br>실제 공개 랭킹에는 반영되지 않습니다.</p></div>
-    <div class="publication-preview"><b>공개 탑은 인증 다음에.</b><p>정식 등록 시에는 미인증 기록은 랭킹에만,<br>자격·기록 확인 후에는 배지와 공개 탑으로 표시됩니다.</p><span>현재 화면은 등록 접수·인증 신청 기능이 아닙니다.</span></div>
+    <div class="publication-preview"><b>인증하면, 전 세계가 내 탑을 봅니다.</b><p>등록이 반영된 미인증 기록은 랭킹에만,<br>전문의 자격과 객관적 기록 확인 후에는 배지와 공개 탑으로 표시됩니다.</p><button type="button" class="record-verify-cta" data-contact-kind="verification">인증 서류 보내기 ↗</button><span>이 입력 화면은 비공개 미리보기입니다. 실제 접수는 이메일로, 자료 확인과 사이트 반영은 운영자가 진행합니다.</span></div>
    </section>
    <p id="record-form-status" class="record-form-status" role="status" aria-live="polite"></p>
    <div class="record-actions"><button type="button" id="previous-step" hidden>← 이전</button><button type="submit" id="next-step" class="primary-button">진피 기록 입력하기 →</button><button type="button" id="reveal-draft" class="primary-button" hidden disabled>3D 준비 중…</button></div>

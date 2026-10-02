@@ -1,3 +1,4 @@
+import {ContactDialog} from './contact-dialog.js';
 import {SIZES} from './measurements.js';
 import {DOCTORS,rankRecords} from './records.js';
 import {LANDMARKS} from './landmark-data.js';
@@ -6,6 +7,7 @@ import {DRAFT_KEY,TYPES,blankDraft,materialKey,materialTotals,readCount,validate
 const $=s=>document.querySelector(s),all=s=>[...document.querySelectorAll(s)],format=new Intl.NumberFormat('en-US',{maximumFractionDigits:2});
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 let step=1,preview,loading=null,stored=false;
+new ContactDialog();
 $('#material-inputs').innerHTML=Object.entries(SIZES).map(([size,s])=>`<tr><th scope="row">${s.width} × ${s.length}</th>${Object.entries(TYPES).map(([type,label])=>{const key=materialKey(size,type);return `<td><label class="sr-only" for="draft-${key}">${s.width}×${s.length}cm ${label} 사용 장수</label><input id="draft-${key}" data-material="${key}" type="text" inputmode="numeric" maxlength="12" placeholder="0" autocomplete="off" aria-describedby="error-${key}"><p id="error-${key}" class="field-error" hidden></p></td>`;}).join('')}</tr>`).join('');
 function readDraft(){return {name:$('#draft-name').value,clinic:$('#draft-clinic').value,country:$('#draft-country').value,cases:$('#draft-cases').value,materials:Object.fromEntries(all('[data-material]').map(input=>[input.dataset.material,input.value]))};}
 function fill(draft){for(const key of ['name','clinic','country','cases'])$('#draft-'+key).value=draft[key];all('[data-material]').forEach(input=>input.value=draft.materials[input.dataset.material]??'');summarize();}

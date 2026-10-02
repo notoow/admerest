@@ -15,8 +15,8 @@
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="https://notoow.github.io/admerest/assets/brand/og-admerest-adm-eiffel-v3.png">
 <link rel="icon" href="./favicon.ico?v=notoow-1" sizes="any"><link rel="icon" type="image/png" href="./assets/brand/icon-32.png?v=notoow-1" sizes="32x32">
 <link rel="apple-touch-icon" href="./assets/brand/icon-180.png?v=notoow-1">
-<link rel="stylesheet" href="./styles.css?v=20261001-notes"><link rel="stylesheet" href="./experience.css?v=20261001-comparison"><link rel="stylesheet" href="./notes.css?v=20261002-usability">
-<link rel="stylesheet" href="./video-player.css?v=20261002-usability"><script type="module" src="./notes.js?v=20261002-usability"></script>
+<link rel="stylesheet" href="./styles.css?v=20261001-notes"><link rel="stylesheet" href="./experience.css?v=20261001-comparison"><link rel="stylesheet" href="./notes.css?v=20261002-physical"><link rel="stylesheet" href="./physical-comparison.css?v=20261002-physical">
+<link rel="stylesheet" href="./video-player.css?v=20261002-usability"><script type="module" src="./notes.js?v=20261002-physical"></script>
 </head>
 <body class="notes-page">
 <a class="skip-link" href="#notes-content">본문으로 건너뛰기</a>
@@ -42,8 +42,20 @@
   <div class="size-lab">
    <div id="everyday-comparison" class="everyday-comparison" aria-labelledby="everyday-title">
     <div class="everyday-heading"><div><span class="eyebrow">FOUR SIZES, ONE SCALE</span><h3 id="everyday-title">네 가지 규격을, 한자리에.</h3><p>진피도, 비교 물건도 같은 축척으로 나란히.</p></div><span class="same-scale">전체 규격 함께 비교</span></div>
-    <div class="everyday-options" role="group" aria-label="네 규격과 비교할 일상 물건"><button data-compare-object="iphone" aria-pressed="true">아이폰 16</button><button data-compare-object="toothbrush" aria-pressed="false">칫솔</button><button data-compare-object="card" aria-pressed="false">카드</button></div>
-    <div class="everyday-stage"><svg id="everyday-svg" viewBox="0 0 660 320" role="img" aria-labelledby="comparison-svg-title"><title id="comparison-svg-title">5×6, 5×8, 5×10, 6×12cm 진피 네 규격과 아이폰 16의 같은 축척 크기 비교</title>
+    <div class="comparison-toolbar"><div class="everyday-options" role="group" aria-label="네 규격과 비교할 일상 물건"><button data-compare-object="card" aria-pressed="true">카드</button><button data-compare-object="iphone" aria-pressed="false">아이폰 16</button><button data-compare-object="toothbrush" aria-pressed="false">칫솔</button></div><div class="size-view-options" role="group" aria-label="크기 표시 방식"><button data-size-view="physical" aria-pressed="true">실물 크기</button><button data-size-view="overview" aria-pressed="false">한눈에 보기</button></div></div>
+    <details id="screen-calibration" class="screen-calibration" hidden>
+     <summary>화면 크기 맞추기</summary>
+     <p>크롬 메뉴의 확대/축소를 <strong>100%</strong>로 맞춘 뒤, 아래 카드에 실제 신용·체크카드를 겹쳐 보세요. 슬라이더로 가로·세로 테두리를 맞추고 저장하면 진피에도 같은 배율이 적용됩니다.</p>
+     <div class="screen-scale-controls"><button id="scale-smaller" aria-label="카드 0.1% 작게">−</button><label for="screen-scale" class="sr-only">화면 크기 보정 배율</label><input id="screen-scale" type="range" min="50" max="250" step="0.1" value="100"><button id="scale-larger" aria-label="카드 0.1% 크게">+</button><output id="screen-scale-output" for="screen-scale">100.0%</output></div>
+     <div class="screen-scale-actions"><button id="scale-save">이 크기로 저장</button><button id="scale-reset">기본 크기로</button><small>다른 모니터·화면 배율에서는 다시 맞춰 주세요.</small></div>
+    </details>
+    <p id="screen-scale-status" class="screen-scale-status" role="status" hidden>화면 보정 전 · 크롬 확대 100%에서 카드 테두리를 맞춰 주세요.</p>
+    <div id="physical-stage" class="physical-stage" role="region" aria-label="실물 크기 비교, 화면이 좁으면 좌우로 스크롤" tabindex="0" hidden>
+     <div class="physical-reference"><figure><div id="physical-object-art"></div><figcaption id="physical-object-label"></figcaption></figure><p id="physical-reference-hint"></p></div>
+     <div class="physical-sheets" role="group" aria-label="네 가지 진피 규격"></div>
+    </div>
+    <p id="physical-overflow-hint" class="physical-overflow-hint" hidden>카드가 잘리면 화면을 가로로 돌리거나 옆으로 밀어 보세요. 전체를 작게 보려면 ‘한눈에 보기’를 누르세요.</p>
+    <div id="overview-stage" class="everyday-stage"><svg id="everyday-svg" viewBox="0 0 660 320" role="img" aria-labelledby="comparison-svg-title"><title id="comparison-svg-title">5×6, 5×8, 5×10, 6×12cm 진피 네 규격과 카드의 같은 축척 크기 비교</title>
       <defs><pattern id="comparison-grid" width="12" height="12" patternUnits="userSpaceOnUse"><path d="M12 0H0V12" fill="none" stroke="#dce5ef" stroke-width=".5"/></pattern><linearGradient id="phone-screen" x2="1" y2="1"><stop stop-color="#192d4d"/><stop offset="1" stop-color="#668afa"/></linearGradient></defs>
       <rect x="5" y="15" width="650" height="260" rx="14" fill="url(#comparison-grid)"/>
       <path d="M10 260H650" stroke="#9daec3" stroke-width="1"/>
@@ -52,16 +64,16 @@
       <g class="comparison-specimen" data-highlight-size="5x10" data-selected="false"><rect class="specimen-focus" x="250" y="135" width="70" height="130" rx="5"/><image href="./assets/adm-front.png" x="255" y="140" width="60" height="120" preserveAspectRatio="none"/><text x="285" y="294" text-anchor="middle">5×10</text></g>
       <g class="comparison-specimen" data-highlight-size="6x12" data-selected="false"><rect class="specimen-focus" x="354" y="111" width="82" height="154" rx="5"/><image href="./assets/adm-front.png" x="359" y="116" width="72" height="144" preserveAspectRatio="none"/><text x="395" y="294" text-anchor="middle">6×12</text></g>
       <path d="M475 45V250" stroke="#d4dfed" stroke-dasharray="4 5"/>
-      <g id="comparison-object"><svg x="522.04" y="82.88" width="85.92" height="177.12" viewBox="0 0 71.6 147.6"><rect width="71.6" height="147.6" rx="13" fill="#263349"/><rect x="2" y="2" width="67.6" height="143.6" rx="11" fill="url(#phone-screen)"/><rect x="25" y="8" width="22" height="6.5" rx="3.25" fill="#152237"/></svg><text x="565" y="67.88" text-anchor="middle">14.76 cm</text></g>
-      <text id="object-stage-label" x="565" y="294" text-anchor="middle">아이폰 16</text>
+      <g id="comparison-object"><svg x="513.64" y="195.224" width="102.72" height="64.776" viewBox="0 0 85.6 53.98"><rect width="85.6" height="53.98" rx="3.18" fill="#e87955"/></svg><text x="565" y="180.224" text-anchor="middle">5.398 cm</text></g>
+      <text id="object-stage-label" x="565" y="294" text-anchor="middle">카드</text>
      </svg></div>
-    <div class="comparison-caption"><p id="object-dimensions">본체 7.16 × 14.76 cm · Apple 공식 규격</p><a id="object-source" href="https://support.apple.com/en-euro/121029" target="_blank" rel="noopener">규격 출처 ↗</a></div>
-    <table class="comparison-metrics"><caption class="sr-only">네 가지 진피 규격의 면적, 누적 길이와 일상 물건 대비 높이</caption><thead><tr><th scope="col">진피 규격</th><th scope="col"><button data-note-size="5x6" aria-pressed="true" aria-controls="everyday-svg" aria-label="5 × 6 cm 강조">5×6<small>cm</small></button></th><th scope="col"><button data-note-size="5x8" aria-pressed="false" aria-controls="everyday-svg" aria-label="5 × 8 cm 강조">5×8<small>cm</small></button></th><th scope="col"><button data-note-size="5x10" aria-pressed="false" aria-controls="everyday-svg" aria-label="5 × 10 cm 강조">5×10<small>cm</small></button></th><th scope="col"><button data-note-size="6x12" aria-pressed="false" aria-controls="everyday-svg" aria-label="6 × 12 cm 강조">6×12<small>cm</small></button></th></tr></thead><tbody>
+    <div class="comparison-caption"><p id="object-dimensions">표준 신용·체크카드 85.60 × 53.98 mm · ISO/IEC 7810 ID-1</p><a id="object-source" href="https://www.iso.org/standard/31432.html" target="_blank" rel="noopener">규격 출처 ↗</a></div>
+    <table class="comparison-metrics"><caption class="sr-only">네 가지 진피 규격의 면적, 누적 길이와 일상 물건 대비 높이</caption><thead><tr><th scope="col">진피 규격</th><th scope="col"><button data-note-size="5x6" aria-pressed="true" aria-controls="everyday-svg physical-stage" aria-label="5 × 6 cm 강조">5×6<small>cm</small></button></th><th scope="col"><button data-note-size="5x8" aria-pressed="false" aria-controls="everyday-svg physical-stage" aria-label="5 × 8 cm 강조">5×8<small>cm</small></button></th><th scope="col"><button data-note-size="5x10" aria-pressed="false" aria-controls="everyday-svg physical-stage" aria-label="5 × 10 cm 강조">5×10<small>cm</small></button></th><th scope="col"><button data-note-size="6x12" aria-pressed="false" aria-controls="everyday-svg physical-stage" aria-label="6 × 12 cm 강조">6×12<small>cm</small></button></th></tr></thead><tbody>
      <tr><th scope="row">한 장의 면적</th><td data-size-cell="5x6">30<small>cm²</small></td><td data-size-cell="5x8">40<small>cm²</small></td><td data-size-cell="5x10">50<small>cm²</small></td><td data-size-cell="6x12">72<small>cm²</small></td></tr>
      <tr><th scope="row">1,000장 길이</th><td data-size-cell="5x6">60<small>m</small></td><td data-size-cell="5x8">80<small>m</small></td><td data-size-cell="5x10">100<small>m</small></td><td data-size-cell="6x12">120<small>m</small></td></tr>
-     <tr class="comparison-ratios"><th scope="row"><span id="object-ratio-caption">아이폰 대비</span><small>높이 비율</small></th><td data-size-cell="5x6" data-size-ratio="5x6">40.7<small>%</small></td><td data-size-cell="5x8" data-size-ratio="5x8">54.2<small>%</small></td><td data-size-cell="5x10" data-size-ratio="5x10">67.8<small>%</small></td><td data-size-cell="6x12" data-size-ratio="6x12">81.3<small>%</small></td></tr>
+     <tr class="comparison-ratios"><th scope="row"><span id="object-ratio-caption">카드 대비</span><small>높이 비율</small></th><td data-size-cell="5x6" data-size-ratio="5x6">111.2<small>%</small></td><td data-size-cell="5x8" data-size-ratio="5x8">148.2<small>%</small></td><td data-size-cell="5x10" data-size-ratio="5x10">185.3<small>%</small></td><td data-size-cell="6x12" data-size-ratio="6x12">222.3<small>%</small></td></tr>
     </tbody></table>
-    <p class="stage-note">규격을 누르면 해당 진피가 강조됩니다. 모든 규격은 계속 함께 표시돼요.<br>화면상 크기 비교이며 실물 크기로 표시되는 것은 아닙니다.</p>
+    <p class="stage-note">규격을 누르면 해당 진피가 강조됩니다. 모든 규격은 계속 함께 표시돼요.<br>실물 크기는 카드를 이용한 화면 보정 후에 비교해 주세요. ‘한눈에 보기’는 화면에 맞춰 축소합니다.</p>
    </div>
    <p class="size-lab-note">5×6·5×8·5×10·6×12cm와 두께 3–5mm는 하이스트 운영자가 제공한 재료 정보입니다. 위 도식은 제공된 사진을 규격별 외곽 비율로 조정한 크기 비교입니다. 실제 천공 형태는 제품별로 다르며, 3D 모델은 두께 3mm를 표현합니다.</p>
    <p id="note-size-status" class="sr-only" role="status" aria-live="polite"></p>

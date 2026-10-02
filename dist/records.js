@@ -10,3 +10,9 @@ export const RANKED_DOCTORS=rankRecords(DOCTORS);
 // Demo approval previews the same publication rule without claiming real credential review.
 export function isTowerPublished(record){return record?.verification==='verified'||record?.verification==='demo';}
 export const PUBLIC_DOCTORS=RANKED_DOCTORS.filter(isTowerPublished);
+export let DATA_SOURCE='demo';
+// Preserve live array bindings used by the 3D scene and ranking modules.
+export function replaceRecords(records,source='live'){
+ DOCTORS.splice(0,DOCTORS.length,...records);RANKED_DOCTORS.splice(0,RANKED_DOCTORS.length,...rankRecords(records));
+ PUBLIC_DOCTORS.splice(0,PUBLIC_DOCTORS.length,...RANKED_DOCTORS.filter(isTowerPublished));DATA_SOURCE=source;
+}

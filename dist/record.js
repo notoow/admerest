@@ -77,3 +77,8 @@ $('#confirm-discard').addEventListener('click',()=>{
 try{const saved=restoreDraft(localStorage.getItem(DRAFT_KEY));if(saved){fill(saved);stored=true;$('#restored-notice').hidden=false;$('#delete-draft').hidden=false;$('#draft-storage-status').textContent='이 기기에 저장된 초안입니다.';}}catch{$('#draft-storage-status').textContent='브라우저 저장이 제한돼 있습니다. 저장 없이 미리 볼 수 있습니다.';}
 showStep(1,false);
 if(document.modelContext?.registerTool){try{document.modelContext.registerTool({name:'get_record_draft_state',description:'Read this local-only record preview, aggregate counts and step. Never returns name or clinic. Does not submit or publish records.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true},execute:async()=>({content:[{type:'text',text:JSON.stringify({step,stored,valid:Object.keys(validateDraft(readDraft())).length===0,cases:readCount(readDraft().cases,false),materials:materialTotals(readDraft().materials),visibility:'private-preview',verification:'none',previewReady:!!preview,reveal:preview?.reveal.state()??null})}]})});}catch(error){console.warn('Record preview tool unavailable:',error.message);}}
+
+$('#continue-registration').addEventListener('click',()=>{
+ try{sessionStorage.setItem('admerest.preview-transfer',JSON.stringify(draftEnvelope(readDraft()).draft));location.href='./account.html';}
+ catch{$('#record-form-status').textContent='브라우저 저장이 제한돼 있어 입력을 전달하지 못했습니다. 내 기록 화면에서 다시 입력해 주세요.';}
+});

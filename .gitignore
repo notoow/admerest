@@ -7,3 +7,6 @@ qa/
 models/adm-mesh.json
 *.blend1
 __pycache__/
+
+.env.*
+!.env.example

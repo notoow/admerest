@@ -1,3 +1,4 @@
+import {escapeHTML as esc} from './html.js';
 import * as THREE from 'three';
 import {OrbitControls} from './vendor/OrbitControls.js';
 import {createWorldSheet,MODEL_WIDTH,MODEL_DEPTH} from './material.js';
@@ -17,7 +18,7 @@ const number=new Intl.NumberFormat('en-US',{maximumFractionDigits:2});
 
 export class Explorer {
  constructor(host,onSelect){
-  this.host=host;this.onSelect=onSelect;this.selected='kim';this.auto=false;
+  this.host=host;this.onSelect=onSelect;this.selected=PUBLIC_DOCTORS[0]?.id??'simulation';this.auto=false;
   this.objects=new Map();this.labels=new Map();this.home=new Map();this.simCases=2000;this.simTarget=120;this.simFinalTarget=120;this.simWidth=.92;this.simWidthTarget=.92;
   this.labelMetrics=new Map();this.labelLifts=new Map();this.labelPoint=new THREE.Vector3();
   this.labelObserver=new ResizeObserver(entries=>{for(const {target}of entries){const {width,height}=target.getBoundingClientRect();if(width&&height)this.labelMetrics.set(target.dataset.object,{width,height});}});
@@ -34,7 +35,7 @@ export class Explorer {
   this.renderer.domElement.setAttribute('aria-label','탑 탐색: 드래그하여 회전, 휠 또는 두 손가락으로 확대. 더하기·빼기 키로 확대·축소, 0 키로 전체 보기.');
   // The atmosphere has one receiving ground surface. Coplanar shadow/grid planes
   // used to fight in the depth buffer, especially at human eye height on phones.
-  PUBLIC_DOCTORS.forEach((d,i)=>this.addObject(d.id,tower(d.length),[i*2.25-2.5,0,0],d.name,d.length,d.country));
+  PUBLIC_DOCTORS.slice(0,12).forEach((d,i)=>this.addObject(d.id,tower(d.length),[-2.5-i*2.25,0,0],d.name,d.length,d.country));
   this.addObject('burj',burj(),[2,0,0],LANDMARKS.burj.name,828);
   this.addObject('lotte',lotte(),[4.2,0,0],LANDMARKS.lotte.name,555);
   this.addObject('shanghai',extraLandmark('shanghai'),[6.4,0,0],LANDMARKS.shanghai.name,632);
@@ -63,9 +64,15 @@ export class Explorer {
   const label=document.createElement('button');label.className='scene-label';label.dataset.object=id;
   const doctor=DOCTORS.find(d=>d.id===id);
   label.setAttribute('aria-label',`${name}, ${doctor?`수술 ${number.format(doctor.cases)}건, `:''}${number.format(value)}미터, 탑 보기`);
-  label.innerHTML=`<span class="label-name">${name}${country?`<img class="flag" src="./assets/${country}.svg" alt="${country}">`:''}${doctor?.verification==='demo'?'<span class="verify-badge" title="데모 인증 표시 · 실제 심사 이력 아님" aria-hidden="true">✓</span>':''}</span><div class="label-value">${number.format(doctor?doctor.cases:id==='simulation'?this.simCases:value)} <small>${doctor||id==='simulation'?'건':'m'}</small></div>${doctor||id==='simulation'?`<span class="label-length">진피 ${number.format(value)} m</span>`:''}`;
+  label.innerHTML=`<span class="label-name">${esc(name)}${country?`<img class="flag" src="./assets/${country}.svg" alt="${country}">`:''}${['demo','verified'].includes(doctor?.verification)?'<span class="verify-badge" title="자격·기록 확인 상태" aria-hidden="true">✓</span>':''}</span><div class="label-value">${number.format(doctor?doctor.cases:id==='simulation'?this.simCases:value)} <small>${doctor||id==='simulation'?'건':'m'}</small></div>${doctor||id==='simulation'?`<span class="label-length">진피 ${number.format(value)} m</span>`:''}`;
   label.addEventListener('click',()=>{if(this.flight?.enabled)return;if(DOCTORS.some(d=>d.id===id))this.onSelect(id);else if(!this.comparison)this.focus(id);});
   this.host.append(label);this.labels.set(id,label);this.labelObserver.observe(label);
+ }
+ ensureDoctor(id){
+  if(this.objects.has(id))return;
+  const doctor=PUBLIC_DOCTORS.find(d=>d.id===id);if(!doctor)return;
+  if(this.extraDoctor){const old=this.extraDoctor,obj=this.objects.get(old),label=this.labels.get(old);this.scene.remove(obj);obj.traverse(o=>{if(o.isInstancedMesh)o.dispose();});this.labelObserver.unobserve(label);label.remove();this.objects.delete(old);this.labels.delete(old);this.home.delete(old);this.labelMetrics.delete(old);this.labelLifts.delete(old);}
+  this.extraDoctor=id;this.addObject(id,tower(doctor.length),[-30,0,0],doctor.name,doctor.length,doctor.country);this.renderer.shadowMap.needsUpdate=true;
  }
  resize(){
   const w=this.host.clientWidth,h=this.host.clientHeight;if(!w||!h)return;
@@ -197,6 +204,7 @@ export class Explorer {
   this.guide.computeLineDistances();this.guide.visible=true;this.markSelected();this.host.dataset.view='comparison';this.frameVisible();
  }
  focus(id,instant=false){
+  this.ensureDoctor(id);
   if(this.comparison&&(DOCTORS.some(d=>d.id===id)||id==='simulation')){this.compare(id,this.comparison.landmarkId);return;}
   const obj=this.objects.get(id);if(!obj?.visible)return;
   this.selected=id;this.host.dataset.view='focus';this.markSelected();const h=id==='simulation'?Math.max(.035,this.simFinalTarget*UNIT):obj.userData.height;

@@ -30,9 +30,9 @@ export class RecordReveal {
   this.shadowAutoUpdate=this.playground.renderer.shadowMap.autoUpdate;this.playground.renderer.shadowMap.autoUpdate=true;this.playground.renderer.shadowMap.needsUpdate=true;
   document.body.classList.add('record-open');this.dialog.showModal();this.stage.append(host);this.playground.presentation=this;this.playground.controls.enabled=false;this.playground.resize();
   const privatePreview=record.preview===true;
-  this.dialog.querySelector('.record-kicker').textContent=privatePreview?'THE MAKING OF YOUR RECORD · PRIVATE PREVIEW':'THE MAKING OF A RECORD · DEMO';
-  this.dialog.querySelector('.record-person').textContent=`${record.name} · ${record.countryName} · ${privatePreview?'미인증 · 나만 보기':'데모 인증'}`;
-  this.dialog.querySelector('.record-note').textContent=privatePreview?'입력한 기록의 비공개 미리보기 · 진피 소나기는 규모를 표현한 연출입니다.':'가상 전문의의 예시 기록 · 진피 소나기는 규모를 표현한 연출입니다.';
+  this.dialog.querySelector('.record-kicker').textContent=privatePreview?'THE MAKING OF YOUR RECORD · PRIVATE PREVIEW':(record.verification==='demo'||record.simulated)?'THE MAKING OF A RECORD · DEMO':'THE MAKING OF A RECORD';
+  this.dialog.querySelector('.record-person').textContent=`${record.name} · ${record.countryName} · ${privatePreview?'미인증 · 나만 보기':(record.verification==='demo'||record.simulated)?'데모 인증':'자격·기록 인증'}`;
+  this.dialog.querySelector('.record-note').textContent=privatePreview?'입력한 기록의 비공개 미리보기 · 진피 소나기는 규모를 표현한 연출입니다.':((record.verification==='demo'||record.simulated)?'가상 전문의의 예시 기록 · ':'')+'진피 소나기는 규모를 표현한 연출입니다.';
   this.dialog.querySelector('.record-tower').textContent=privatePreview?'내 탑 비교하기 ↗':'공개 탑 보러 가기 ↗';
   this.dialog.querySelector('.record-close').focus();this.step(0);
  }

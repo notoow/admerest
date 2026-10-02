@@ -24,9 +24,13 @@ test('rehearsal: request → return for changes → resubmit → approve → sta
  await assert.rejects(()=>owner.saveSubmission({status:'submitted'},row),/자료/);await owner.addDemoEvidence(row);row=await owner.saveSubmission({status:'submitted'},row);
  row=await admin.saveSubmission({status:'changes_requested',review_note:'집계 기준 보완'},row);row=await owner.saveSubmission({status:'submitted'},row);
  row=await admin.saveSubmission({status:'approved',credential_checked:true,records_checked:true,review_note:'시연 확인'},row);
- assert.equal((await owner.publicRecords())[0].cases,3100);assert.equal((await owner.events(row.id)).length,5);
+ assert.equal((await owner.publicRecords())[0].cases,3100);assert.equal((await owner.myPublicRecord()).cases,3100);assert.equal((await owner.events(row.id)).length,5);
  const publicId=(await owner.publicRecords())[0].id;
- let next=await owner.saveSubmission({...examplePayload(),cases:3200,verification_requested:false});assert.equal((await owner.publicRecords())[0].cases,3100);
+ let next=await owner.saveSubmission({...examplePayload(),cases:3200,verification_requested:false});assert.equal((await owner.publicRecords())[0].cases,3100);assert.equal((await owner.myPublicRecord()).cases,3100);
  next=await owner.saveSubmission({status:'submitted'},next);await admin.saveSubmission({status:'approved'},next);const result=(await owner.publicRecords())[0];assert.equal(result.id,publicId);assert.equal(result.verification,'none');
- await owner.hideRecord();assert.deepEqual(await owner.publicRecords(),[]);delete globalThis.sessionStorage;
+ await owner.hideRecord();assert.deepEqual(await owner.publicRecords(),[]);assert.equal(await owner.myPublicRecord(),null);
+ let restored=await owner.saveSubmission({...examplePayload(),cases:3500,verification_requested:false});
+ restored=await owner.saveSubmission({status:'submitted'},restored);await admin.saveSubmission({status:'approved'},restored);
+ assert.equal((await owner.myPublicRecord()).id,publicId);assert.equal((await owner.myPublicRecord()).cases,3500);
+ delete globalThis.sessionStorage;
 });

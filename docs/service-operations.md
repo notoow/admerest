@@ -43,5 +43,8 @@ Current scope does not include email review notifications, billing collection, a
 
 - Submission errors keep the editable form. Do not claim saved/submitted until the API returns a row.
 - Stale version returns a readable refresh prompt; no silent overwrite.
+- Personal dashboards filter by owner at the database before pagination, including for reviewer accounts with access to other applications. The published snapshot is loaded independently through the owner RPC; a public-status failure leaves draft and evidence controls usable and offers a targeted retry.
+- The dashboard separates the current application from the currently published record. A pending update preserves the old public snapshot. Hiding the snapshot does not withdraw an already submitted update; its later approval republishes the record, as stated in the confirmation.
+- Evidence links expire after 60 seconds; the original preview button remains available to issue a fresh authorized link without reloading the review. Actual signed-URL transport still requires live Storage verification.
 - Backend outage leaves local 3D/playground available, with no fabricated fallback live records.
 - Export database backups under an agreed operational process. Pro backup retention is a plan feature, not proof a restore has been tested. See [official pricing](https://supabase.com/pricing).

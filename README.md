@@ -196,4 +196,4 @@ Blender 모델 재생성: `npm ci`, `node scripts/export-adm-mesh.mjs`를 실행
 
 **아직 완료되지 않은 운영 연결:** 전용 Supabase 프로젝트, SMTP·발신 도메인, 실제 심사 계정, 자료 보관·삭제 및 개인정보 고지 기준. `dist/backend-config.js`는 비어 있고 `registrationOpen=false`입니다. 가입·접수 성공을 가장하지 않고 이메일 신청과 명시된 시연을 안내합니다. 유료 프로젝트를 임의 생성하거나 기존 프로젝트를 변경하지 않았습니다.
 
-`npm run check`는 53개 테스트를 포함합니다. 실제 마이그레이션을 PGlite/Postgres에서 실행하고 anon/본인/타인/심사자 권한으로 검증합니다. 로컬 스키마 스텁을 쓰므로 실서비스 Auth/Storage API·메일 발송 검증을 대체하지 않습니다. 번들 갱신은 `npm run bundle:service`; Supabase SDK 2.117.2를 로컬 ESM으로 묶고 라이선스를 함께 보관합니다.
+`npm run check`는 54개 테스트를 포함합니다. 실제 마이그레이션을 PGlite/Postgres에서 실행하고 anon/본인/타인/심사자 권한으로 검증합니다. 심사 계정의 내 신청이 다른 신청 100건에 밀려 누락되지 않는지도 SDK 요청 단계에서 검사합니다. 로컬 스키마 스텁과 테스트 응답을 쓰므로 실서비스 Auth/Storage API·메일 발송 검증을 대체하지 않습니다. 번들 갱신은 `npm run bundle:service`; Supabase SDK 2.117.2를 로컬 ESM으로 묶고 라이선스를 함께 보관합니다.

@@ -1,6 +1,7 @@
 import {BACKEND} from './backend-config.js';
 import {createClient} from './vendor/supabase.js';
 import {publicRecord,evidenceError} from './service-model.js';
+import {submissionListRequest} from './service-queries.js';
 export const configured=!!(BACKEND.url&&BACKEND.publishableKey);
 export const registrationOpen=configured&&BACKEND.registrationOpen;
 let client;
@@ -32,7 +33,7 @@ export async function publicRecords(){
  const rows=[];for(let offset=0;;offset+=500){const page=unwrap(await backend().from('admerest_public_records').select('*').order('cases',{ascending:false}).order('id').range(offset,offset+499).abortSignal(AbortSignal.timeout(12000)));rows.push(...page);if(page.length<500)break;}
  return rows.map(publicRecord);
 }
-export async function listSubmissions(offset=0){return unwrap(await backend().from('admerest_submissions').select('*').order('created_at',{ascending:false}).order('id').range(offset,offset+99));}
+export async function listSubmissions(offset=0,ownerId=null){return unwrap(await submissionListRequest(backend(),{offset,ownerId}).abortSignal(AbortSignal.timeout(12000)));}
 export async function saveSubmission(payload,row){
  const request=row?backend().from('admerest_submissions').update(payload).eq('id',row.id).eq('version',row.version):backend().from('admerest_submissions').insert(payload);
  const result=unwrap(await request.select().maybeSingle());if(!result)throw new Error('다른 화면에서 기록이 변경됐습니다. 새로고침 후 다시 확인해 주세요.');return result;
@@ -54,4 +55,4 @@ export async function removeEvidence(document){
 }
 export async function evidenceURL(document){return unwrap(await backend().storage.from('admerest-evidence').createSignedUrl(document.object_path,60)).signedUrl;}
 export async function hideRecord(){unwrap(await backend().rpc('admerest_hide_my_record'));}
-export async function myPublicRecord(){const rows=unwrap(await backend().rpc('admerest_my_public_record'));return rows[0]?publicRecord(rows[0]):null;}
+export async function myPublicRecord(){const rows=unwrap(await backend().rpc('admerest_my_public_record').abortSignal(AbortSignal.timeout(12000)));return rows[0]?publicRecord(rows[0]):null;}

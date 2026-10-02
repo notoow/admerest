@@ -12,7 +12,7 @@ export function demoService(role='owner'){
   demo:true,configured:true,registrationOpen:true,
   session:async()=>({user:{id:role==='admin'?'demo-reviewer':'demo-owner',email:role==='admin'?'reviewer@example.invalid':'demo@example.invalid'}}),
   reviewerAccess:async()=>role==='admin',signOut:async()=>{},
-  listSubmissions:async()=>clone(read().rows).reverse(),
+  listSubmissions:async(offset=0,ownerId=null)=>clone(read().rows).reverse().filter(row=>!ownerId||row.owner_id===ownerId).slice(offset,offset+100),
   saveSubmission:async(payload,old)=>{
    const state=read(),now=new Date().toISOString();let row=old?state.rows.find(s=>s.id===old.id):null;
    if(old&&(!row||row.version!==old.version))throw new Error('시연 기록이 변경됐습니다. 새로고침해 주세요.');
@@ -32,7 +32,8 @@ export function demoService(role='owner'){
   documents:async(id)=>clone(read().documents.filter(d=>d.submission_id===id)),events:async(id)=>clone(read().events.filter(e=>e.submission_id===id)),
   addDemoEvidence:async(row)=>{const state=read();for(const kind of ['credential','records'])if(!state.documents.some(d=>d.submission_id===row.id&&d.kind===kind))state.documents.push({id:crypto.randomUUID(),submission_id:row.id,kind,filename:kind==='credential'?'전문의 자격 확인 · 가상 자료':'CRM 집계 기록 · 가상 자료',size_bytes:0,demo:true});write(state);},
   removeEvidence:async(doc)=>{const state=read();state.documents=state.documents.filter(d=>d.id!==doc.id);write(state);},
-  publicRecords:async()=>read().published.filter(r=>r.published).map(row=>({...publicRecord(row),simulated:true})),hideRecord:async()=>{const state=read();state.published=[];write(state);},
+  publicRecords:async()=>read().published.filter(r=>r.published).map(row=>({...publicRecord(row),simulated:true})),hideRecord:async()=>{const state=read();state.published.forEach(row=>row.published=false);write(state);},
+  myPublicRecord:async()=>{const row=read().published.find(r=>r.published);return row?{...publicRecord(row),simulated:true}:null;},
   reset:()=>sessionStorage.removeItem(KEY)
  };
 }

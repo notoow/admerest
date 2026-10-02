@@ -1,11 +1,11 @@
-import * as live from './service-api.js';
+import * as live from './service-api.js?v=20261002-owner';
 import {STATUS,EDITABLE,EVIDENCE_KINDS,submissionPayload,toDraft,materialSummary,canSubmit,reviewError} from './service-model.js';
 import {blankDraft,COUNTRIES,materialTotals,readCount} from './draft-record.js';
 import {escapeHTML as esc,formatNumber as num,formatDate as date} from './html.js';
 import {ContactDialog} from './contact-dialog.js';
 
 const $=selector=>document.querySelector(selector),demo=new URLSearchParams(location.search).get('demo')==='1',admin=document.body.dataset.page==='admin';
-const api=demo?(await import('./service-demo.js')).demoService(admin?'admin':'owner'):live;
+const api=demo?(await import('./service-demo.js?v=20261002-owner')).demoService(admin?'admin':'owner'):live;
 const suffix=demo?'?demo=1':'';
 let user,rows=[],activeId=null,filter='submitted',busy=false,renderVersion=0,moreRows=false;
 new ContactDialog();
@@ -40,7 +40,7 @@ async function boot(){
  }catch(error){$('#service-content').innerHTML=empty('연결을 확인해 주세요.',esc(live.friendlyError(error)),`<button id="boot-retry">다시 시도</button>`);$('#boot-retry').onclick=boot;}
 }
 async function load(){
- rows=await api.listSubmissions();moreRows=!demo&&rows.length===100;if(!admin)rows=rows.filter(row=>row.owner_id===user.id);
+ rows=await api.listSubmissions(0,admin?null:user.id);moreRows=!demo&&rows.length===100;
  if(admin)await renderAdmin();else await renderOwner();
 }
 function totals(row){return `<dl class="service-totals"><div><dt>총 수술 케이스</dt><dd>${num(row.cases)}<small> 건</small></dd></div><div><dt>진피 사용량</dt><dd>${num(row.sheets)}<small> 장</small></dd></div><div><dt>긴 변 누적 길이</dt><dd>${num(row.length_m)}<small> m</small></dd></div></dl>`;}
@@ -51,15 +51,29 @@ async function renderOwner(){
  if(!row){$('#service-content').innerHTML=empty('한 건에서 시작하는 내 기록.','수술 건수와 실제 진피 사용량을 입력해 보세요.<br>공개 제출 전까지 내용은 나만 볼 수 있습니다.','<button id="new-submission" class="primary-button">첫 기록 작성하기 →</button>');$('#new-submission').onclick=()=>renderForm(null);return;}
  const [docs,trail]=await Promise.all([api.documents(row.id),api.events(row.id)]);if(version!==renderVersion)return;
  $('#service-content').innerHTML=`<div class="service-grid"><section class="service-card"><div class="service-detail-top"><span class="eyebrow">MY LATEST SUBMISSION</span>${status(row)}</div><h2>${esc(row.display_name)}님의 기록</h2><p>${esc(row.clinic||'소속 미입력')} · ${COUNTRIES[row.country]} · 집계 기준 ${date(row.period_end)}</p>${totals(row)}${row.review_note?`<div class="service-review-note"><b>심사자 안내</b><br>${esc(row.review_note)}</div>`:''}${ledger(row)}<div class="service-help">${row.verification_requested?'<strong>전문의 인증 + 공개 탑 신청</strong><br>자격과 객관적 집계 자료 확인 후 파란 배지와 공개 탑이 함께 반영됩니다.':'<strong>기록 등록 신청 · 인증 미요청</strong><br>입력 내용 확인 후 랭킹에만 표시됩니다. 이후 자료를 준비해 인증을 신청할 수 있습니다.'}</div><div id="owner-evidence"></div><div class="service-actions" id="owner-actions"></div></section><aside><section class="service-card"><h3>기록에서, 공개까지.</h3>${steps(row.status)}${history(trail)}</section><section class="service-card"><h3>인증은 기록의 근거입니다.</h3><p>수술 건수 순위는 치료 효과나 의료진의 실력을 평가한 결과가 아닙니다. 공개 기록에는 집계 기준일과 인증 상태를 함께 표시합니다.</p><button class="service-button" data-contact-kind="verification">운영자에게 문의 ↗</button></section></aside></div>`;
+ document.querySelector('.service-grid>aside').insertAdjacentHTML('afterbegin','<section class="service-card publication-current" id="owner-publication" aria-label="현재 공개 중인 기록"><h3>현재 공개 중인 기록</h3><p>공개 상태를 확인하고 있습니다…</p></section>');
  const editable=EDITABLE.includes(row.status),buttons=$('#owner-actions');
  if(editable){buttons.innerHTML='<button id="edit-submission">내용 수정</button><button id="submit-record" class="primary-button">공개 등록 심사 요청 →</button>';$('#edit-submission').onclick=()=>renderForm(row);$('#submit-record').onclick=async e=>{const button=e.currentTarget;const problem=canSubmit(row,docs);if(problem){feedback(problem,true);return;}if(!await confirm('이 기록으로 심사를 요청할까요?',`${num(row.cases)}건 · ${num(row.sheets)}장 · ${num(row.length_m)}m\n반영 후 이름·소속·국적·집계 기준일·수술 및 진피 기록이 공개됩니다. 심사 중에는 수정할 수 없으며 신청 철회가 가능합니다.`, '심사 요청'))return;action(button,async()=>{await api.saveSubmission({status:'submitted'},row);await load();feedback('심사를 요청했습니다. 확인 결과와 보완 요청은 이 화면에서 확인하세요.');});};}
  else if(row.status==='submitted'){buttons.innerHTML='<button id="withdraw-submission">신청 철회</button>';$('#withdraw-submission').onclick=async e=>{const b=e.currentTarget;if(await confirm('심사 신청을 철회할까요?','이 신청의 심사를 취소합니다. 기존 공개 기록은 유지됩니다.','신청 철회'))action(b,async()=>{await api.saveSubmission({status:'withdrawn'},row);await load();});};}
  else{buttons.innerHTML='<button id="new-submission" class="primary-button">새 기준일로 기록 업데이트 →</button>';$('#new-submission').onclick=()=>renderForm(null,row);}
- {
-  const publicRows=await api.publicRecords();const own=demo?publicRows[0]:await live.myPublicRecord();
-  if(own){const url=`./?${demo?'demo=workflow&':''}tower=${encodeURIComponent(own.id)}#${own.verification==='verified'?'explore':'ranking'}`;buttons.insertAdjacentHTML('beforeend',`<a href="${url}">${own.verification==='verified'?'내 공개 탑':'내 랭킹'} 보기 ↗</a><button id="copy-tower">공유 링크 복사</button><button id="hide-record">공개 중지</button>`);$('#copy-tower').onclick=e=>action(e.currentTarget,async()=>{if(demo){feedback('시연 기록은 이 브라우저에서만 볼 수 있어 외부 공유가 되지 않습니다. 실제 인증 후에는 고정 링크로 공유할 수 있습니다.');return;}await navigator.clipboard.writeText(new URL(url,location.href).href);feedback('내 기록 링크를 복사했습니다.');});$('#hide-record').onclick=async e=>{const b=e.currentTarget;if(await confirm('내 공개 기록을 숨길까요?','랭킹과 3D 탑에서 내 기록을 숨깁니다. 다시 공개하려면 새 기록으로 심사를 요청해야 합니다.','공개 중지'))action(b,async()=>{await api.hideRecord();await load();feedback('공개 기록을 숨겼습니다.');});};}
- }
  await evidence(row,docs,editable,false);
+ // Public lookup is independent: an outage must not disable draft/evidence work.
+ void renderPublication(row,version);
+}
+async function renderPublication(row,version){
+ const host=$('#owner-publication');if(!host)return;
+ try{
+  const own=await api.myPublicRecord();if(version!==renderVersion||!host.isConnected)return;
+  if(!own){host.innerHTML='<h3>현재 공개 중인 기록</h3><p>현재 공개된 기록이 없습니다. 신청이 승인되면 이곳에서 공개 상태를 확인하고 공유할 수 있습니다.</p>';return;}
+  const verified=own.verification==='verified',url=`./?${demo?'demo=workflow&':''}tower=${encodeURIComponent(own.id)}#${verified?'explore':'ranking'}`;
+  host.innerHTML=`<div class="service-detail-top"><h3>현재 공개 중인 기록</h3><span class="status-badge ${verified?'status-approved':''}">${verified?'인증 · 탑 공개':'미인증 · 랭킹'}</span></div><strong class="publication-name">${esc(own.name)}</strong><p>집계 기준 ${date(own.periodEnd)}${demo?' · 가상 시연':''}</p><div class="publication-cases">${num(own.cases)}<small> 건</small></div><p>${num(own.sheets)}장 · 긴 변 누적 ${num(own.length)}m</p>${row.status!=='approved'?'<div class="service-help">새 신청의 수정·심사가 진행되는 동안에는 이 기록이 계속 공개됩니다. 새 기록은 승인 후 반영됩니다.</div>':''}<div class="service-actions"><a class="primary-button" href="${url}">${verified?'내 공개 탑':'내 랭킹'} 보기 ↗</a><button id="copy-tower">공유 링크 복사</button><button id="hide-record">공개 중지</button></div>`;
+  $('#copy-tower').onclick=e=>action(e.currentTarget,async()=>{if(demo){feedback('시연 기록은 이 브라우저에서만 볼 수 있어 외부 공유가 되지 않습니다. 실제 인증 후에는 고정 링크로 공유할 수 있습니다.');return;}await navigator.clipboard.writeText(new URL(url,location.href).href);feedback('내 기록 링크를 복사했습니다.');});
+  $('#hide-record').onclick=async e=>{const b=e.currentTarget;if(await confirm('내 공개 기록을 숨길까요?','랭킹과 3D 탑에서 내 기록을 숨깁니다. 심사 중인 신청이 승인되면 새 기록이 다시 공개됩니다. 재공개를 원하지 않으면 심사 신청을 철회하고, 새 심사를 요청하지 마세요.','공개 중지'))action(b,async()=>{await api.hideRecord();await load();feedback('공개 기록을 숨겼습니다. 진행 중인 신청의 상태도 확인해 주세요.');});};
+ }catch(error){
+  if(version!==renderVersion||!host.isConnected)return;
+  host.innerHTML=`<h3>공개 상태를 확인하지 못했습니다.</h3><p>${esc(live.friendlyError(error))}</p><p>신청 작성과 자료 첨부는 계속할 수 있습니다.</p><button class="service-button" id="retry-publication">공개 상태 다시 확인</button>`;
+  $('#retry-publication').onclick=e=>action(e.currentTarget,()=>renderPublication(row,version));
+ }
 }
 function renderForm(row,source=row){
  ++renderVersion;let draft=toDraft(source);
@@ -74,17 +88,28 @@ function renderForm(row,source=row){
 async function evidence(row,docs,editable,reviewer){
  const host=$('#owner-evidence')??$('#review-evidence');if(!host)return;
  host.innerHTML=`<h3 style="margin-top:26px">인증 자료 <small>비공개</small></h3><p>자격증의 불필요한 개인정보와 환자 식별 정보는 가려 주세요. PDF·JPG·PNG, 각 10MB 이하. 인증 자료는 공개되지 않습니다.</p>${Object.entries(EVIDENCE_KINDS).map(([kind,label])=>{const doc=docs.find(d=>d.kind===kind);return `<div class="service-file"><strong>${label}</strong>${doc?`<div class="service-file-row"><span>${esc(doc.filename)}${doc.demo?'':` · ${num(doc.size_bytes/1024)}KB`}</span><button data-open-document="${doc.id}">자료 보기 ↗</button>${editable?`<button data-remove-document="${doc.id}">삭제</button>`:''}</div>`:`<p>아직 첨부된 자료가 없습니다.</p>${editable&&!demo?`<input type="file" data-upload="${kind}" accept=".pdf,.jpg,.jpeg,.png" aria-label="${label} 첨부">`:''}`}</div>`;}).join('')}${demo&&editable?'<div class="service-actions"><button id="demo-evidence">가상 인증 자료 2종 준비하기</button></div><p>실제 파일을 읽거나 업로드하지 않는 시연입니다.</p>':''}`;
- host.querySelectorAll('[data-open-document]').forEach(b=>b.onclick=()=>{const doc=docs.find(d=>d.id===b.dataset.openDocument);if(demo){confirm('가상 인증 자료',`${doc.kind==='credential'?'전문의 자격증 · 자격 종류 및 이름 일치 확인':'CRM 합산 보고서 · 수술 건수 및 규격별 사용량 확인'}\n운영 시연용 표시이며 실제 증빙 서류가 아닙니다.`,'확인');return;}action(b,async()=>{const url=await api.evidenceURL(doc);const link=document.createElement('a');link.href=url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='60초간 유효한 자료 열기 ↗';link.className='service-button';b.replaceWith(link);feedback('아래 자료 열기 버튼을 눌러 확인하세요. 링크는 60초 후 만료됩니다.');});});
+ host.querySelectorAll('[data-open-document]').forEach(b=>b.onclick=()=>{const doc=docs.find(d=>d.id===b.dataset.openDocument);if(demo){confirm('가상 인증 자료',`${doc.kind==='credential'?'전문의 자격증 · 자격 종류 및 이름 일치 확인':'CRM 합산 보고서 · 수술 건수 및 규격별 사용량 확인'}\n운영 시연용 표시이며 실제 증빙 서류가 아닙니다.`,'확인');return;}action(b,async()=>{const url=await api.evidenceURL(doc);showEvidenceLink(b,url);feedback('자료 열기 링크를 준비했습니다. 만료되면 자료 보기 버튼으로 다시 발급할 수 있습니다.');});});
  host.querySelectorAll('[data-upload]').forEach(input=>input.onchange=()=>{const file=input.files[0];if(file)action(null,async()=>{await api.uploadEvidence(row,input.dataset.upload,file);await load();feedback('자료를 비공개로 첨부했습니다.');});});
  host.querySelectorAll('[data-remove-document]').forEach(b=>b.onclick=async()=>{if(await confirm('이 자료를 삭제할까요?','다른 파일을 첨부하려면 기존 자료를 먼저 삭제하세요.','자료 삭제'))action(b,async()=>{await api.removeEvidence(docs.find(d=>d.id===b.dataset.removeDocument));await load();});});
  if(demo&&editable)$('#demo-evidence').onclick=e=>action(e.currentTarget,async()=>{await api.addDemoEvidence(row);await load();feedback('가상 자료 2종을 준비했습니다. 심사 요청을 진행할 수 있습니다.');});
+}
+function showEvidenceLink(button,url){
+ const file=button.closest('.service-file');let preview=file.querySelector('.service-document-preview');
+ if(!preview){preview=document.createElement('div');preview.className='service-document-preview';file.append(preview);}
+ clearTimeout(preview.expiryTimer);
+ const expiresAt=Date.now()+60000,link=document.createElement('a'),note=document.createElement('p');
+ link.href=url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='자료 열기 ↗';link.className='service-button';
+ note.textContent='발급 후 60초간 열 수 있습니다. 링크가 만료되면 위의 자료 보기를 다시 눌러 주세요.';
+ const expire=()=>{link.removeAttribute('href');link.setAttribute('aria-disabled','true');link.textContent='열기 링크 만료';note.textContent='위의 자료 보기 버튼을 눌러 새 링크를 발급하세요.';};
+ link.onclick=event=>{if(Date.now()>=expiresAt){event.preventDefault();expire();}};
+ preview.replaceChildren(link,note);preview.expiryTimer=setTimeout(expire,60000);
 }
 async function renderAdmin(){
  const version=++renderVersion,counts={submitted:0,changes_requested:0,approved:0};for(const row of rows)if(Object.hasOwn(counts,row.status))counts[row.status]++;
  const queue=rows.filter(row=>filter==='all'||row.status===filter);activeId=queue.some(r=>r.id===activeId)?activeId:queue[0]?.id;
  $('#service-content').innerHTML=`<div class="service-stats">${[['submitted','심사 대기'],['changes_requested','보완 대기'],['approved','반영 완료']].map(([key,label])=>`<div class="service-stat"><span>${label}</span><b>${counts[key]}</b><small>최근 조회한 신청 기준</small></div>`).join('')}</div><div class="service-filters" aria-label="신청 상태 필터">${[['submitted','심사 대기'],['changes_requested','보완 요청'],['approved','반영 완료'],['all','전체']].map(([value,label])=>`<button data-filter="${value}" aria-pressed="${filter===value}">${label}</button>`).join('')}</div><div class="service-queue"><aside class="service-queue-list" aria-label="신청 목록">${queue.map(row=>`<button data-review-id="${row.id}" aria-pressed="${row.id===activeId}">${status(row)}<strong>${esc(row.display_name)}</strong><small>${num(row.cases)}건 · ${row.verification_requested?'인증 신청':'랭킹 등록'}<br>${date(row.submitted_at??row.created_at)}</small></button>`).join('')}</aside><div id="review-detail">${empty('대기 중인 신청이 없습니다.','다른 상태를 선택하거나 신청자 화면에서 기록을 제출해 보세요.',demo?'<a href="./account.html?demo=1">신청자 시연으로 이동 ↗</a>':'')}</div></div>`;
  if(moreRows){$('#service-content').insertAdjacentHTML('beforeend','<div class="service-actions"><button id="load-more-submissions">이전 신청 100건 더 불러오기</button></div>');$('#load-more-submissions').onclick=e=>action(e.currentTarget,async()=>{const page=await api.listSubmissions(rows.length);rows.push(...page);moreRows=page.length===100;await renderAdmin();});}
- document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{filter=b.dataset.filter;renderAdmin();});document.querySelectorAll('[data-review-id]').forEach(b=>b.onclick=()=>{activeId=b.dataset.reviewId;renderAdmin();});
+ document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>action(b,async()=>{filter=b.dataset.filter;await renderAdmin();}));document.querySelectorAll('[data-review-id]').forEach(b=>b.onclick=()=>action(b,async()=>{activeId=b.dataset.reviewId;await renderAdmin();}));
  const row=queue.find(r=>r.id===activeId);if(!row)return;const [docs,trail]=await Promise.all([api.documents(row.id),api.events(row.id)]);if(version!==renderVersion)return;
  $('#review-detail').innerHTML=`<section class="service-card"><div class="service-detail-top"><span class="eyebrow">${row.verification_requested?'CREDENTIAL & RECORD REVIEW':'RANKING REGISTRATION'}</span>${status(row)}</div><h2>${esc(row.display_name)}</h2><p>${esc(row.clinic||'소속 미입력')} · ${COUNTRIES[row.country]} · 집계 기준 ${date(row.period_end)}</p>${totals(row)}${ledger(row)}<div id="review-evidence"></div>${row.status==='submitted'?`<form id="review-form"><h3 style="margin-top:26px">심사 결과</h3>${row.verification_requested?'<label class="service-check"><input type="checkbox" id="check-credential"><span>전문의 자격과 신청자 정보의 일치를 확인했습니다.</span></label><label class="service-check"><input type="checkbox" id="check-records"><span>객관적 자료의 수술 건수·재료 사용량·집계 기준일을 확인했습니다.</span></label>':'<div class="service-help">인증을 요청하지 않은 기록입니다. 반영 후에도 미인증 상태로 랭킹에만 표시됩니다.</div>'}<div class="service-field"><label for="review-decision">처리 결과</label><select id="review-decision"><option value="changes_requested">보완 요청</option><option value="approved">${row.verification_requested?'인증 승인 · 공개 탑 반영':'등록 승인 · 랭킹에만 반영'}</option><option value="rejected">반려</option></select></div><div class="service-field"><label for="review-note">신청자에게 전달할 안내 · 보완/반려 시 필수</label><textarea id="review-note" maxlength="2000" placeholder="어떤 자료를 보완해야 하는지 구체적으로 안내해 주세요."></textarea></div><p class="service-error" id="review-error" role="alert"></p><div class="service-actions"><button type="submit" class="primary-button">심사 결과 반영 →</button></div></form>`:`${row.review_note?`<div class="service-review-note">${esc(row.review_note)}</div>`:''}`}<div style="margin-top:26px">${history(trail)}</div></section>`;
  await evidence(row,docs,false,true);

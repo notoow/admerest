@@ -79,7 +79,8 @@ all('[data-landmark]').forEach(b=>b.addEventListener('click',()=>toggleLandmark(
 $('#live-quantity-form').addEventListener('submit',e=>{e.preventDefault();const raw=$('#live-quantity').value;if(raw.trim()==='')return error('체험할 수술 건수를 입력해 주세요.');setQuantity(Number(raw));});
 all('[data-live-add]').forEach(b=>b.addEventListener('click',()=>setQuantity(quantity+Number(b.dataset.liveAdd))));
 $('#live-size').addEventListener('change',e=>setSize(e.target.value));$('#live-reset').addEventListener('click',()=>setQuantity(0));
-all('[data-start-flight]').forEach(button=>{button.disabled=!explorer;button.addEventListener('click',()=>{if(!explorer)return;explorer.setFlying(true);syncPairButton();});});
+const flightCues=new IntersectionObserver(entries=>{for(const e of entries)e.target.classList.toggle('flight-cue-visible',e.isIntersecting);},{threshold:.8});
+all('[data-start-flight]').forEach(button=>{button.disabled=!explorer;flightCues.observe(button);button.addEventListener('click',()=>{if(!explorer)return;explorer.setFlying(true);document.body.classList.add('flight-experienced');syncPairButton();});});
 refreshComparison();
 $('#compare-pair').disabled=!explorer;$('#comparison-source').disabled=!explorer;$('#comparison-landmark').disabled=!explorer;
 const navObserver=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting)all('.site-header nav a').forEach(a=>a.classList.toggle('nav-active',a.hash===`#${e.target.id}`));});},{rootMargin:'-10% 0px -60% 0px'});['explore','play','ranking'].forEach(id=>navObserver.observe($('#'+id)));

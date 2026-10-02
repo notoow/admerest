@@ -5,6 +5,7 @@ export class FlightControls {
   Object.assign(this,{camera,canvas,groundHeight,blocked,enabled:false,speed:1,yaw:0,pitch:0,walking:true,unlockedAt:0});
   this.keys=new Set();this.touchKeys=new Set();this.stick={x:0,y:0};this.velocity=new THREE.Vector3();this.target=new THREE.Vector3();
   this.joystick=document.querySelector('#flight-joystick');this.knob=this.joystick.querySelector('i');
+  this.lookPad=document.querySelector('#flight-look-pad');
   canvas.addEventListener('keydown',e=>{
    if(!this.enabled||!FLIGHT_CODES.has(e.code)||e.ctrlKey||e.metaKey||e.altKey)return;
    e.preventDefault();this.keys.add(e.code);
@@ -12,33 +13,44 @@ export class FlightControls {
   window.addEventListener('keyup',e=>this.keys.delete(e.code));
   canvas.addEventListener('blur',()=>{this.keys.clear();this.velocity.set(0,0,0);this.hover=null;});
   window.addEventListener('blur',()=>this.pause());
-  window.addEventListener('resize',()=>{if(this.enabled)this.clear();});
+  // Mobile browser chrome resizes the viewport during a gesture. Preserve held
+  // input; rebase its coordinates instead of requiring both thumbs to start over.
+  window.addEventListener('resize',()=>{
+   if(!this.enabled)return;
+   if(this.lookTouch)this.lookTouch.rebase=true;
+  });
+  window.addEventListener('orientationchange',()=>{if(this.enabled)this.clear();});
   document.addEventListener('visibilitychange',()=>{if(document.hidden)this.pause();});
   document.addEventListener('pointerlockchange',()=>{if(!this.locked){this.clear();this.unlockedAt=performance.now();this.hoverLook=false;}this.updateUI();});
   document.addEventListener('pointerlockerror',()=>this.allowHoverLook());
   document.addEventListener('mousemove',e=>{if(this.enabled&&this.locked)this.look(e.movementX,e.movementY,.0022);});
-  canvas.addEventListener('pointerdown',e=>{
-   if(!this.enabled||e.button!==0)return;e.preventDefault();canvas.focus({preventScroll:true});
-   if(e.pointerType==='touch'||e.pointerType==='pen'){
-    if(this.lookTouch)return;this.lookTouch={id:e.pointerId,x:e.clientX,y:e.clientY};canvas.setPointerCapture(e.pointerId);
-   }else this.requestLook();
-  });
-  canvas.addEventListener('pointermove',e=>{
-   if(!this.enabled||this.locked)return;
-   if(this.lookTouch?.id===e.pointerId){this.look(e.clientX-this.lookTouch.x,e.clientY-this.lookTouch.y,.004);this.lookTouch={id:e.pointerId,x:e.clientX,y:e.clientY};}
-   else if(e.pointerType==='mouse'&&this.hoverLook&&document.activeElement===canvas){
-    if(this.hover)this.look(e.clientX-this.hover.x,e.clientY-this.hover.y,.0022);this.hover={x:e.clientX,y:e.clientY};
-   }
-  });
-  const endLook=e=>{if(this.lookTouch?.id===e.pointerId)this.lookTouch=null;};
-  ['pointerup','pointercancel','lostpointercapture'].forEach(type=>canvas.addEventListener(type,endLook));
+  for(const surface of [canvas,this.lookPad]){
+   surface.addEventListener('pointerdown',e=>{
+    if(!this.enabled||(e.pointerType==='mouse'&&e.button!==0))return;
+    if(surface===canvas&&e.pointerType==='mouse'){e.preventDefault();this.requestLook();return;}
+    if(this.lookTouch)return;e.preventDefault();
+    this.lookTouch={id:e.pointerId,x:e.clientX,y:e.clientY,surface};surface.setPointerCapture(e.pointerId);this.lookPad.classList.add('held');
+   });
+   surface.addEventListener('pointermove',e=>{
+    if(!this.enabled||this.locked)return;
+    const touch=this.lookTouch;
+    if(touch?.id===e.pointerId){
+     e.preventDefault();if(!touch.rebase)this.look(e.clientX-touch.x,e.clientY-touch.y,.003);
+     touch.x=e.clientX;touch.y=e.clientY;touch.rebase=false;
+    }else if(surface===canvas&&e.pointerType==='mouse'&&this.hoverLook&&document.activeElement===canvas){
+     if(this.hover)this.look(e.clientX-this.hover.x,e.clientY-this.hover.y,.0022);this.hover={x:e.clientX,y:e.clientY};
+    }
+   });
+   const endLook=e=>{if(this.lookTouch?.id===e.pointerId)this.resetLook();};
+   ['pointerup','pointercancel','lostpointercapture'].forEach(type=>surface.addEventListener(type,endLook));
+  }
   canvas.addEventListener('pointerleave',()=>{this.hover=null;});
   const updateStick=e=>{
    const r=this.stickRect,radius=r.width*.34,x=e.clientX-(r.left+r.width/2),y=e.clientY-(r.top+r.height/2);
    this.stick=joystickVector(x,y,radius);const scale=Math.min(1,radius/(Math.hypot(x,y)||1));this.knob.style.transform=`translate(${x*scale}px,${y*scale}px)`;
   };
   this.joystick.addEventListener('pointerdown',e=>{
-   if(!this.enabled||this.stickId!==undefined)return;e.preventDefault();this.stickId=e.pointerId;
+   if(!this.enabled||this.stickId!==undefined||(e.pointerType==='mouse'&&e.button!==0))return;e.preventDefault();this.stickId=e.pointerId;
    this.stickRect=this.joystick.getBoundingClientRect();this.joystick.setPointerCapture(e.pointerId);this.joystick.classList.add('held');updateStick(e);
   });
   this.joystick.addEventListener('pointermove',e=>{if(e.pointerId===this.stickId){e.preventDefault();updateStick(e);}});
@@ -56,7 +68,7 @@ export class FlightControls {
  }
  get locked(){return document.pointerLockElement===this.canvas;}
  requestLook(){
-  if(!this.enabled||matchMedia('(pointer:coarse)').matches)return;this.canvas.focus({preventScroll:true});if(this.locked)return;
+  if(!this.enabled||matchMedia('(pointer:coarse), (max-width:760px), (max-width:1000px) and (max-height:550px)').matches)return;this.canvas.focus({preventScroll:true});if(this.locked)return;
   if(!this.canvas.requestPointerLock){this.allowHoverLook();return;}
   try{const request=this.canvas.requestPointerLock();request?.catch(()=>this.allowHoverLook());}catch{this.allowHoverLook();}
  }
@@ -64,7 +76,8 @@ export class FlightControls {
  unlock(){this.hoverLook=false;this.hover=null;if(this.locked)document.exitPointerLock();this.clear();this.updateUI();}
  pause(){this.unlock();}
  resetStick(){const id=this.stickId;this.stickId=undefined;this.stick={x:0,y:0};this.knob.style.transform='';this.joystick.classList.remove('held');if(id!==undefined&&this.joystick.hasPointerCapture(id))this.joystick.releasePointerCapture(id);}
- clear(){this.keys.clear();this.touchKeys.clear();this.velocity.set(0,0,0);this.resetStick();const touch=this.lookTouch;this.lookTouch=null;if(touch&&this.canvas.hasPointerCapture(touch.id))this.canvas.releasePointerCapture(touch.id);this.hover=null;document.querySelectorAll('[data-flight-key]').forEach(b=>b.classList.remove('held'));}
+ resetLook(){const touch=this.lookTouch;this.lookTouch=null;this.lookPad.classList.remove('held');if(touch&&touch.surface.hasPointerCapture(touch.id))touch.surface.releasePointerCapture(touch.id);}
+ clear(){this.keys.clear();this.touchKeys.clear();this.velocity.set(0,0,0);this.resetStick();this.resetLook();this.hover=null;document.querySelectorAll('[data-flight-key]').forEach(b=>b.classList.remove('held'));}
  setEnabled(on){this.enabled=on;this.clear();if(on){this.syncAngles();this.canvas.focus({preventScroll:true});}else this.unlock();}
  setWalking(on){this.walking=on;this.velocity.y=0;if(on)this.camera.position.y=this.groundHeight(this.camera.position.x,this.camera.position.z)+EYE_HEIGHT;this.updateUI();}
  updateUI(){

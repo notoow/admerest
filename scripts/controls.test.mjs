@@ -20,7 +20,7 @@ function setup(){
  globalThis.document=doc;globalThis.window=new EventTarget();globalThis.matchMedia=()=>({matches:false});
  const camera=new PerspectiveCamera();camera.position.set(0,EYE_HEIGHT,5);const canvas=new Element();
  const controls=new FlightControls(camera,canvas);controls.setEnabled(true);controls.setWalking(true);
- return {camera,canvas,controls,joystick:doc.querySelector('#flight-joystick'),lift};
+ return {camera,canvas,controls,joystick:doc.querySelector('#flight-joystick'),lookPad:doc.querySelector('#flight-look-pad'),lift};
 }
 test('independent touch pointers allow moving and looking together, and stop on release',()=>{
  const {camera,canvas,controls,joystick}=setup();
@@ -63,4 +63,44 @@ test('touch cancellation recentres joystick without clearing a separate look ges
  send(canvas,'pointerdown',{pointerId:8,pointerType:'touch',button:0,clientX:250,clientY:100});
  send(joystick,'pointercancel',{pointerId:7});assert.deepEqual(controls.stick,{x:0,y:0});assert.equal(controls.lookTouch.id,8);
  send(canvas,'pointermove',{pointerId:8,pointerType:'touch',clientX:270,clientY:100});assert(controls.yaw<0);
+});
+
+test('mobile look layer captures its own pointer and does not steal joystick or third-finger input',()=>{
+ const {camera,controls,joystick,lookPad,lift}=setup();
+ send(joystick,'pointerdown',{pointerId:11,pointerType:'touch',clientX:60,clientY:20});
+ send(lookPad,'pointerdown',{pointerId:12,pointerType:'touch',button:0,clientX:240,clientY:200});
+ send(lookPad,'pointerdown',{pointerId:13,pointerType:'touch',button:0,clientX:310,clientY:400});
+ send(lookPad,'pointermove',{pointerId:13,pointerType:'touch',clientX:10,clientY:10});
+ assert.equal(controls.yaw,0,'an extra finger must not replace or move the look pointer');
+ send(lookPad,'pointermove',{pointerId:12,pointerType:'touch',clientX:290,clientY:200});
+ const start=camera.position.clone();controls.step(.05,true);
+ assert(controls.yaw<0);assert(camera.position.distanceTo(start)>0);assert(lookPad.hasPointerCapture(12));
+ send(lift,'pointerdown',{pointerId:14,pointerType:'touch'});controls.step(.05,true);assert.equal(controls.walking,false);
+ send(lookPad,'pointercancel',{pointerId:12});assert(!lookPad.hasPointerCapture(12));assert.equal(controls.lookTouch,null);
+ assert(controls.stick.y<0);assert(controls.touchKeys.has('KeyQ'));
+ send(joystick,'lostpointercapture',{pointerId:11});send(lift,'pointerup',{pointerId:14});
+ const stopped=camera.position.clone();controls.step(.05);assert.deepEqual(camera.position.toArray(),stopped.toArray());
+});
+
+test('mobile address-bar resize preserves held movement and rebases looking; rotation cancels safely',()=>{
+ const {controls,joystick,lookPad,camera}=setup();
+ send(joystick,'pointerdown',{pointerId:21,pointerType:'touch',clientX:60,clientY:20});
+ send(lookPad,'pointerdown',{pointerId:22,pointerType:'touch',clientX:240,clientY:200});
+ const before=camera.position.clone();send(window,'resize');controls.step(.05,true);
+ assert(camera.position.distanceTo(before)>0,'resizing must not require a fresh joystick press');
+ send(lookPad,'pointermove',{pointerId:22,pointerType:'touch',clientX:300,clientY:100});
+ assert.equal(controls.yaw,0,'first coordinate after viewport change should rebase without jumping');
+ send(lookPad,'pointermove',{pointerId:22,pointerType:'touch',clientX:320,clientY:110});assert(controls.yaw<0);
+ send(window,'orientationchange');assert.equal(controls.lookTouch,null);assert.deepEqual(controls.stick,{x:0,y:0});
+ assert(!lookPad.hasPointerCapture(22));assert(!joystick.hasPointerCapture(21));
+});
+
+test('leaving touch exploration releases both captures and fresh entry accepts new gestures',()=>{
+ const {controls,joystick,lookPad}=setup();
+ send(joystick,'pointerdown',{pointerId:31,pointerType:'touch',clientX:90,clientY:60});
+ send(lookPad,'pointerdown',{pointerId:32,pointerType:'touch',clientX:240,clientY:200});
+ controls.setEnabled(false);assert(!joystick.hasPointerCapture(31));assert(!lookPad.hasPointerCapture(32));
+ send(lookPad,'pointermove',{pointerId:32,pointerType:'touch',clientX:300,clientY:100});assert.equal(controls.yaw,0);
+ controls.setEnabled(true);send(lookPad,'pointerdown',{pointerId:33,pointerType:'touch',clientX:240,clientY:200});
+ send(lookPad,'pointermove',{pointerId:33,pointerType:'touch',clientX:270,clientY:200});assert(controls.yaw<0);
 });

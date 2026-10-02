@@ -1,0 +1,42 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import vm from 'node:vm';
+import {SIZES,MAX_QUANTITY,lengthMeters} from '../dist/measurements.js';
+
+function setup(reduced=false){
+ const source=readFileSync(new URL('../dist/app.js',import.meta.url),'utf8');
+ const nodes=new Map(),frames=new Map(),updates=[],visits=[];let clock=0,id=0;
+ const element=selector=>{if(!nodes.has(selector))nodes.set(selector,{style:{},focus(){this.focused=true;}});return nodes.get(selector);};
+ const explorer={flight:{enabled:false},selected:'kim',updateSimulation(meters,cases){updates.push({meters,cases});},prepareSimulation(meters){this.finalMeters=meters;},refit(){}};
+ const context=vm.createContext({quantity:2000,displayCount:2000,displayLength:120,size:'5x6',animation:null,raf:null,reduced,explorer,SIZES,MAX_QUANTITY,lengthMeters,$:element,
+  format:new Intl.NumberFormat('en-US'),decimal:new Intl.NumberFormat('en-US',{maximumFractionDigits:2}),performance:{now:()=>clock},
+  requestAnimationFrame:fn=>{frames.set(++id,fn);return id;},refreshComparison(){},clearError(){},error(message){context.lastError=message;},showSimulation(options){visits.push(options);explorer.selected='simulation';}});
+ vm.runInContext(source.slice(source.indexOf('function paintMetrics('),source.indexOf('function setSize(')),context);
+ const frame=time=>{clock=time;const pending=[...frames.values()];frames.clear();pending.forEach(fn=>fn(time));};
+ return {context,nodes,updates,visits,frames,frame,apply:(count,replay=true)=>context.setQuantity(count,{replay})};
+}
+
+test('Apply resets an existing tower to zero, opens it immediately and reaches the exact input',()=>{
+ const s=setup();s.apply(3100);
+ assert.equal(s.context.displayCount,0);assert.equal(s.context.displayLength,0);
+ assert.deepEqual(s.updates.at(-1),{meters:0,cases:0});assert.equal(s.visits[0].instant,true);assert.equal(s.context.explorer.finalMeters,186);
+ s.frame(400);assert.equal(s.context.displayCount,0,'arrival gives the empty tower a visible frame');
+ s.frame(1800);assert(s.context.displayCount>0&&s.context.displayCount<3100);
+ s.frame(3650);assert.equal(s.context.displayCount,3100);assert.equal(s.context.displayLength,186);assert.equal(s.context.animation,null);
+ assert.equal(s.nodes.get('#build-count').textContent,'3,100');assert.equal(s.nodes.get('#build-status').textContent,'쌓기 완료');
+ s.apply(3100);assert.equal(s.context.displayCount,0,'applying the same number replays from zero');
+});
+
+test('reapplying during a build replaces its target without creating two animation loops',()=>{
+ const s=setup();s.apply(3100);s.frame(1400);s.apply(1320);assert.equal(s.frames.size,1);assert.equal(s.context.displayCount,0);
+ s.frame(5050);assert.equal(s.context.displayCount,1320);assert.equal(s.context.displayLength,79.2);assert.equal(s.frames.size,0);
+ s.apply(10,false);assert.equal(s.context.displayCount,1320,'quick changes retain their current starting count');s.frame(5700);assert.equal(s.context.displayCount,10);
+});
+
+test('zero, maximum, invalid input and reduced motion keep deterministic final counts',()=>{
+ const s=setup();assert.equal(s.apply(-1),false);assert.equal(s.apply(1.5),false);assert.equal(s.visits.length,0);
+ s.apply(0);s.frame(0);assert.equal(s.context.displayLength,0);assert.equal(s.context.animation,null);
+ s.context.size='6x12';s.apply(MAX_QUANTITY);s.frame(3650);assert.equal(s.context.displayCount,MAX_QUANTITY);assert.equal(s.context.displayLength,12000);
+ const calm=setup(true);calm.apply(231);calm.frame(0);assert.equal(calm.context.displayCount,231);assert.equal(calm.context.displayLength,13.86);assert.equal(calm.frames.size,0);
+});

@@ -17,8 +17,8 @@ $('.explorer-main').append($('#live-build'),$('#flight-hud'));
 try{new ScrollJourney($('#journey'));}catch(error){console.warn('Scroll scene unavailable:',error.message);$('#journey').classList.add('journey-static');}
 function person(d){return `<span class="person-line">${d.name}<img class="flag" src="./assets/${d.country}.svg" alt="국적 ${d.countryName}">${d.verification==='demo'?`<button class="verify-trigger" aria-label="${d.name} 데모 인증 정보 보기">${badge}</button>`:''}</span>`;}
 function toast(message){const el=$('#toast');el.textContent=message;el.classList.add('visible');clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.classList.remove('visible'),3000);}
-function selectDoctor(id){if(!PUBLIC_DOCTORS.some(d=>d.id===id))return;if(explorer?.flight.enabled)explorer.setFlying(false);selected=id;all('.doctor-card').forEach(card=>{const on=card.dataset.doctor===id;card.classList.toggle('selected',on);card.querySelector('.doctor-select').setAttribute('aria-pressed',String(on));});explorer?.focus(id);$('#all-view').classList.toggle('active',!explorer?.comparison);$('#my-tower').classList.remove('active');$('#comparison-source').value=id;$('#live-build').hidden=true;refreshComparison();}
-$('#doctor-list').innerHTML=PUBLIC_DOCTORS.map(d=>`<div class="doctor-card ${d.id===selected?'selected':''}" data-doctor="${d.id}"><button class="doctor-select" aria-label="${d.name}, 수술 ${format.format(d.cases)}건, ${format.format(d.length)}미터 탑 보기" aria-pressed="${d.id===selected}"></button><span class="avatar">${d.initials}</span><div class="doctor-details">${person(d)}<span class="person-value">${format.format(d.cases)}<small>건</small></span><span class="person-hint">총 수술 케이스</span><span class="person-length">진피 누적 길이 <b>${format.format(d.length)} m</b></span></div></div>`).join('');
+function selectDoctor(id){if(!PUBLIC_DOCTORS.some(d=>d.id===id))return;if(explorer?.flight.enabled)explorer.setFlying(false);selected=id;all('.doctor-card').forEach(card=>{const on=card.dataset.doctor===id;card.classList.toggle('selected',on);card.querySelector('.doctor-select').setAttribute('aria-pressed',String(on));});explorer?.focus(id);$('#all-view').classList.toggle('active',!explorer?.comparison);$('#my-tower').classList.remove('active');$('#comparison-source').value=id;$('#live-build').hidden=true;$('#simulation-playback').hidden=true;refreshComparison();}
+$('#doctor-list').innerHTML=PUBLIC_DOCTORS.map(d=>`<div class="doctor-card ${d.id===selected?'selected':''}" data-doctor="${d.id}"><button class="doctor-select" aria-label="${d.name}, 수술 ${format.format(d.cases)}건, ${format.format(d.length)}미터 탑 보기" aria-pressed="${d.id===selected}"></button><div class="doctor-details">${person(d)}<span class="person-value"><small>수술</small><b>${format.format(d.cases)}</b><small>건</small></span><span class="person-length">진피 누적 길이 <b>${format.format(d.length)} m</b></span></div></div>`).join('');
 $('#public-tower-count').textContent=String(PUBLIC_DOCTORS.length).padStart(2,'0');
 all('.doctor-select').forEach(b=>b.addEventListener('click',()=>selectDoctor(b.closest('[data-doctor]').dataset.doctor)));
 function attachBadges(){all('.verify-trigger:not([data-bound])').forEach(b=>{b.dataset.bound='true';b.setAttribute('aria-describedby','verification-popover');const pop=$('#verification-popover');const show=()=>{const rect=b.getBoundingClientRect();pop.style.left=`${Math.max(12,Math.min(rect.left-90,innerWidth-322))}px`;pop.style.top=`${Math.max(12,Math.min(rect.bottom+12,innerHeight-210))}px`;if(!pop.matches(':popover-open'))pop.showPopover();};b.addEventListener('pointerenter',e=>{if(e.pointerType==='mouse')show();});b.addEventListener('focus',show);b.addEventListener('click',e=>{e.stopPropagation();show();});b.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse'&&!b.matches(':focus-visible'))pop.hidePopover();});b.addEventListener('blur',()=>pop.hidePopover());});}
@@ -36,11 +36,36 @@ $('#play-canvas').addEventListener('playground-change',e=>{all('[data-drop]').fo
 $('#play-canvas').addEventListener('physics-unavailable',()=>{$('#sim-status').textContent='물리 연출을 불러오지 못했습니다. 길이 계산은 가능합니다.';});
 function error(message){for(const id of ['input-error','live-error']){$('#'+id).textContent=message;$('#'+id).hidden=false;}$('#quantity').setAttribute('aria-invalid','true');$('#live-quantity').setAttribute('aria-invalid','true');}
 function clearError(){for(const id of ['input-error','live-error'])$('#'+id).hidden=true;$('#quantity').removeAttribute('aria-invalid');$('#live-quantity').removeAttribute('aria-invalid');}
-function animateMetrics(duration=1800){animation={fromCount:displayCount,fromLength:displayLength,toCount:quantity,toLength:lengthMeters(quantity,size),start:performance.now(),duration:reduced?0:duration};explorer?.prepareSimulation(lengthMeters(quantity,size));$('#sim-status').textContent=duration>1000?'한 장씩, 길이가 쌓이는 중…':'새로운 길이에 맞추는 중…';if(!raf)raf=requestAnimationFrame(tick);}
-function tick(now){raf=null;if(!animation)return;const t=animation.duration===0?1:Math.min(1,(now-animation.start)/animation.duration),ease=1-Math.pow(1-t,2);displayCount=Math.round(animation.fromCount+(animation.toCount-animation.fromCount)*ease);displayLength=animation.fromLength+(animation.toLength-animation.fromLength)*ease;$('#count-value').textContent=format.format(displayCount);$('#length-value').textContent=decimal.format(displayLength);$('#sim-progress').style.width=`${t*100}%`;explorer?.updateSimulation(displayLength,displayCount);$('#live-cases').innerHTML=`${format.format(displayCount)}<small>건</small>`;$('#live-length').innerHTML=`${decimal.format(displayLength)}<small>m</small>`;refreshComparison();if(t<1)raf=requestAnimationFrame(tick);else{animation=null;$('#sim-status').textContent=`체험 ${format.format(quantity)}건 · 진피 ${format.format(quantity)}장 · ${decimal.format(displayLength)}m`;$('#formula').textContent=`${format.format(quantity)}건 × 1장 × ${SIZES[size].length} cm = ${decimal.format(displayLength)} m`;if(explorer?.selected==='simulation')explorer.refit();}}
-function setQuantity(next){if(!Number.isInteger(next)||next<0||next>MAX_QUANTITY){error('0부터 100,000까지의 정수로 입력해 주세요.');return false;}clearError();const delta=next-quantity;quantity=next;$('#quantity').value=String(next);$('#live-quantity').value=String(next);animateMetrics(delta>0?2400:650);return true;}
+function paintMetrics(progress){
+ $('#count-value').textContent=format.format(displayCount);$('#length-value').textContent=decimal.format(displayLength);$('#sim-progress').style.width=`${progress*100}%`;
+ explorer?.updateSimulation(displayLength,displayCount);$('#live-cases').innerHTML=`${format.format(displayCount)}<small>건</small>`;$('#live-length').innerHTML=`${decimal.format(displayLength)}<small>m</small>`;
+ $('#build-count').textContent=format.format(displayCount);$('#build-target').textContent=format.format(quantity);$('#build-progress').style.width=`${progress*100}%`;refreshComparison();
+}
+function animateMetrics(duration=1800,{delay=0}={}){
+ animation={fromCount:displayCount,fromLength:displayLength,toCount:quantity,toLength:lengthMeters(quantity,size),start:performance.now()+(reduced?0:delay),duration:reduced?0:duration};
+ explorer?.prepareSimulation(lengthMeters(quantity,size));$('#sim-status').textContent=duration>1000?'한 장씩, 길이가 쌓이는 중…':'새로운 길이에 맞추는 중…';$('#build-status').textContent='진피 쌓는 중';
+ if(!raf)raf=requestAnimationFrame(tick);
+}
+function tick(now){
+ raf=null;if(!animation)return;const t=animation.duration===0?1:Math.max(0,Math.min(1,(now-animation.start)/animation.duration)),ease=1-Math.pow(1-t,2);
+ displayCount=Math.round(animation.fromCount+(animation.toCount-animation.fromCount)*ease);displayLength=animation.fromLength+(animation.toLength-animation.fromLength)*ease;paintMetrics(t);
+ if(t<1)raf=requestAnimationFrame(tick);else{
+  animation=null;$('#sim-status').textContent=`체험 ${format.format(quantity)}건 · 진피 ${format.format(quantity)}장 · ${decimal.format(displayLength)}m`;$('#build-status').textContent=quantity?'쌓기 완료':'진피 0장 · 새 수량을 입력해 보세요';
+  $('#formula').textContent=`${format.format(quantity)}건 × 1장 × ${SIZES[size].length} cm = ${decimal.format(displayLength)} m`;if(explorer?.selected==='simulation')explorer.refit();
+ }
+}
+function setQuantity(next,{replay=false}={}){
+ if(!Number.isInteger(next)||next<0||next>MAX_QUANTITY){error('0부터 100,000까지의 정수로 입력해 주세요.');return false;}
+ clearError();const delta=next-quantity;quantity=next;$('#quantity').value=String(next);$('#live-quantity').value=String(next);
+ if(replay){
+  if(explorer?.flight.enabled)explorer.setFlying(false);
+  displayCount=0;displayLength=0;paintMetrics(0);animateMetrics(next?3200:0,{delay:next?450:0});showSimulation({instant:true});
+  $('#explorer-canvas canvas')?.focus({preventScroll:true});
+ }else animateMetrics(delta>0?2400:650);
+ return true;
+}
 function setSize(key){if(!SIZES[key])return false;size=key;$('#live-size').value=key;all('[data-size]').forEach(b=>{const on=b.dataset.size===key;b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));});playground?.setSize(SIZES[key]);explorer?.setSize(SIZES[key]);$('#material-dimensions').textContent=`${SIZES[key].width} × ${SIZES[key].length} cm · 3 mm${key==='5x6'?'':' · 예시'}`;animateMetrics(750);return true;}
-$('#quantity-form').addEventListener('submit',e=>{e.preventDefault();const raw=$('#quantity').value;if(raw.trim()==='')return error('체험할 수술 건수를 입력해 주세요.');setQuantity(Number(raw));});all('[data-add]').forEach(b=>b.addEventListener('click',()=>setQuantity(quantity+Number(b.dataset.add))));all('[data-size]').forEach(b=>b.addEventListener('click',()=>setSize(b.dataset.size)));$('#reset-count').addEventListener('click',()=>{setQuantity(0);toast('체험 수술 건수를 초기화했습니다.');});$('#inspect-material').addEventListener('click',e=>{const on=e.currentTarget.getAttribute('aria-pressed')!=='true';setInspection(on);});
+$('#quantity-form').addEventListener('submit',e=>{e.preventDefault();const raw=$('#quantity').value;if(raw.trim()==='')return error('체험할 수술 건수를 입력해 주세요.');setQuantity(Number(raw),{replay:true});});all('[data-add]').forEach(b=>b.addEventListener('click',()=>setQuantity(quantity+Number(b.dataset.add))));all('[data-size]').forEach(b=>b.addEventListener('click',()=>setSize(b.dataset.size)));$('#reset-count').addEventListener('click',()=>{setQuantity(0);toast('체험 수술 건수를 초기화했습니다.');});$('#inspect-material').addEventListener('click',e=>{const on=e.currentTarget.getAttribute('aria-pressed')!=='true';setInspection(on);});
 function setInspection(on){
  $('#inspect-material').setAttribute('aria-pressed',String(on));$('#inspect-material').textContent=on?'낙하 체험으로 돌아가기 ↙':'진피 자세히 보기 ↗';
  $('#material-views').hidden=!on;$('.free-play-tools').hidden=on;playground?.setInspect(on);
@@ -57,16 +82,16 @@ function refreshComparison(){
  $('#comparison-note').textContent=$('#comparison-landmark').value==='everest'?'에베레스트는 해발고도 기준의 개념 지형입니다. 높이는 같은 비율, 탑의 폭은 확대해 표현합니다.':'같은 기준선에서 높이를 비교합니다. 탑의 폭은 식별을 위해 확대했습니다.';
 }
 function syncPairButton(){const on=!!explorer?.comparison;$('#compare-pair').setAttribute('aria-pressed',String(on));$('#compare-pair').textContent=on?'전체 공간으로 ↙':'나란히 보기 ↗';}
-function showSimulation(){
- selected='simulation';explorer?.showSimulation();$('#comparison-source').value='simulation';$('#live-build').hidden=false;
+function showSimulation({instant=false}={}){
+ selected='simulation';explorer?.showSimulation(instant);$('#simulation-playback').hidden=false;$('#comparison-source').value='simulation';$('#live-build').hidden=false;
  all('.doctor-card').forEach(c=>{c.classList.remove('selected');c.querySelector('.doctor-select').setAttribute('aria-pressed','false');});
- $('#all-view').classList.remove('active');$('#my-tower').classList.add('active');refreshComparison();syncPairButton();$('.explorer-main').scrollIntoView({behavior:reduced?'instant':'smooth',block:'start'});
+ $('#all-view').classList.remove('active');$('#my-tower').classList.add('active');refreshComparison();syncPairButton();$('.explorer-main').scrollIntoView({behavior:instant||reduced?'instant':'smooth',block:'start'});
 }
 function enterComparison(){
  explorer?.compare($('#comparison-source').value,$('#comparison-landmark').value);
  $('#all-view').classList.remove('active');syncPairButton();refreshComparison();$('.explorer-main').scrollIntoView({behavior:reduced?'instant':'smooth',block:'start'});
 }
-function overview(){if(explorer?.flight.enabled)explorer.setFlying(false);explorer?.overview();$('#live-build').hidden=true;$('#all-view').classList.add('active');$('#my-tower').classList.remove('active');syncPairButton();}
+function overview(){if(explorer?.flight.enabled)explorer.setFlying(false);explorer?.overview();$('#live-build').hidden=true;$('#simulation-playback').hidden=true;$('#all-view').classList.add('active');$('#my-tower').classList.remove('active');syncPairButton();}
 $('#compare-sim').addEventListener('click',()=>{$('#explore').scrollIntoView({behavior:reduced?'instant':'smooth'});showSimulation();enterComparison();});
 $('#all-view').addEventListener('click',overview);$('#reset-camera').addEventListener('click',overview);$('#explorer-canvas').addEventListener('overview-request',overview);
 $('#my-tower').addEventListener('click',showSimulation);
@@ -76,7 +101,7 @@ $('#comparison-landmark').addEventListener('change',enterComparison);
 $('#auto-rotate').addEventListener('click',e=>{if(!explorer)return;explorer.auto=!explorer.auto;e.currentTarget.setAttribute('aria-pressed',String(explorer.auto));});
 function toggleLandmark(id,on){const b=$(`[data-landmark="${id}"]`);if(!b)return;b.setAttribute('aria-pressed',String(on));b.classList.toggle('active',on);b.querySelector('.chip-check').textContent=on?'✓':'＋';explorer?.toggleLandmark(id,on);syncPairButton();$('#all-view').classList.add('active');$('#my-tower').classList.remove('active');}
 all('[data-landmark]').forEach(b=>b.addEventListener('click',()=>toggleLandmark(b.dataset.landmark,b.getAttribute('aria-pressed')!=='true')));
-$('#live-quantity-form').addEventListener('submit',e=>{e.preventDefault();const raw=$('#live-quantity').value;if(raw.trim()==='')return error('체험할 수술 건수를 입력해 주세요.');setQuantity(Number(raw));});
+$('#live-quantity-form').addEventListener('submit',e=>{e.preventDefault();const raw=$('#live-quantity').value;if(raw.trim()==='')return error('체험할 수술 건수를 입력해 주세요.');setQuantity(Number(raw),{replay:true});});
 all('[data-live-add]').forEach(b=>b.addEventListener('click',()=>setQuantity(quantity+Number(b.dataset.liveAdd))));
 $('#live-size').addEventListener('change',e=>setSize(e.target.value));$('#live-reset').addEventListener('click',()=>setQuantity(0));
 const flightCues=new IntersectionObserver(entries=>{for(const e of entries)e.target.classList.toggle('flight-cue-visible',e.isIntersecting);},{threshold:.8});

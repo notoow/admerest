@@ -200,14 +200,14 @@ export class Explorer {
   if(this.comparison&&(DOCTORS.some(d=>d.id===id)||id==='simulation')){this.compare(id,this.comparison.landmarkId);return;}
   const obj=this.objects.get(id);if(!obj?.visible)return;
   this.selected=id;this.host.dataset.view='focus';this.markSelected();const h=id==='simulation'?Math.max(.035,this.simFinalTarget*UNIT):obj.userData.height;
-  const center=obj.position.clone().add(new THREE.Vector3(0,h*.48,0)),distance=Math.max(h*2.25,8);
+  const center=obj.position.clone().add(new THREE.Vector3(0,h*.48,0)),distance=Math.max(h*2.25,id==='simulation'?4:8);
   this.animateCamera(center.clone().add(new THREE.Vector3(distance*.3,distance*.12,distance)),center,instant);
  }
  markSelected(){for(const [id,o]of this.objects){if(o.userData.base)o.userData.base.material.color.set(id===this.selected?0x3975ff:0xdfe7f3);this.labels.get(id)?.classList.toggle('selected',id===this.selected);}}
  toggleLandmark(id,on){this.clearComparison();this.objects.get(id).visible=on;this.overview();}
- showSimulation(){
-  if(this.comparison){this.restoreVisibility.set('simulation',true);this.compare('simulation',this.comparison.landmarkId);}
-  else{this.objects.get('simulation').visible=true;this.focus('simulation');}
+ showSimulation(instant=false){
+  if(this.comparison){this.restoreVisibility.set('simulation',true);this.compare('simulation',this.comparison.landmarkId);if(instant)this.frameVisible(true);}
+  else{this.objects.get('simulation').visible=true;this.focus('simulation',instant);}
  }
  prepareSimulation(meters){this.simFinalTarget=meters;if(this.selected==='simulation'&&!this.flight.enabled){if(this.comparison)this.frameVisible();else this.focus('simulation');}}
  updateSimulation(meters,cases=this.simCases){this.simTarget=Math.max(0,meters);this.simCases=cases;}

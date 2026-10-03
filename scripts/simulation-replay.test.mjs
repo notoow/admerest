@@ -60,3 +60,10 @@ test('quick additions use the visible unsubmitted input and reject invalid count
  s.nodes.get('#quantity').value='-1';assert.equal(s.context.addQuantity(100),false);assert.equal(s.context.quantity,3200);
  s.nodes.get('#quantity').value='100000';assert.equal(s.context.addQuantity(10),false);assert.equal(s.context.quantity,3200);
 });
+test('upper tower quick-add uses its own edited input without switching preview or scrolling',()=>{
+ const s=setup();s.apply(2000);s.views.length=0;s.nodes.get('#live-quantity').value='3100';
+ assert.equal(s.context.addQuantity(100,{surface:'explorer'}),true);assert.equal(s.context.quantity,3200);
+ assert.equal(s.nodes.get('#quantity').value,'3200');assert.equal(s.visits.length,0);assert.equal(s.views.length,0);
+ s.frame(3000);assert.equal(s.nodes.get('#build-length').textContent,'192 m');
+ s.nodes.get('#live-quantity').value='100000';assert.equal(s.context.addQuantity(10,{surface:'explorer'}),false);assert.equal(s.context.quantity,3200);
+});

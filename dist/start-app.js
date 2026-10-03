@@ -16,7 +16,7 @@ else if(BACKEND.url&&BACKEND.publishableKey&&!explicitDemo){
  catch{replaceRecords([],'unavailable');note='공개 기록을 불러오지 못했습니다. 새로고침해 주세요. 기록 체험은 계속 사용할 수 있습니다.';}
 }
 if(note){const banner=document.createElement('div');banner.className='data-source-notice';banner.innerHTML=`<span>${esc(note)}</span><a href="${workflow?'./admin.html?demo=1':'./'}">${workflow?'심사 시연으로 돌아가기':'다시 불러오기'} ↗</a>`;document.querySelector('#explore').prepend(banner);}
-await import('./app.js?v=20261003-ux2');
+await import('./app.js?v=20261003-flow');
 if(initialSection&&initialSection===location.hash)document.getElementById(initialSection.slice(1))?.scrollIntoView({behavior:'instant'});
 for(const type of ['wheel','touchmove','keydown'])removeEventListener(type,cancelSection);
 document.removeEventListener('click',chooseSection);

@@ -18,6 +18,8 @@
 .build-progress-track{height:3px;background:#d9e5f6;border-radius:5px;margin-top:9px;overflow:hidden}
 .build-progress-track i{display:block;height:100%;width:100%;background:#2469e7;transform-origin:left}
 .explorer-main{scroll-margin-top:12px}
+.simulation-playback .build-length{margin-top:4px;font-size:11px}
+.live-assumption{display:none}
 @media(max-width:760px){
  .doctor-card{padding:16px;min-width:195px}
  .doctor-card .person-line{font-size:14px}
@@ -26,4 +28,17 @@
  .simulation-playback{left:12px;bottom:12px;min-width:155px;padding:9px 12px}
  .simulation-playback>strong{font-size:22px}
  .explorer-main{scroll-margin-top:12px}
+ /* Keep accepted-count controls beside the scene, ahead of publication details. */
+ .explorer-main:has(.live-build:not([hidden])) .scene-host{height:clamp(175px,calc(100svh - 440px),350px)}
+ .explorer-main>.live-build:not([hidden]){grid-template-columns:minmax(0,1fr) 110px;gap:8px 10px;padding:10px;margin:0 10px 8px}
+ .explorer-main>.live-build form{grid-column:1;grid-row:1;min-width:0}
+ .explorer-main>.live-build .live-size{grid-column:2;grid-row:1;min-width:0}
+ .live-input,.live-size select{margin-top:5px;height:44px}
+ .live-input button{min-height:36px}
+ .live-adds{grid-column:1/-1;grid-row:2;gap:7px}
+ .live-adds button{min-height:44px;padding:9px 7px}
+ .live-build .live-total{display:none}
+ .live-assumption{display:block;grid-column:1;grid-row:3;align-self:center;margin:0;color:#6c84a3;font-size:10px}
+ .live-reset{grid-column:2;grid-row:3;margin:0;padding:6px 8px;min-height:32px}
+ .live-build>.input-error{grid-column:1/-1;grid-row:4}
 }

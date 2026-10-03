@@ -9,10 +9,12 @@ import {RecordReveal} from './record-reveal.js';
 import {InlineStack} from './inline-stack.js';
 import {filterRanking,rankingRows} from './ranking-view.js';
 import {ContactDialog} from './contact-dialog.js?v=20261003-ux2';
+import {readExperience,saveExperience} from './experience-session.js';
 const $=s=>document.querySelector(s),all=s=>[...document.querySelectorAll(s)];
 const format=new Intl.NumberFormat('en-US'),decimal=new Intl.NumberFormat('en-US',{maximumFractionDigits:2});
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 let explorer,playground,reveal,inlineStack,selected=PUBLIC_DOCTORS[0]?.id??'simulation',quantity=2000,displayCount=2000,size='5x6',displayLength=120,animation=null,raf=null;
+let towerAdded=false;
 new ContactDialog();
 $('#comparison-source').innerHTML=PUBLIC_DOCTORS.map(d=>`<option value="${esc(d.id)}">${esc(d.name)} · ${esc(d.countryName)}</option>`).join('')+'<option value="simulation">내 체험 탑</option>';
 if(DATA_SOURCE!=='demo'){
@@ -27,7 +29,7 @@ const totals=recordTotals(DOCTORS);
 all('[data-total-cases]').forEach(el=>el.textContent=format.format(totals.cases));
 all('[data-total-length]').forEach(el=>el.textContent=format.format(totals.length));
 const badge='<span class="verify-badge" aria-hidden="true">✓</span>';
-$('.explorer-main').append($('#live-build'),$('#flight-hud'));
+$('#explorer-canvas').after($('#live-build'));$('.explorer-main').append($('#flight-hud'));
 try{new ScrollJourney($('#journey'));}catch(error){console.warn('Scroll scene unavailable:',error.message);$('#journey').classList.add('journey-static');}
 function person(d){return `<span class="person-line">${esc(d.name)}<img class="flag" src="./assets/${d.country}.svg" alt="국적 ${d.countryName}">${isTowerPublished(d)?`<button class="verify-trigger" data-verification-id="${d.id}" aria-label="${esc(d.name)} ${d.verification==='demo'?'데모 ':''}인증 정보 보기">${badge}</button>`:''}</span>`;}
 function toast(message){const el=$('#toast');el.textContent=message;el.classList.add('visible');clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.classList.remove('visible'),3000);}
@@ -90,7 +92,7 @@ function paintMetrics(progress){
  $('#count-value').textContent=format.format(displayCount);$('#length-value').textContent=decimal.format(displayLength);$('#sim-progress').style.width=`${progress*100}%`;
  explorer?.updateSimulation(displayLength,displayCount);$('#live-cases').innerHTML=`${format.format(displayCount)}<small>건</small>`;$('#live-length').innerHTML=`${decimal.format(displayLength)}<small>m</small>`;
  inlineStack?.update(displayCount);$('#inline-build-count').textContent=format.format(displayCount);$('#inline-build-target').textContent=format.format(quantity);$('#inline-build-length').textContent=decimal.format(displayLength)+' m';$('#inline-build-progress').style.width=`${progress*100}%`;
- $('#build-count').textContent=format.format(displayCount);$('#build-target').textContent=format.format(quantity);$('#build-progress').style.width=`${progress*100}%`;refreshComparison();
+ $('#build-count').textContent=format.format(displayCount);$('#build-target').textContent=format.format(quantity);$('#build-length').textContent=decimal.format(displayLength)+' m';$('#build-progress').style.width=`${progress*100}%`;refreshComparison();
 }
 function animateMetrics(duration=1800,{delay=0}={}){
  $('#formula').textContent=`목표 ${format.format(quantity)}건 × 1장 × ${SIZES[size].length} cm = ${decimal.format(lengthMeters(quantity,size))} m`;
@@ -120,11 +122,11 @@ function registerBuiltTower(){
  if(animation||quantity<1)return false;
  showSimulation();toast('내 화면에 체험 탑을 추가했습니다. 전체 공개는 서류 확인 후 진행됩니다.');return true;
 }
-function addQuantity(amount){
- const raw=$('#quantity').value.trim(),base=raw===''?quantity:Number(raw);
+function addQuantity(amount,{surface='inline'}={}){
+ const raw=$(surface==='explorer'?'#live-quantity':'#quantity').value.trim(),base=raw===''?quantity:Number(raw);
  if(!Number.isInteger(base)||base<0||base>MAX_QUANTITY){error('0부터 100,000까지의 정수로 입력해 주세요.');return false;}
  if(!setQuantity(base+amount))return false;
- setPlayView('tower');return true;
+ if(surface==='inline')setPlayView('tower');return true;
 }
 function setSize(key){if(!SIZES[key])return false;size=key;$('#live-size').value=key;all('[data-size]').forEach(b=>{const on=b.dataset.size===key;b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));});playground?.setSize(SIZES[key]);explorer?.setSize(SIZES[key]);$('#material-dimensions').textContent=`${SIZES[key].width} × ${SIZES[key].length} cm · 3 mm${key==='5x6'?'':' · 예시'}`;animateMetrics(750);return true;}
 $('#register-tower').addEventListener('click',registerBuiltTower);
@@ -148,6 +150,7 @@ function refreshComparison(){
 }
 function syncPairButton(){const on=!!explorer?.comparison;$('#compare-pair').setAttribute('aria-pressed',String(on));$('#compare-pair').textContent=on?'전체 공간으로 ↙':'나란히 보기 ↗';}
 function showSimulation({instant=false,scroll=true}={}){
+ towerAdded=true;
  selected='simulation';$('#tower-registration').hidden=false;explorer?.showSimulation(instant);$('#simulation-playback').hidden=false;$('#comparison-source').value='simulation';$('#live-build').hidden=false;
  all('.doctor-card').forEach(c=>{c.classList.remove('selected');c.querySelector('.doctor-select').setAttribute('aria-pressed','false');});
  $('#all-view').classList.remove('active');$('#my-tower').classList.add('active');refreshComparison();syncPairButton();if(scroll)$('.explorer-main').scrollIntoView({behavior:instant||reduced?'instant':'smooth',block:'start'});
@@ -167,7 +170,7 @@ $('#auto-rotate').addEventListener('click',e=>{if(!explorer)return;explorer.auto
 function toggleLandmark(id,on){const b=$(`[data-landmark="${id}"]`);if(!b)return;b.setAttribute('aria-pressed',String(on));b.classList.toggle('active',on);b.querySelector('.chip-check').textContent=on?'✓':'＋';explorer?.toggleLandmark(id,on);syncPairButton();$('#all-view').classList.add('active');$('#my-tower').classList.remove('active');}
 all('[data-landmark]').forEach(b=>b.addEventListener('click',()=>toggleLandmark(b.dataset.landmark,b.getAttribute('aria-pressed')!=='true')));
 $('#live-quantity-form').addEventListener('submit',e=>{e.preventDefault();const raw=$('#live-quantity').value;if(raw.trim()==='')return error('체험할 수술 건수를 입력해 주세요.');setQuantity(Number(raw),{replay:true,surface:'explorer'});});
-all('[data-live-add]').forEach(b=>b.addEventListener('click',()=>setQuantity(quantity+Number(b.dataset.liveAdd))));
+all('[data-live-add]').forEach(b=>b.addEventListener('click',()=>addQuantity(Number(b.dataset.liveAdd),{surface:'explorer'})));
 $('#live-size').addEventListener('change',e=>setSize(e.target.value));$('#live-reset').addEventListener('click',()=>setQuantity(0));
 const flightCues=new IntersectionObserver(entries=>{for(const e of entries)e.target.classList.toggle('flight-cue-visible',e.isIntersecting);},{threshold:.8});
 all('[data-start-flight]').forEach(button=>{button.disabled=!explorer;flightCues.observe(button);button.addEventListener('click',()=>{if(!explorer)return;explorer.setFlying(true);document.body.classList.add('flight-experienced');syncPairButton();});});
@@ -183,6 +186,22 @@ if(document.modelContext?.registerTool){
  register({name:'focus_professional_tower',description:'Select a fictional professional and move the 3D camera to their tower.',inputSchema:{type:'object',properties:{id:{type:'string',enum:PUBLIC_DOCTORS.map(d=>d.id)}},required:['id'],additionalProperties:false},execute:async({id})=>{if(!PUBLIC_DOCTORS.some(d=>d.id===id))throw new Error('Professional tower is not public');selectDoctor(id);$('#explore').scrollIntoView({behavior:'instant'});return result(state());}});
  register({name:'set_comparison_landmarks',description:'Choose landmarks visible alongside the professional towers.',inputSchema:{type:'object',properties:{landmarks:{type:'array',items:{type:'string',enum:Object.keys(LANDMARKS)},uniqueItems:true}},required:['landmarks'],additionalProperties:false},execute:async({landmarks})=>{if(!Array.isArray(landmarks)||landmarks.some(id=>!LANDMARKS[id]))throw new Error('Unknown landmark');Object.keys(LANDMARKS).forEach(id=>toggleLandmark(id,landmarks.includes(id)));return result(state());}});
 }
+
+const previousExperience=readExperience();
+if(previousExperience){
+ quantity=displayCount=previousExperience.quantity;size=previousExperience.size;displayLength=lengthMeters(quantity,size);
+ $('#quantity').value=$('#live-quantity').value=String(quantity);$('#live-size').value=size;
+ all('[data-size]').forEach(b=>{const on=b.dataset.size===size;b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));});
+ playground?.setSize(SIZES[size]);explorer?.setSize(SIZES[size]);explorer?.prepareSimulation(displayLength);inlineStack?.prepare(quantity,SIZES[size]);paintMetrics(1);setPlayView(previousExperience.playView);
+ $('#material-dimensions').textContent=`${SIZES[size].width} × ${SIZES[size].length} cm · 3 mm${size==='5x6'?'':' · 예시'}`;
+ $('#formula').textContent=`${format.format(quantity)}건 × 1장 × ${SIZES[size].length} cm = ${decimal.format(displayLength)} m`;
+ $('#sim-status').textContent='이 탭에서 체험하던 기록을 이어갑니다.';$('#build-status').textContent=$('#inline-build-status').textContent=quantity?'내 기록 탑':'진피 0장 · 새 수량을 입력해 보세요';
+ if(previousExperience.towerAdded){showSimulation({instant:true,scroll:false});if(!previousExperience.towerOpen)overview();}
+}
+syncRegisterButton();
+function rememberExperience(){saveExperience({quantity,size,playView,towerAdded,towerOpen:!$('#live-build').hidden});}
+addEventListener('pagehide',rememberExperience);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')rememberExperience();});
 
 const linkedId=new URLSearchParams(location.search).get('tower');
 if(linkedId){

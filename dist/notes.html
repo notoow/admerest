@@ -15,14 +15,14 @@
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="https://notoow.github.io/admerest/assets/brand/og-admerest-adm-eiffel-v3.png">
 <link rel="icon" href="./favicon.ico?v=notoow-1" sizes="any"><link rel="icon" type="image/png" href="./assets/brand/icon-32.png?v=notoow-1" sizes="32x32">
 <link rel="apple-touch-icon" href="./assets/brand/icon-180.png?v=notoow-1">
-<link rel="stylesheet" href="./styles.css?v=20261001-notes"><link rel="stylesheet" href="./experience.css?v=20261001-comparison"><link rel="stylesheet" href="./notes.css?v=20261002-physical"><link rel="stylesheet" href="./physical-comparison.css?v=20261002-dialog">
-<link rel="stylesheet" href="./video-player.css?v=20261002-usability"><script type="module" src="./notes.js?v=20261002-physical-objects"></script>
+<link rel="stylesheet" href="./styles.css?v=20261001-notes"><link rel="stylesheet" href="./experience.css?v=20261001-comparison"><link rel="stylesheet" href="./notes.css?v=20261002-physical"><link rel="stylesheet" href="./physical-comparison.css?v=20261003-ux2">
+<link rel="stylesheet" href="./video-player.css?v=20261002-usability"><script type="module" src="./notes.js?v=20261003-ux2"></script>
 </head>
 <body class="notes-page">
 <a class="skip-link" href="#notes-content">본문으로 건너뛰기</a>
 <header class="site-header">
  <div class="site-brand"><a class="wordmark" href="./" aria-label="admerest 홈">admerest<span class="wordmark-dot">.</span></a><span class="brand-credit">by <img src="./assets/brand/notoow-2d.png" alt="" width="20" height="21"><b>notoow</b></span></div>
- <nav aria-label="주요 메뉴"><a href="./#explore">탑 탐색</a><a href="./#play">직접 쌓기</a><a href="./#ranking">전문의 랭킹</a><a href="./notes.html" class="nav-active" aria-current="page">ADM 노트</a><a href="./game.html">미니게임</a></nav>
+ <nav aria-label="주요 메뉴"><a href="./#explore">탑 탐색</a><a href="./#play">직접 쌓기</a><a href="./#ranking">전문의 랭킹</a><a href="./notes.html" class="nav-active" aria-current="page">ADM 노트</a><a href="./game.html">미니게임</a><a href="./record.html">내 기록</a></nav>
 </header>
 <main id="notes-content">
  <section class="notes-hero" aria-labelledby="notes-title">
@@ -133,7 +133,7 @@
 <footer><div><a class="wordmark" href="./">admerest<span class="wordmark-dot">.</span></a><span class="footer-copy">한 장의 길이, 새로운 관점.</span></div><div class="creator-signature"><span>Created by</span><img src="./assets/brand/notoow-2d.png" alt="" width="32" height="34"><b>notoow</b></div><span class="footer-meta">ADM NOTE · 2026</span></footer>
 <dialog id="physical-dialog" class="physical-dialog" aria-labelledby="physical-title"><header><div><span>TRUE SIZE</span><h2 id="physical-title">실제 크기로 비교하기</h2></div><button id="physical-close" aria-label="실제 크기 비교 닫기">닫기 ×</button></header><div class="physical-dialog-body"><p class="physical-intro">화면마다 배율이 달라요. 실제 카드에 테두리를 맞춰 두면 진피도 같은 크기로 비교할 수 있어요.</p><div class="everyday-options" role="group" aria-label="실제 크기 비교 물건"><button data-compare-object="card" aria-pressed="true">카드</button><button data-compare-object="iphone" aria-pressed="false">아이폰 16</button></div>    <details id="screen-calibration" class="screen-calibration">
      <summary>화면 크기 맞추기</summary>
-     <p>크롬 메뉴의 확대/축소를 <strong>100%</strong>로 맞춘 뒤, 아래 카드에 실제 신용·체크카드를 겹쳐 보세요. 슬라이더로 가로·세로 테두리를 맞추고 저장하면 진피에도 같은 배율이 적용됩니다.</p>
+     <p>크롬 확대 <strong>100%</strong>에서 실물 카드를 겹쳐 보세요. 아래 테두리가 맞도록 크기를 조절합니다.</p>
      <div class="screen-scale-controls"><button id="scale-smaller" aria-label="카드 0.1% 작게">−</button><label for="screen-scale" class="sr-only">화면 크기 보정 배율</label><input id="screen-scale" type="range" min="50" max="250" step="0.1" value="100"><button id="scale-larger" aria-label="카드 0.1% 크게">+</button><output id="screen-scale-output" for="screen-scale">100.0%</output></div>
      <div class="screen-scale-actions"><button id="scale-save">이 크기로 저장</button><button id="scale-reset">기본 크기로</button><small>다른 모니터·화면 배율에서는 다시 맞춰 주세요.</small></div>
     </details>

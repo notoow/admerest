@@ -6,6 +6,7 @@ import {ResolutionBudget,sceneSuspended} from './render-budget.js';
 import {DOCTORS,LANDMARKS,rendererFor,lighting,tower,lotte,burj,everest} from './scene.js';
 import {towerPanels} from './measurements.js';
 import {FlightControls} from './flight.js';
+import {trackOverlay} from './overlay-navigation.js';
 import {WORLD_UNIT} from './flight-motion.js';
 import {createAtmosphere} from './atmosphere.js';
 import {extraLandmark} from './landmarks.js';
@@ -74,11 +75,11 @@ export class Explorer {
   if(this.extraDoctor){const old=this.extraDoctor,obj=this.objects.get(old),label=this.labels.get(old);this.scene.remove(obj);obj.traverse(o=>{if(o.isInstancedMesh)o.dispose();});this.labelObserver.unobserve(label);label.remove();this.objects.delete(old);this.labels.delete(old);this.home.delete(old);this.labelMetrics.delete(old);this.labelLifts.delete(old);}
   this.extraDoctor=id;this.addObject(id,tower(doctor.length),[-30,0,0],doctor.name,doctor.length,doctor.country);this.renderer.shadowMap.needsUpdate=true;
  }
- resize(){
+ resize(refit=true){
   const w=this.host.clientWidth,h=this.host.clientHeight;if(!w||!h)return;
   if(this.viewWidth===w&&this.viewHeight===h)return;this.viewWidth=w;this.viewHeight=h;
   this.renderer.setSize(w,h);this.camera.aspect=w/h;this.camera.updateProjectionMatrix();
-  if(this.objects.size&&!this.flight?.enabled){if(this.host.dataset.view==='focus')this.focus(this.selected,true);else this.frameVisible(true);}
+  if(refit&&this.objects.size&&!this.flight?.enabled){if(this.host.dataset.view==='focus')this.focus(this.selected,true);else this.frameVisible(true);}
  }
  bindFlightUI(){
   this.main=this.host.closest('.explorer-main');this.hud=document.querySelector('#flight-hud');
@@ -103,18 +104,25 @@ export class Explorer {
   this.transition=null;this.auto=false;this.controls.autoRotate=false;document.querySelector('#auto-rotate').setAttribute('aria-pressed','false');
   if(on){
    this.previousFocus=document.activeElement;this.savedScroll=window.scrollY;
+   this.orbitReturn={position:this.camera.position.clone(),target:this.controls.target.clone(),fov:this.camera.fov};
+   this.leaveFlightHistory=trackOverlay(()=>this.setFlying(false));
    this.placeholder=document.createElement('div');this.placeholder.style.height=`${this.main.offsetHeight}px`;this.main.before(this.placeholder);
    this.controls.enabled=false;this.main.classList.add('is-flying');this.hud.hidden=false;document.body.classList.add('flight-open');
    this.main.setAttribute('role','dialog');this.main.setAttribute('aria-modal','true');this.main.setAttribute('aria-label','3D 자유 탐색');
+   this.inertOutside=[];
+   for(let branch=this.main;branch.parentElement&&branch!==document.body;branch=branch.parentElement){for(const sibling of branch.parentElement.children){if(sibling!==branch&&!sibling.inert){sibling.inert=true;this.inertOutside.push(sibling);}}}
    this.orbitLabel=this.renderer.domElement.getAttribute('aria-label');this.renderer.domElement.setAttribute('aria-label','보행 탐색: WASD 이동, 마우스로 둘러보기, Shift 가속. Q 상승, E 하강. Escape로 마우스 해제, 다시 Escape로 종료.');
    this.flight.setEnabled(true);this.camera.fov=65;this.visit('city');this.flight.requestLook();
   }else{
-   this.flight.setEnabled(false);this.controls.enabled=true;this.controls.target.copy(this.camera.position).add(this.camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(10));
+   this.flight.setEnabled(false);this.controls.enabled=true;
+   if(this.orbitReturn){this.camera.position.copy(this.orbitReturn.position);this.controls.target.copy(this.orbitReturn.target);this.camera.lookAt(this.controls.target);}
    this.main.classList.remove('is-flying');this.hud.hidden=true;document.body.classList.remove('flight-open');this.placeholder?.remove();
+   this.inertOutside?.forEach(element=>element.inert=false);this.inertOutside=[];
    this.main.removeAttribute('role');this.main.removeAttribute('aria-modal');this.main.removeAttribute('aria-label');this.camera.fov=34;this.renderer.domElement.setAttribute('aria-label',this.orbitLabel);
+   this.camera.fov=this.orbitReturn?.fov??34;this.leaveFlightHistory?.();
    window.scrollTo({top:this.savedScroll,behavior:'instant'});this.previousFocus?.focus({preventScroll:true});
   }
-  this.resize();this.host.dispatchEvent(new CustomEvent('flight-mode-change',{detail:{enabled:on}}));
+  this.resize(on);this.camera.updateProjectionMatrix();this.host.dispatchEvent(new CustomEvent('flight-mode-change',{detail:{enabled:on}}));
  }
  discover(){
   if(this.atmosphere.unlocked)return;this.atmosphere.unlock();document.querySelector('#discover-light').hidden=true;

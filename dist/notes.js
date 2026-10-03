@@ -1,7 +1,7 @@
 import {SIZES,lengthMeters} from './measurements.js?v=20261001-material-types';
 import {EVERYDAY_OBJECTS,comparisonDimensions} from './size-comparison.js?v=20261002-physical';
-import {PhysicalComparison} from './physical-comparison.js?v=20261002-physical-objects';
-import {VideoRoom} from './video-player.js?v=20261002-usability';
+import {PhysicalComparison} from './physical-comparison.js?v=20261003-ux2';
+import {VideoRoom} from './video-player.js?v=20261003-ux2';
 const sizeButtons=[...document.querySelectorAll('[data-note-size]')];
 const objectButtons=[...document.querySelectorAll('[data-compare-object]')];
 let selectedSize='5x6',selectedObject='card';

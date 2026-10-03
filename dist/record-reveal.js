@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {trackOverlay} from './overlay-navigation.js';
 import {createSheet,createLightSheet,MODEL_WIDTH,MODEL_DEPTH} from './material.js';
 import {lighting} from './scene.js';
 
@@ -13,7 +14,7 @@ export class RecordReveal {
   this.dialog.querySelector('.record-close').onclick=()=>this.close();this.dialog.addEventListener('cancel',e=>{e.preventDefault();this.close();});
   this.dialog.querySelector('.record-skip').onclick=()=>{this.elapsed=6.4;this.step(0);};
   this.dialog.querySelector('.record-replay').onclick=()=>{this.elapsed=0;this.announced=false;this.step(0);};
-  this.dialog.querySelector('.record-tower').onclick=()=>{const id=this.record.id;this.close();this.onTower(id);};
+  this.dialog.querySelector('.record-tower').onclick=async()=>{const id=this.record.id;await this.close();this.onTower(id);};
   this.scene=new THREE.Scene();this.scene.background=new THREE.Color(0x071a36);lighting(this.scene);
   this.scene.add(new THREE.AmbientLight(0xa5bfe9,.65));this.camera=new THREE.PerspectiveCamera(36,1,.1,100);
   this.pieces=Array.from({length:36},(_,i)=>{const mesh=createLightSheet();this.scene.add(mesh);return mesh;});
@@ -26,6 +27,7 @@ export class RecordReveal {
  open(record){
   if(this.dialog.open)return;
   this.record=record;this.elapsed=0;this.announced=false;this.previousFocus=document.activeElement;
+  this.leaveHistory=trackOverlay(()=>this.close());
   const host=this.playground.host;this.home=host.parentNode;this.next=host.nextSibling;this.placeholder=document.createElement('div');this.placeholder.style.height=`${host.clientHeight}px`;host.before(this.placeholder);
   this.shadowAutoUpdate=this.playground.renderer.shadowMap.autoUpdate;this.playground.renderer.shadowMap.autoUpdate=true;this.playground.renderer.shadowMap.needsUpdate=true;
   document.body.classList.add('record-open');this.dialog.showModal();this.stage.append(host);this.playground.presentation=this;this.playground.controls.enabled=false;this.playground.resize();
@@ -39,6 +41,7 @@ export class RecordReveal {
  close(){
   if(!this.dialog.open)return;
   this.playground.presentation=null;this.playground.controls.enabled=true;this.playground.renderer.shadowMap.autoUpdate=this.shadowAutoUpdate;this.playground.renderer.shadowMap.needsUpdate=true;this.home.insertBefore(this.playground.host,this.next);this.placeholder.remove();this.dialog.close();document.body.classList.remove('record-open');this.playground.resize();this.previousFocus?.focus({preventScroll:true});
+  return this.leaveHistory?.();
  }
  state(){return {open:this.dialog.open,professionalId:this.record?.id??null,elapsedSeconds:this.elapsed,finished:revealProgress(this.elapsed,this.reduced).done};}
  step(dt){

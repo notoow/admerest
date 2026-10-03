@@ -36,7 +36,7 @@ function start(){if(!ready)return;clearVisuals();round.reset();lastFrame=perform
 function action(){
  if(!ready)return false;
  if(round.status==='ready'||round.status==='clear'||round.status==='over'&&failTime>=1.15){start();return true;}
- if(round.status==='paused'){round.resume();lastFrame=performance.now();updateUI();renderer.domElement.focus({preventScroll:true});return true;}
+ if(round.status==='paused'){round.resume();lastFrame=performance.now();updateUI();renderer.domElement.focus({preventScroll:true});$('#game-status').textContent='멈춘 위치에서 게임을 이어갑니다.';return true;}
  const placed=round.place();if(placed)updateUI();return placed;
 }
 function pause(){if(round.pause()){updateUI();$('#game-status').textContent='게임이 일시정지됐습니다.';}}

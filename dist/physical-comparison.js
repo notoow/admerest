@@ -1,4 +1,5 @@
 import {SIZES} from './measurements.js';
+import {trackOverlay} from './overlay-navigation.js';
 import {EVERYDAY_OBJECTS} from './size-comparison.js?v=20261002-physical';
 import {SCREEN_SCALE_KEY,MIN_SCALE,MAX_SCALE,physicalPixels,screenProfile,readScreenScale,writeScreenScale} from './screen-scale.js';
 
@@ -8,9 +9,9 @@ export class PhysicalComparison {
   this.root=document.querySelector('#physical-stage');this.panel=document.querySelector('#screen-calibration');
   this.range=document.querySelector('#screen-scale');this.status=document.querySelector('#screen-scale-status');
   this.dialog=document.querySelector('#physical-dialog');
-  this.dialog.addEventListener('close',()=>{this.mode='overview';document.body.classList.remove('physical-open');this.opener?.focus({preventScroll:true});});
+  this.dialog.addEventListener('close',()=>{this.mode='overview';document.body.classList.remove('physical-open');this.opener?.focus({preventScroll:true});this.leaveHistory?.();});
   document.querySelector('#physical-close').onclick=()=>this.dialog.close();
-  for(const button of document.querySelectorAll('[data-open-physical]'))button.onclick=()=>{this.opener=button;if(this.objectKey==='toothbrush')onRequestCard();this.mode='physical';this.dialog.showModal();document.body.classList.add('physical-open');document.querySelector('#physical-close').focus({preventScroll:true});};
+  for(const button of document.querySelectorAll('[data-open-physical]'))button.onclick=()=>{this.opener=button;if(this.objectKey==='toothbrush')onRequestCard();this.mode='physical';this.leaveHistory=trackOverlay(()=>this.dialog.close());this.dialog.showModal();this.dialog.scrollTop=0;document.body.classList.add('physical-open');document.querySelector('#physical-close').focus({preventScroll:true});};
   this.profile=this.currentProfile();this.restore();
   const specimens=this.root.querySelector('.physical-sheets');
   for(const [key,size]of Object.entries(SIZES)){
@@ -27,7 +28,7 @@ export class PhysicalComparison {
    this.changeScale(1);try{localStorage.removeItem(SCREEN_SCALE_KEY);}catch{}
    this.status.textContent='기본 크기로 되돌렸습니다. 실물 카드에 맞춘 뒤 저장해 주세요.';
   };
-  this.panel.addEventListener('toggle',()=>{if(this.panel.open)onRequestCard();});
+  this.panel.addEventListener('toggle',()=>{this.dialog.classList.toggle('is-calibrating',this.panel.open);if(this.panel.open)onRequestCard();});
   addEventListener('resize',()=>this.checkScreen());window.visualViewport?.addEventListener('resize',()=>this.checkScreen());
   this.setObject('card');this.setSize('5x6');
  }
@@ -61,7 +62,7 @@ export class PhysicalComparison {
  save(){
   if((window.visualViewport?.scale??1)>1.01){this.render();return;}
   this.confirmed=true;try{localStorage.setItem(SCREEN_SCALE_KEY,writeScreenScale(this.scale,this.profile));this.persisted=true;}catch{this.persisted=false;}
-  this.render();
+  this.render();this.panel.open=false;
  }
  checkScreen(){
   const profile=this.currentProfile();if(profile!==this.profile){this.profile=profile;this.restore();this.render();if(!this.confirmed)this.status.textContent='화면 배율이 바뀌었습니다. 크롬 100%로 돌아와 카드 크기를 다시 확인해 주세요.';}

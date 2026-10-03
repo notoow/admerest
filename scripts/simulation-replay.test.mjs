@@ -53,3 +53,10 @@ test('registration opens the upper tower only after building a nonzero record',(
  assert.equal(s.context.registerBuiltTower(),true);assert.equal(s.visits.length,1);
  s.apply(0);s.frame(3650);assert.equal(s.context.registerBuiltTower(),false);assert.equal(s.nodes.get('#register-tower').disabled,true);
 });
+test('quick additions use the visible unsubmitted input and reject invalid counts',()=>{
+ const s=setup();s.apply(2000);s.nodes.get('#quantity').value='3100';
+ assert.equal(s.context.addQuantity(100),true);assert.equal(s.context.quantity,3200);
+ assert.equal(s.nodes.get('#quantity').value,'3200');assert.match(s.nodes.get('#formula').textContent,/3,200건.*192 m/);
+ s.nodes.get('#quantity').value='-1';assert.equal(s.context.addQuantity(100),false);assert.equal(s.context.quantity,3200);
+ s.nodes.get('#quantity').value='100000';assert.equal(s.context.addQuantity(10),false);assert.equal(s.context.quantity,3200);
+});

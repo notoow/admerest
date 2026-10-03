@@ -38,3 +38,13 @@
  .physical-dialog{border-radius:16px}.physical-dialog>header{padding:12px 14px}.physical-dialog h2{font-size:18px}.physical-dialog-body{padding:14px 12px}
  .physical-dialog .physical-reference p{display:none}.physical-dialog .screen-scale-status{margin-bottom:12px}
 }
+
+.physical-dialog.is-calibrating .physical-intro,.physical-dialog.is-calibrating .physical-size-options,.physical-dialog.is-calibrating .physical-sheets,.physical-dialog.is-calibrating #physical-reference-hint{display:none}
+.physical-dialog.is-calibrating .physical-reference{margin-bottom:0}
+@media(max-width:600px){
+ .physical-dialog{width:100vw;max-height:100dvh;border-radius:0}
+ .physical-dialog-body{padding:12px 8px}
+ .physical-dialog .physical-stage{padding-left:0;padding-right:0}
+ .physical-dialog.is-calibrating .screen-calibration p{font-size:12px;line-height:1.7}
+ .physical-dialog.is-calibrating .screen-scale-actions small{display:none}
+}

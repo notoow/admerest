@@ -8,7 +8,7 @@ import {ScrollJourney} from './journey.js';
 import {RecordReveal} from './record-reveal.js';
 import {InlineStack} from './inline-stack.js';
 import {filterRanking,rankingRows} from './ranking-view.js';
-import {ContactDialog} from './contact-dialog.js';
+import {ContactDialog} from './contact-dialog.js?v=20261003-ux2';
 const $=s=>document.querySelector(s),all=s=>[...document.querySelectorAll(s)];
 const format=new Intl.NumberFormat('en-US'),decimal=new Intl.NumberFormat('en-US',{maximumFractionDigits:2});
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -93,6 +93,7 @@ function paintMetrics(progress){
  $('#build-count').textContent=format.format(displayCount);$('#build-target').textContent=format.format(quantity);$('#build-progress').style.width=`${progress*100}%`;refreshComparison();
 }
 function animateMetrics(duration=1800,{delay=0}={}){
+ $('#formula').textContent=`목표 ${format.format(quantity)}건 × 1장 × ${SIZES[size].length} cm = ${decimal.format(lengthMeters(quantity,size))} m`;
  animation={fromCount:displayCount,fromLength:displayLength,toCount:quantity,toLength:lengthMeters(quantity,size),start:performance.now()+(reduced?0:delay),duration:reduced?0:duration};
  inlineStack?.prepare(quantity,SIZES[size]);explorer?.prepareSimulation(lengthMeters(quantity,size));$('#sim-status').textContent=duration>1000?'한 장씩, 길이가 쌓이는 중…':'새로운 길이에 맞추는 중…';$('#build-status').textContent='진피 쌓는 중';$('#inline-build-status').textContent='진피 쌓는 중';syncRegisterButton();
  if(!raf)raf=requestAnimationFrame(tick);
@@ -119,10 +120,16 @@ function registerBuiltTower(){
  if(animation||quantity<1)return false;
  showSimulation();toast('내 화면에 체험 탑을 추가했습니다. 전체 공개는 서류 확인 후 진행됩니다.');return true;
 }
+function addQuantity(amount){
+ const raw=$('#quantity').value.trim(),base=raw===''?quantity:Number(raw);
+ if(!Number.isInteger(base)||base<0||base>MAX_QUANTITY){error('0부터 100,000까지의 정수로 입력해 주세요.');return false;}
+ if(!setQuantity(base+amount))return false;
+ setPlayView('tower');return true;
+}
 function setSize(key){if(!SIZES[key])return false;size=key;$('#live-size').value=key;all('[data-size]').forEach(b=>{const on=b.dataset.size===key;b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));});playground?.setSize(SIZES[key]);explorer?.setSize(SIZES[key]);$('#material-dimensions').textContent=`${SIZES[key].width} × ${SIZES[key].length} cm · 3 mm${key==='5x6'?'':' · 예시'}`;animateMetrics(750);return true;}
 $('#register-tower').addEventListener('click',registerBuiltTower);
 $('#replay-inline').addEventListener('click',()=>setQuantity(quantity,{replay:true}));
-$('#quantity-form').addEventListener('submit',e=>{e.preventDefault();const raw=$('#quantity').value;if(raw.trim()==='')return error('체험할 수술 건수를 입력해 주세요.');setQuantity(Number(raw),{replay:true});});all('[data-add]').forEach(b=>b.addEventListener('click',()=>{if(setQuantity(quantity+Number(b.dataset.add)))setPlayView('tower');}));all('[data-size]').forEach(b=>b.addEventListener('click',()=>setSize(b.dataset.size)));$('#reset-count').addEventListener('click',()=>{setQuantity(0);toast('체험 수술 건수를 초기화했습니다.');});$('#inspect-material').addEventListener('click',e=>{const on=e.currentTarget.getAttribute('aria-pressed')!=='true';setInspection(on);});
+$('#quantity-form').addEventListener('submit',e=>{e.preventDefault();const raw=$('#quantity').value;if(raw.trim()==='')return error('체험할 수술 건수를 입력해 주세요.');setQuantity(Number(raw),{replay:true});});all('[data-add]').forEach(b=>b.addEventListener('click',()=>{addQuantity(Number(b.dataset.add));}));all('[data-size]').forEach(b=>b.addEventListener('click',()=>setSize(b.dataset.size)));$('#reset-count').addEventListener('click',()=>{setQuantity(0);toast('체험 수술 건수를 초기화했습니다.');});$('#inspect-material').addEventListener('click',e=>{const on=e.currentTarget.getAttribute('aria-pressed')!=='true';setInspection(on);});
 function setInspection(on){
  if(playView==='tower')setPlayView('free');
  $('#inspect-material').setAttribute('aria-pressed',String(on));$('#inspect-material').textContent=on?'낙하 체험으로 돌아가기 ↙':'진피 자세히 보기 ↗';

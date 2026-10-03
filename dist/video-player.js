@@ -1,3 +1,4 @@
+import {trackOverlay} from './overlay-navigation.js';
 // Load YouTube only after a viewer opens a video. No credentials or API key.
 let apiPromise;
 function loadYouTube(){
@@ -30,7 +31,7 @@ export class VideoRoom {
  message(text){this.dialog.querySelector('.video-room-status').textContent=text;}
  async open(index){
   const card=this.cards[index],id=card?.dataset.videoId;if(!/^[\w-]{11}$/.test(id??''))return;
-  if(!this.dialog.open){this.returnFocus=card.querySelector('.video-poster');this.dialog.showModal();document.body.classList.add('video-room-open');}
+  if(!this.dialog.open){this.returnFocus=card.querySelector('.video-poster');this.leaveHistory=trackOverlay(()=>this.close());this.dialog.showModal();document.body.classList.add('video-room-open');}
   const session=++this.session;this.destroyPlayer();this.index=index;this.status='loading';
   const title=card.querySelector('h3').textContent,short=card.dataset.videoFormat==='short';
   this.dialog.dataset.format=short?'short':'wide';this.dialog.querySelector('#video-room-title').textContent=title;
@@ -60,7 +61,7 @@ export class VideoRoom {
   }catch{if(current()){this.status='direct';this.message('영상의 ▶ 버튼을 눌러 보세요. 열리지 않으면 YouTube에서 볼 수 있어요.');}}
  }
  close(restoreFocus=true){
-  if(!this.dialog.open)return;++this.session;this.destroyPlayer();this.dialog.close();document.body.classList.remove('video-room-open');this.status='closed';if(restoreFocus)this.returnFocus?.focus({preventScroll:true});
+  if(!this.dialog.open)return;++this.session;this.destroyPlayer();this.dialog.close();document.body.classList.remove('video-room-open');this.status='closed';if(restoreFocus)this.returnFocus?.focus({preventScroll:true});this.leaveHistory?.();
  }
  state(){return {open:this.dialog.open,status:this.status,videoId:this.cards[this.index]?.dataset.videoId??null,format:this.dialog.dataset.format??null,iframeCount:this.screen.querySelectorAll('iframe').length};}
 }

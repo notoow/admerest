@@ -1,4 +1,5 @@
-import {ContactDialog} from './contact-dialog.js';
+import {ContactDialog} from './contact-dialog.js?v=20261003-ux2';
+import {trackOverlay} from './overlay-navigation.js';
 import {SIZES} from './measurements.js';
 import {DOCTORS,rankRecords} from './records.js';
 import {LANDMARKS} from './landmark-data.js';
@@ -7,7 +8,7 @@ import {DRAFT_KEY,TYPES,blankDraft,materialKey,materialTotals,readCount,validate
 const $=s=>document.querySelector(s),all=s=>[...document.querySelectorAll(s)],format=new Intl.NumberFormat('en-US',{maximumFractionDigits:2});
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 let step=1,preview,loading=null,stored=false;
-new ContactDialog();
+const contact=new ContactDialog();
 $('#material-inputs').innerHTML=Object.entries(SIZES).map(([size,s])=>`<tr><th scope="row">${s.width} × ${s.length}</th>${Object.entries(TYPES).map(([type,label])=>{const key=materialKey(size,type);return `<td><label class="sr-only" for="draft-${key}">${s.width}×${s.length}cm ${label} 사용 장수</label><input id="draft-${key}" data-material="${key}" type="text" inputmode="numeric" maxlength="12" placeholder="0" autocomplete="off" aria-describedby="error-${key}"><p id="error-${key}" class="field-error" hidden></p></td>`;}).join('')}</tr>`).join('');
 function readDraft(){return {name:$('#draft-name').value,clinic:$('#draft-clinic').value,country:$('#draft-country').value,cases:$('#draft-cases').value,materials:Object.fromEntries(all('[data-material]').map(input=>[input.dataset.material,input.value]))};}
 function fill(draft){for(const key of ['name','clinic','country','cases'])$('#draft-'+key).value=draft[key];all('[data-material]').forEach(input=>input.value=draft.materials[input.dataset.material]??'');summarize();}
@@ -68,7 +69,9 @@ $('#save-draft').addEventListener('click',()=>{
  try{localStorage.setItem(DRAFT_KEY,JSON.stringify(draftEnvelope(readDraft())));stored=true;$('#delete-draft').hidden=false;$('#draft-storage-status').textContent='이 기기에 초안을 저장했습니다. 서버 전송이나 공개 등록은 하지 않았습니다.';}
  catch{$('#draft-storage-status').textContent='이 브라우저에서 저장할 수 없습니다. 현재 입력과 미리보기는 계속 사용할 수 있습니다.';}
 });
-function askDiscard(){ $('#discard-draft').showModal();$('#cancel-discard').focus(); }
+let leaveDiscard;
+function askDiscard(){leaveDiscard=trackOverlay(()=>$('#discard-draft').close());$('#discard-draft').showModal();$('#cancel-discard').focus();}
+$('#discard-draft').addEventListener('close',()=>leaveDiscard?.());
 $('#delete-draft').addEventListener('click',askDiscard);$('#reset-draft').addEventListener('click',askDiscard);$('#cancel-discard').addEventListener('click',()=>$('#discard-draft').close());
 $('#confirm-discard').addEventListener('click',()=>{
  try{localStorage.removeItem(DRAFT_KEY);}catch{$('#discard-draft').close();$('#draft-storage-status').textContent='브라우저가 삭제를 허용하지 않았습니다. 저장 설정을 확인해 주세요.';return;}
@@ -79,6 +82,7 @@ showStep(1,false);
 if(document.modelContext?.registerTool){try{document.modelContext.registerTool({name:'get_record_draft_state',description:'Read this local-only record preview, aggregate counts and step. Never returns name or clinic. Does not submit or publish records.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true},execute:async()=>({content:[{type:'text',text:JSON.stringify({step,stored,valid:Object.keys(validateDraft(readDraft())).length===0,cases:readCount(readDraft().cases,false),materials:materialTotals(readDraft().materials),visibility:'private-preview',verification:'none',previewReady:!!preview,reveal:preview?.reveal.state()??null})}]})});}catch(error){console.warn('Record preview tool unavailable:',error.message);}}
 
 $('#continue-registration').addEventListener('click',()=>{
- try{sessionStorage.setItem('admerest.preview-transfer',JSON.stringify(draftEnvelope(readDraft()).draft));location.href='./account.html';}
- catch{$('#record-form-status').textContent='브라우저 저장이 제한돼 있어 입력을 전달하지 못했습니다. 내 기록 화면에서 다시 입력해 주세요.';}
+ const draft=readDraft(),problems=validateDraft(draft);
+ if(Object.keys(problems).length){errors(problems);return;}
+ contact.open('verification',$('#continue-registration'),draftEnvelope(draft).draft);
 });

@@ -15,4 +15,7 @@ test('opening or resizing the input panel preserves the focused tower, while ove
  view.host.clientWidth=650;view.resize();assert.equal(view.controls.target.x,-7.5);
  view.overview(true);const overview=view.controls.target.x;assert.notEqual(overview,-7.5);
  view.host.clientHeight=400;view.resize();assert.equal(view.controls.target.x,overview);assert.equal(view.host.dataset.view,'all');
+ const position=view.camera.position.clone(),target=view.controls.target.clone();
+ view.host.clientHeight=700;view.resize(false);
+ assert(view.camera.position.equals(position),'return from flight preserves the saved camera');assert(view.controls.target.equals(target));assert.equal(view.camera.aspect,650/700);
 });

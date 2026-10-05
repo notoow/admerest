@@ -146,7 +146,7 @@ function setQuantity(next,{replay=false,surface='inline'}={}){
 }
 function registerBuiltTower(){
  if(animation||quantity<1)return false;
- showSimulation({wholeWorld:true});$('#tower-placement').hidden=false;toast('전체 공간에 내 탑을 추가했습니다. 파란 표시를 찾아보세요.');return true;
+ showSimulation({wholeWorld:true});$('#tower-placement').hidden=false;return true;
 }
 function addQuantity(amount,{surface='inline'}={}){
  const raw=$(surface==='explorer'?'#live-quantity':'#quantity').value.trim(),base=raw===''?quantity:Number(raw);
@@ -180,7 +180,10 @@ function showSimulation({instant=false,scroll=true,wholeWorld=false}={}){
  selected='simulation';$('#tower-registration').hidden=false;explorer?.showSimulation(instant,wholeWorld);$('#simulation-playback').hidden=false;$('#comparison-source').value='simulation';$('#live-build').hidden=false;
  all('.doctor-card').forEach(c=>{c.classList.remove('selected');c.querySelector('.doctor-select').setAttribute('aria-pressed','false');});
  if(wholeWorld){$('#live-build').hidden=true;$('#tower-registration').hidden=true;$('#simulation-playback').hidden=true;}
- $('#all-view').classList.toggle('active',wholeWorld);$('#my-tower').classList.toggle('active',!wholeWorld);$('#tower-placement').hidden=!wholeWorld;refreshComparison();syncPairButton();if(scroll)$('.explorer-main').scrollIntoView({behavior:instant||reduced?'instant':'smooth',block:'start'});
+ $('#all-view').classList.toggle('active',wholeWorld);$('#my-tower').classList.toggle('active',!wholeWorld);$('#tower-placement').hidden=!wholeWorld;refreshComparison();syncPairButton();
+ // Wait for the controls' new layout before choosing the destination. Otherwise
+ // closing the landmark panel can anchor the smooth scroll below the scene.
+ if(scroll)requestAnimationFrame(()=>$('.explorer-main').scrollIntoView({behavior:instant||reduced?'instant':'smooth',block:'start'}));
 }
 function enterComparison(){
  explorer?.compare($('#comparison-source').value,$('#comparison-landmark').value);
@@ -190,7 +193,7 @@ function overview(){$('#tower-placement').hidden=true;if(explorer?.flight.enable
 $('#compare-sim').addEventListener('click',()=>{$('#explore').scrollIntoView({behavior:reduced?'instant':'smooth'});showSimulation();enterComparison();});
 $('#all-view').addEventListener('click',overview);$('#reset-camera').addEventListener('click',overview);$('#explorer-canvas').addEventListener('overview-request',overview);
 $('#my-tower').addEventListener('click',()=>showSimulation());
-$('#locate-my-tower').addEventListener('click',()=>{explorer?.showSimulation(false,true);$('#all-view').classList.add('active');$('#my-tower').classList.remove('active');});
+$('#locate-my-tower').addEventListener('click',()=>showSimulation({wholeWorld:true}));
 $('#compare-pair').addEventListener('click',()=>{if(explorer?.comparison)overview();else enterComparison();});
 $('#comparison-source').addEventListener('change',e=>{if(e.target.value==='simulation')showSimulation();else selectDoctor(e.target.value);enterComparison();});
 $('#comparison-landmark').addEventListener('change',enterComparison);

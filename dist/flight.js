@@ -23,6 +23,9 @@ export class FlightControls {
   window.addEventListener('resize',()=>{
    if(!this.enabled)return;
    if(this.lookTouch)this.lookTouch.rebase=true;
+   // Address-bar movement relocates the pad. Keep its held direction, then
+   // measure the next finger delta from the new coordinates without a jump.
+   if(this.stickId!==undefined)this.stickRebase=true;
   });
   window.addEventListener('orientationchange',()=>{if(this.enabled)this.clear();});
   document.addEventListener('visibilitychange',()=>{if(document.hidden)this.pause();});
@@ -51,12 +54,18 @@ export class FlightControls {
   }
   canvas.addEventListener('pointerleave',()=>{this.hover=null;});
   const updateStick=e=>{
-   const r=this.stickRect,radius=r.width*.34,x=e.clientX-(r.left+r.width/2),y=e.clientY-(r.top+r.height/2);
+   if(this.stickRebase){
+    const previous=this.stickRect,next=this.joystick.getBoundingClientRect(),scale=next.width/previous.width;
+    this.stickOffset={x:this.stickOffset.x*scale,y:this.stickOffset.y*scale};this.stickRect=next;
+    this.stickOrigin={x:e.clientX-this.stickOffset.x,y:e.clientY-this.stickOffset.y};this.stickRebase=false;
+   }
+   const r=this.stickRect,radius=r.width*.34,x=e.clientX-this.stickOrigin.x,y=e.clientY-this.stickOrigin.y;
+   this.stickOffset={x,y};
    this.stick=joystickVector(x,y,radius);const scale=Math.min(1,radius/(Math.hypot(x,y)||1));this.knob.style.transform=`translate(${x*scale}px,${y*scale}px)`;
   };
   this.joystick.addEventListener('pointerdown',e=>{
    if(!this.enabled||this.stickId!==undefined||(e.pointerType==='mouse'&&e.button!==0))return;e.preventDefault();this.stickId=e.pointerId;
-   this.stickRect=this.joystick.getBoundingClientRect();this.joystick.setPointerCapture(e.pointerId);this.joystick.classList.add('held');updateStick(e);
+   this.stickRect=this.joystick.getBoundingClientRect();this.stickOrigin={x:this.stickRect.left+this.stickRect.width/2,y:this.stickRect.top+this.stickRect.height/2};this.stickRebase=false;this.joystick.setPointerCapture(e.pointerId);this.joystick.classList.add('held');updateStick(e);
   });
   this.joystick.addEventListener('pointermove',e=>{if(e.pointerId===this.stickId){e.preventDefault();updateStick(e);}});
   const endStick=e=>{if(e.pointerId===this.stickId)this.resetStick();};

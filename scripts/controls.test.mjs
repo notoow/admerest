@@ -106,6 +106,18 @@ test('leaving touch exploration releases both captures and fresh entry accepts n
  send(lookPad,'pointermove',{pointerId:33,pointerType:'touch',clientX:270,clientY:200});assert(controls.yaw<0);
 });
 
+test('a held joystick keeps analog speed after viewport relocation and follows new finger deltas',()=>{
+ const {controls,joystick}=setup();
+ send(joystick,'pointerdown',{pointerId:41,pointerType:'touch',clientX:80,clientY:40});
+ const held={...controls.stick};
+ joystick.getBoundingClientRect=()=>({left:20,top:90,width:104,height:104});send(window,'resize');
+ send(joystick,'pointermove',{pointerId:41,pointerType:'touch',clientX:92,clientY:125});
+ assert(Math.abs(controls.stick.x-held.x)<1e-9);assert(Math.abs(controls.stick.y-held.y)<1e-9,'address-bar changes must not reverse or accelerate a held direction');
+ send(joystick,'pointermove',{pointerId:41,pointerType:'touch',clientX:102,clientY:125});assert(controls.stick.x>held.x,'subsequent finger motion must still steer');
+ send(joystick,'pointerup',{pointerId:41});assert.deepEqual(controls.stick,{x:0,y:0});
+ send(joystick,'pointerdown',{pointerId:42,pointerType:'touch',clientX:72,clientY:142});assert.deepEqual(controls.stick,{x:0,y:0},'a fresh press uses the visible pad center');
+});
+
 test('wheel adjusts only enabled flight speed, handles all delta modes and keeps HUD synchronized',()=>{
  const {controls,canvas}=setup(),surface=canvas.closest('.explorer-main');
  send(surface,'wheel',{deltaY:-120,deltaMode:0});assert(controls.speed>1);assert.match(document.querySelector('#flight-speed-value').textContent,/×1.3/);

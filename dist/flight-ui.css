@@ -44,10 +44,13 @@ body.flight-open{overscroll-behavior:none}
 }
 @media(max-width:760px){
  .journey-cta{padding:15px 22px;min-width:218px;border-radius:16px}
- .scene-toolbar{gap:12px;padding-bottom:15px}
- .scene-actions{width:100%;justify-content:space-between}
- .enter-flight{flex:1;justify-content:space-between;padding:12px 16px;border-radius:11px;min-height:48px;margin-right:8px}
- .enter-flight .flight-cta-copy{font-size:14px}
+ .scene-toolbar{flex-wrap:nowrap;gap:8px;padding-bottom:10px}
+ .scene-toolbar .segmented button{min-height:44px;padding:8px}
+ .scene-actions{flex:1;min-width:0;justify-content:flex-end}
+ .scene-actions #reset-camera{display:none}
+ .enter-flight{flex:1;justify-content:space-between;padding:10px 12px;border-radius:11px;min-height:48px;margin:0;gap:8px}
+ .enter-flight .flight-cta-copy{font-size:12px}
+ .enter-flight .flight-cta-arrow{font-size:20px}
 }
 @media(max-width:359px){.touch-look-area small{display:none}.touch-look-area{font-size:11px}.flight-destinations button{padding:8px;font-size:10px}.flight-instructions>.touch-look-hint{max-width:185px;font-size:10px}}
 @media(max-height:550px) and (orientation:landscape){

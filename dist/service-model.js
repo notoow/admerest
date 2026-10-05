@@ -1,7 +1,7 @@
-import {blankDraft,validateDraft,materialTotals,readCount} from './draft-record.js';
+import {blankDraft,validateDraft,materialTotals,readCount} from './draft-record.js?v=20261005-records';
 export const STATUS={draft:'작성 중',submitted:'심사 대기',changes_requested:'보완 요청',approved:'반영 완료',rejected:'반려',withdrawn:'신청 철회'};
 export const EDITABLE=['draft','changes_requested'];
-export const EVIDENCE_KINDS={credential:'전문의 자격 확인 자료',records:'수술·재료 집계 기록'};
+export const EVIDENCE_KINDS={credential:'전문의 자격 확인 자료',records:'직접 집도 건수 집계 기록'};
 export const MAX_FILE_SIZE=10*1024*1024;
 export function submissionPayload(draft,periodEnd,verificationRequested){
  const errors=validateDraft(draft),today=new Date().toISOString().slice(0,10);
@@ -9,10 +9,11 @@ export function submissionPayload(draft,periodEnd,verificationRequested){
  if(!/^\d{4}-\d{2}-\d{2}$/.test(periodEnd)||periodEnd>today||periodEnd<'1900-01-01'||!validDate)errors.period_end='오늘 또는 이전의 올바른 집계 기준일을 선택해 주세요.';
  if(Object.keys(errors).length)return {errors};
  const clean=blankDraft();
- for(const key of Object.keys(clean.materials))clean.materials[key]=readCount(draft.materials[key]);
+ // Legacy material fields are retained only for stored drafts, never inferred from cases.
+ for(const key of Object.keys(clean.materials))clean.materials[key]=readCount(draft.materials?.[key]);
  return {errors:{},payload:{display_name:draft.name.trim(),clinic:draft.clinic.trim(),country:draft.country,cases:readCount(draft.cases),materials:clean.materials,period_end:periodEnd,verification_requested:!!verificationRequested}};
 }
-export function toDraft(row){return row?{name:row.display_name,clinic:row.clinic,country:row.country,cases:String(row.cases),materials:Object.fromEntries(Object.entries(row.materials).map(([k,v])=>[k,String(v)]))}:blankDraft();}
+export function toDraft(row){return row?{name:row.display_name,clinic:row.clinic,country:row.country,cases:String(row.cases),materials:{...blankDraft().materials,...Object.fromEntries(Object.entries(row.materials??{}).map(([k,v])=>[k,String(v)]))}}:blankDraft();}
 export function evidenceError(file){
  if(!file||!['application/pdf','image/jpeg','image/png'].includes(file.type))return 'PDF, JPG, PNG 파일만 사용할 수 있습니다.';
  if(file.size<1||file.size>MAX_FILE_SIZE)return '파일 하나당 10MB 이하로 준비해 주세요.';

@@ -25,6 +25,7 @@ test('rehearsal: request → return for changes → resubmit → approve → sta
  row=await admin.saveSubmission({status:'changes_requested',review_note:'집계 기준 보완'},row);row=await owner.saveSubmission({status:'submitted'},row);
  row=await admin.saveSubmission({status:'approved',credential_checked:true,records_checked:true,review_note:'시연 확인'},row);
  assert.equal((await owner.publicRecords())[0].cases,3100);assert.equal((await owner.myPublicRecord()).cases,3100);assert.equal((await owner.events(row.id)).length,5);
+ assert.equal((await owner.publicRecords())[0].length,186);assert.equal(row.sheets,0,'case visualization must not invent material usage');
  const publicId=(await owner.publicRecords())[0].id;
  let next=await owner.saveSubmission({...examplePayload(),cases:3200,verification_requested:false});assert.equal((await owner.publicRecords())[0].cases,3100);assert.equal((await owner.myPublicRecord()).cases,3100);
  next=await owner.saveSubmission({status:'submitted'},next);await admin.saveSubmission({status:'approved'},next);const result=(await owner.publicRecords())[0];assert.equal(result.id,publicId);assert.equal(result.verification,'none');
@@ -33,4 +34,14 @@ test('rehearsal: request → return for changes → resubmit → approve → sta
  restored=await owner.saveSubmission({status:'submitted'},restored);await admin.saveSubmission({status:'approved'},restored);
  assert.equal((await owner.myPublicRecord()).id,publicId);assert.equal((await owner.myPublicRecord()).cases,3500);
  delete globalThis.sessionStorage;
+});
+
+test('case-only record entry accepts no material ledger and preserves legacy drafts without fabricating counts',()=>{
+ const draft={name:'시연 전문의',clinic:'',country:'KR',cases:'1,250'};
+ const {errors,payload}=submissionPayload(draft,'2026-10-01',false);
+ assert.deepEqual(errors,{});assert.equal(payload.cases,1250);
+ assert(Object.values(payload.materials).every(value=>value===0));
+ assert.deepEqual(submissionPayload(toDraft({...payload,materials:undefined}),'2026-10-01',false).errors,{});
+ const legacy={...payload,materials:{...payload.materials,'6x12-dry':14}};
+ assert.equal(submissionPayload(toDraft(legacy),'2026-10-01',false).payload.materials['6x12-dry'],14);
 });

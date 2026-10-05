@@ -1,9 +1,10 @@
 // Explicit, isolated rehearsal. Never imported by the production API and never grants authority.
-import {blankDraft} from './draft-record.js';
-import {materialSummary,canSubmit,reviewError,publicRecord} from './service-model.js';
+import {blankDraft} from './draft-record.js?v=20261005-records';
+import {recordHeightMeters} from './measurements.js?v=20261005-records';
+import {materialSummary,canSubmit,reviewError,publicRecord} from './service-model.js?v=20261005-rehearsal';
 const KEY='admerest.rehearsal.v1';
 const clone=value=>structuredClone(value);
-export function examplePayload(){const draft=blankDraft();return {display_name:'시연 전문의',clinic:'시연 클리닉',country:'KR',cases:3100,materials:{...Object.fromEntries(Object.keys(draft.materials).map(k=>[k,0])),'5x6-hydrated':2100,'5x8-dry':400,'5x10-hydrated':300,'6x12-dry':100},period_end:'2026-10-01',verification_requested:true};}
+export function examplePayload(){const draft=blankDraft();return {display_name:'시연 전문의',clinic:'시연 클리닉',country:'KR',cases:3100,materials:Object.fromEntries(Object.keys(draft.materials).map(k=>[k,0])),period_end:'2026-10-01',verification_requested:true};}
 function read(){try{const value=JSON.parse(sessionStorage.getItem(KEY));if(value?.version===1)return value;}catch{}return {version:1,rows:[],documents:[],events:[],published:[]};}
 function write(state){sessionStorage.setItem(KEY,JSON.stringify(state));}
 function event(state,row,note=''){state.events.push({id:crypto.randomUUID(),submission_id:row.id,status:row.status,note,created_at:new Date().toISOString()});}
@@ -25,7 +26,7 @@ export function demoService(role='owner'){
     else if(!['draft','changes_requested'].includes(row.status)&&payload.status!=='withdrawn')throw new Error('심사 중에는 수정할 수 없습니다.');
     Object.assign(row,payload);if(row.status==='submitted')row.submitted_at=now;
    }
-   row.version++;row.updated_at=now;const totals=materialSummary(row);row.sheets=totals.sheets;row.length_m=totals.length;
+   row.version++;row.updated_at=now;const totals=materialSummary(row);row.sheets=totals.sheets;row.length_m=recordHeightMeters(row.cases);
    if(row.status==='approved')state.published=[{id:state.published[0]?.id??crypto.randomUUID(),...Object.fromEntries(['display_name','clinic','country','cases','sheets','length_m','period_end'].map(k=>[k,row[k]])),verification:row.verification_requested?'verified':'none',verified_at:row.verification_requested?now:null,updated_at:now,published:true}];
    if(!old||old.status!==row.status)event(state,row,row.review_note);write(state);return clone(row);
   },

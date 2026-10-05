@@ -31,3 +31,12 @@ Public examples remain labeled demonstrations. Entered surgery counts are user-s
 - GitHub Pages run [37287890726](https://github.com/notoow/admerest/actions/runs/37287890726) succeeded on 2026-10-05.
 - Production smoke checks: 1,000 cases visibly built from 0 to 1,000; actual-size dialog shows the precise card left / ADM right / size controls below; mobile Shorts played within the card (one iframe, no open dialog, player fully inside the viewport); game started with stage metadata and the preparing leaderboard. No console errors in these checked flows.
 - Final copy polish removes the obsolete video-modal instructions. Proof screenshots are saved locally under `qa/frontend-records-2026-10-05/` (ignored).
+
+## Registration rehearsal follow-through
+
+The goal continuation audit found an inconsistency: account/admin rehearsal and the director's presentation still requested a material ledger although the public UI now centers on directly performed surgeries. The frontend rehearsal, submission confirmation, reviewer evidence labels, published-record card and presentation now use cases and the reporting date. New examples do not fabricate material usage. Existing material fields are retained for compatibility only.
+
+- 78 tests pass, including a case-only payload without a material ledger, preservation of older draft fields, and the review/publication lifecycle. A 3,100-case rehearsal publishes a 186m visualization while leaving actual material usage at zero when unreported.
+- Browser verification: 1366×900 applicant form → save 3,100 cases → prepare two synthetic evidence entries → submit → 412×915 reviewer approval → owner publication card → selected 3D tower. No horizontal overflow or console errors in these checked flows. No real account, document upload or email was used.
+- The overall service goal remains **incomplete**: live registration, Auth delivery, remote evidence access and cross-browser shared records are not established. `backend-config.js` remains empty with `registrationOpen:false`, as requested by the user.
+- Before an authorized backend phase, reconcile the staged storage contract with the case-first frontend: material totals must not be mandatory, case-derived visualization height must not masquerade as actual material consumption, and existing evidence/role/snapshot requirements must remain enforced. The older staged migration has not been changed or applied during this frontend pass.

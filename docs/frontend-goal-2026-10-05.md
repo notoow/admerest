@@ -10,7 +10,7 @@ The existing active service goal is constrained by the user's latest instruction
 - [x] Videos play within their own cards.
 - [x] Game leaderboard marked preparing; visible staged difficulty; a discoverable Easter egg.
 - [x] Desktop/mobile interaction, layout and regression verification; repair findings.
-- [ ] Commit, push to notoow/admerest and verify GitHub Pages deployment.
+- [x] Commit, push to notoow/admerest and verify GitHub Pages deployment.
 
 Public examples remain labeled demonstrations. Entered surgery counts are user-submitted records; credential/document verification and public publication remain separate manual steps. No claims of automatic global registration.
 
@@ -24,3 +24,10 @@ Public examples remain labeled demonstrations. Entered surgery counts are user-s
 - Mobile exploration: joystick changed position from [1, 0.0136, 10] to [0.92798, 0.0136, 9.57633]; look drag changed yaw/pitch; both inputs released cleanly. Wheel changed desktop speed from ×1.0 to ×1.6. Moved altitude HUD after finding a nameplate overlap.
 - Case-only record → review → certification email draft worked; no message sent. Game start, pause/resume and Space drop/failure worked; leaderboard clearly preparing, local best separate. Mobile checks are browser viewport/gesture tests, not tests on a physical S26 Ultra.
 - Backend infrastructure/configuration untouched. The existing goal object's older backend scope remains deferred; this checklist tracks the current authorized frontend release.
+
+## Release
+
+- Feature commit: `b508852e7d9e95da638747141db18e31035a6fbe` on `main`, pushed to `notoow/admerest`.
+- GitHub Pages run [37287890726](https://github.com/notoow/admerest/actions/runs/37287890726) succeeded on 2026-10-05.
+- Production smoke checks: 1,000 cases visibly built from 0 to 1,000; actual-size dialog shows the precise card left / ADM right / size controls below; mobile Shorts played within the card (one iframe, no open dialog, player fully inside the viewport); game started with stage metadata and the preparing leaderboard. No console errors in these checked flows.
+- Final copy polish removes the obsolete video-modal instructions. Proof screenshots are saved locally under `qa/frontend-records-2026-10-05/` (ignored).

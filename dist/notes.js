@@ -1,7 +1,7 @@
-import {SIZES,lengthMeters} from './measurements.js?v=20261001-material-types';
+import {SIZES} from './measurements.js?v=20261005-records';
 import {EVERYDAY_OBJECTS,comparisonDimensions} from './size-comparison.js?v=20261002-physical';
-import {PhysicalComparison} from './physical-comparison.js?v=20261003-ux2';
-import {VideoRoom} from './video-player.js?v=20261003-ux2';
+import {PhysicalComparison} from './physical-comparison.js?v=20261005-records';
+import {VideoRoom} from './video-player.js?v=20261005-records';
 const sizeButtons=[...document.querySelectorAll('[data-note-size]')];
 const objectButtons=[...document.querySelectorAll('[data-compare-object]')];
 let selectedSize='5x6',selectedObject='card';
@@ -10,7 +10,7 @@ const objectArt={
  toothbrush:'<path d="M4 46H11L10 89Q15 128 14 178Q14 190 7.5 190Q1 190 1 178L5 89Z" fill="#448ee0"/><path d="M5 93L4 166Q4 181 7.5 181Q11 181 11 166L10 93Z" fill="#c0e8fb"/><rect width="15" height="48" rx="6" fill="#d2eaf1"/><rect x="2" y="2" width="11" height="43" rx="4" fill="white"/><path d="M3 7H12M3 12H12M3 17H12M3 22H12M3 27H12M3 32H12M3 37H12M3 42H12" stroke="#78beb8" stroke-width="2.5"/>',
  card:'<rect width="85.6" height="53.98" rx="3.18" fill="#e87955"/><path d="M49 0H82.42Q85.6 0 85.6 3.18V50.8Q85.6 53.98 82.42 53.98H35C66 37 66 18 49 0" fill="#efad93" opacity=".6"/><rect x="9" y="19" width="13" height="10" rx="2" fill="#f1d6ac"/><path d="M15.5 19V29M9 24H22" stroke="#b59876" stroke-width=".6"/><text x="9" y="42" style="fill:#fff4ea;font-size:4px;letter-spacing:1px">85.60 × 53.98 mm</text><text x="9" y="10" style="fill:#fff4ea;font-size:4px">EVERYDAY CARD</text>'
 };
-const physicalComparison=new PhysicalComparison(objectArt,()=>{selectedObject='card';renderSizeComparison(true);});
+const physicalComparison=new PhysicalComparison(objectArt);
 function renderSizeComparison(announce=false){
  const size=SIZES[selectedSize],object=EVERYDAY_OBJECTS[selectedObject];
  const label=size.width+' × '+size.length+' cm';
@@ -33,7 +33,7 @@ function renderSizeComparison(announce=false){
  document.querySelector('#object-dimensions').textContent=object.note;
  physicalComparison.setObject(selectedObject);physicalComparison.setSize(selectedSize);
  const source=document.querySelector('#object-source');source.hidden=!object.source;if(object.source)source.href=object.source;
- if(announce)document.querySelector('#note-size-status').textContent='네 규격 모두 표시. '+label+' 강조. 비교 물건 '+object.name+'. '+label+'는 '+object.name+' 높이의 '+dims.heightPercent.toFixed(1)+'%, 면적 '+size.width*size.length+'제곱센티미터, 1,000장 길이 '+lengthMeters(1000,selectedSize)+'미터.';
+ if(announce)document.querySelector('#note-size-status').textContent='네 규격 모두 표시. '+label+' 강조. 비교 물건 '+object.name+'. '+label+'는 '+object.name+' 높이의 '+dims.heightPercent.toFixed(1)+'%, 면적 '+size.width*size.length+'제곱센티미터.';
 }
 function highlightSize(key){if(!SIZES[key])return;selectedSize=key;renderSizeComparison(true);}
 for(const button of sizeButtons)button.addEventListener('click',()=>highlightSize(button.dataset.noteSize));
@@ -41,8 +41,8 @@ for(const specimen of document.querySelectorAll('[data-highlight-size]'))specime
 for(const button of objectButtons)button.addEventListener('click',()=>{if(!EVERYDAY_OBJECTS[button.dataset.compareObject])return;selectedObject=button.dataset.compareObject;renderSizeComparison(true);});
 renderSizeComparison();
 const quizAnswers={
- yes:'다시 생각해 볼까요? 탑은 사용한 재료의 길이를 보여줍니다. 수술의 적합성·결과·만족도를 판정하지 않습니다.',
- no:'맞아요. 진피 누적 길이, 수술 건수, 수술 결과는 서로 다른 정보입니다. 랭킹은 데모 수술 건수만 비교합니다.',
+ yes:'다시 생각해 볼까요? 탑은 직접 집도한 수술 건수를 같은 규격으로 표현합니다. 수술의 적합성·결과·만족도를 판정하지 않습니다.',
+ no:'맞아요. 집도 건수와 수술 결과는 서로 다른 정보입니다. 랭킹은 데모 수술 건수만 비교합니다.',
  depends:'함께 볼 자료는 늘어나도, 탑의 높이만으로 수술 실력을 판정할 수는 없습니다. 수술 결과와 합병증, 추적 관찰도 별도로 봐야 합니다.'
 };
 for(const button of document.querySelectorAll('[data-quiz-answer]'))button.addEventListener('click',()=>{

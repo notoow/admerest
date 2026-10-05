@@ -1,4 +1,4 @@
-import {CONTACT_EMAIL,contactDraft} from './contact-info.js?v=20261003-ux2';
+import {CONTACT_EMAIL,contactDraft} from './contact-info.js?v=20261005-records';
 import {trackOverlay} from './overlay-navigation.js';
 
 export class ContactDialog {
@@ -27,7 +27,7 @@ export class ContactDialog {
   this.dialog.querySelector('#contact-title').textContent=advertising?'이 자리에, 당신의 브랜드를.':'인증하면, 전 세계가 내 탑을 봅니다.';
   this.dialog.querySelector('#contact-content').innerHTML=advertising?
    '<p>전문의 랭킹 사이의 한 줄 광고로 브랜드를 소개하세요.</p><ul><li>브랜드명과 소개할 제품·서비스</li><li>연결할 링크와 희망 노출 기간</li><li>담당자 연락처와 문의 내용</li></ul><p class="contact-fine">광고는 AD로 구분하며, 전문의 순위나 인증 상태에 영향을 주지 않습니다.</p>':
-   '<div class="contact-visibility"><div><span>인증 전</span><strong>랭킹 목록에만</strong><small>등록이 반영된 미인증 기록</small></div><div><span>인증 완료 ✓</span><strong>전 세계에 공개되는 내 탑</strong><small>공개 3D 공간 + 파란 인증 배지</small></div></div><p>기록만 먼저 등록할 수도 있어요. 공개할 이름·소속과 집계 기록을 보내고, 인증을 원하면 아래 자료를 함께 첨부해 주세요.</p><ol><li><strong>전문의 자격 확인 자료</strong></li><li><strong>CRM 등 객관적 집계 기록</strong><br>집계 기간, 수술 건수, 규격·타입별 진피 사용 장수</li></ol><p class="contact-fine">환자별 원본 대신 집계 자료를 보내 주세요. 환자명·연락처·주민번호 등 불필요한 개인정보는 가려 주세요.</p><p class="contact-process">메일 접수 → 운영자 자료 확인 → 사이트 반영<br>서류를 보냈다고 즉시 인증되거나 공개되지는 않습니다.</p>';
+   '<div class="contact-visibility"><div><span>인증 전</span><strong>랭킹 목록에만</strong><small>등록이 반영된 미인증 기록</small></div><div><span>인증 완료 ✓</span><strong>전 세계에 공개되는 내 탑</strong><small>공개 3D 공간 + 파란 인증 배지</small></div></div><p>기록만 먼저 등록할 수도 있어요. 공개할 이름·소속과 집계 기록을 보내고, 인증을 원하면 아래 자료를 함께 첨부해 주세요.</p><ol><li><strong>전문의 자격 확인 자료</strong></li><li><strong>CRM 등 객관적 집계 기록</strong><br>집계 기간과 직접 집도한 수술 건수</li></ol><p class="contact-fine">환자별 원본 대신 집계 자료를 보내 주세요. 환자명·연락처·주민번호 등 불필요한 개인정보는 가려 주세요.</p><p class="contact-process">메일 접수 → 운영자 자료 확인 → 사이트 반영<br>서류를 보냈다고 즉시 인증되거나 공개되지는 않습니다.</p>';
   const mail=this.dialog.querySelector('#contact-mail');mail.href=draft.href;mail.textContent=advertising?'광고 문의 이메일 작성 ↗':'기록 등록·인증 이메일 작성 ↗';
   this.dialog.querySelector('.contact-draft').open=!!record;
   this.dialog.querySelector('textarea').value=`제목: ${draft.subject}\n\n${draft.body}`;

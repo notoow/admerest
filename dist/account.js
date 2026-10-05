@@ -2,7 +2,7 @@ import * as live from './service-api.js?v=20261002-owner';
 import {STATUS,EDITABLE,EVIDENCE_KINDS,submissionPayload,toDraft,materialSummary,canSubmit,reviewError} from './service-model.js';
 import {blankDraft,COUNTRIES,materialTotals,readCount} from './draft-record.js';
 import {escapeHTML as esc,formatNumber as num,formatDate as date} from './html.js';
-import {ContactDialog} from './contact-dialog.js?v=20261003-ux2';
+import {ContactDialog} from './contact-dialog.js?v=20261005-records';
 
 const $=selector=>document.querySelector(selector),demo=new URLSearchParams(location.search).get('demo')==='1',admin=document.body.dataset.page==='admin';
 const api=demo?(await import('./service-demo.js?v=20261002-owner')).demoService(admin?'admin':'owner'):live;

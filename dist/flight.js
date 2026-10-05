@@ -1,12 +1,17 @@
 import * as THREE from 'three';
-import {FLIGHT_CODES,flightVector,joystickVector,clampFlightPosition,EYE_HEIGHT,MOVE_SPEED} from './flight-motion.js';
+import {FLIGHT_CODES,flightVector,joystickVector,clampFlightPosition,EYE_HEIGHT,MOVE_SPEED,MIN_FLIGHT_SPEED,MAX_FLIGHT_SPEED,wheelFlightSpeed} from './flight-motion.js';
 export class FlightControls {
- constructor(camera,canvas,{groundHeight=()=>0,blocked=()=>false}={}){
+ constructor(camera,canvas,{groundHeight=()=>0,blocked=()=>false,onInteract=()=>{}}={}){
   Object.assign(this,{camera,canvas,groundHeight,blocked,enabled:false,speed:1,yaw:0,pitch:0,walking:true,unlockedAt:0});
   this.keys=new Set();this.touchKeys=new Set();this.stick={x:0,y:0};this.velocity=new THREE.Vector3();this.target=new THREE.Vector3();
   this.joystick=document.querySelector('#flight-joystick');this.knob=this.joystick.querySelector('i');
   this.lookPad=document.querySelector('#flight-look-pad');
+  canvas.closest('.explorer-main').addEventListener('wheel',e=>{
+   if(!this.enabled||e.ctrlKey||e.target.closest('input,select'))return;
+   e.preventDefault();e.stopPropagation();this.setSpeed(wheelFlightSpeed(this.speed,e.deltaY,e.deltaMode));
+  },{passive:false,capture:true});
   canvas.addEventListener('keydown',e=>{
+   if(this.enabled&&e.code==='KeyF'&&!e.ctrlKey&&!e.metaKey&&!e.altKey){e.preventDefault();if(!e.repeat)onInteract();return;}
    if(!this.enabled||!FLIGHT_CODES.has(e.code)||e.ctrlKey||e.metaKey||e.altKey)return;
    e.preventDefault();this.keys.add(e.code);
   });
@@ -67,6 +72,14 @@ export class FlightControls {
   document.querySelector('#flight-fly').addEventListener('click',()=>{this.setWalking(false);canvas.focus({preventScroll:true});});
  }
  get locked(){return document.pointerLockElement===this.canvas;}
+ setSpeed(value){
+  if(!Number.isFinite(value))return;
+  this.speed=Math.max(MIN_FLIGHT_SPEED,Math.min(MAX_FLIGHT_SPEED,value));
+  document.querySelector('#flight-speed').value=String(this.speed);
+  document.querySelector('#flight-speed-value').textContent=`×${this.speed.toFixed(1)}`;
+  const feedback=document.querySelector('#flight-speed-feedback');feedback.textContent=`이동 속도 ×${this.speed.toFixed(1)}`;feedback.classList.add('visible');
+  clearTimeout(this.speedTimer);this.speedTimer=setTimeout(()=>feedback.classList.remove('visible'),1200);
+ }
  requestLook(){
   if(!this.enabled||matchMedia('(pointer:coarse), (max-width:760px), (max-width:1000px) and (max-height:550px)').matches)return;this.canvas.focus({preventScroll:true});if(this.locked)return;
   if(!this.canvas.requestPointerLock){this.allowHoverLook();return;}

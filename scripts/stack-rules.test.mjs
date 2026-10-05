@@ -38,3 +38,14 @@ test('all fifty sheets are playable through actual movement and the five difficu
  }
  assert.deepEqual([...stages],[1,2,3,4,5]);assert.equal(game.status,'clear');assert.equal(game.perfects,50);
 });
+
+test('later stages narrow sheets while mass and support use their actual widths',()=>{
+ assert.equal(stackDifficulty(0).width,5);assert.equal(stackDifficulty(10).width,4.7);assert.equal(stackDifficulty(40).width,3.8);
+ assert.equal(assessBalance([{x:0,width:1},{x:1.6,width:1}]).stable,false);
+ const game=new StackRound();game.reset();for(let i=0;i<11;i++){game.incoming.x=0;game.place();advance(game);}assert.equal(game.stack[10].width,4.7);assert.equal(game.risk,0);
+});
+test('seven consecutive perfect landings reveal the cosmetic egg without changing score or physics',()=>{
+ const game=new StackRound();game.reset();for(let i=0;i<6;i++){game.incoming.x=0;game.place();advance(game);}assert.equal(game.secretUnlocked,false);
+ game.incoming.x=0;game.place();advance(game);assert.equal(game.secretUnlocked,true);assert.equal(game.score,7);assert.equal(game.risk,0);assert.equal(game.snapshot().difficulty.level,1);
+ game.reset();assert.equal(game.secretUnlocked,false);
+});

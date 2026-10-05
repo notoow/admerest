@@ -1,0 +1,26 @@
+# Frontend improvement goal — 2026-10-05
+
+The existing active service goal is constrained by the user's latest instructions: **frontend only; do not create or connect a backend**. This pass completes the following reviewable scope before any backend work.
+
+- [x] Landmark visibility inside the whole-world view.
+- [x] Mouse wheel movement speed, plus in-flight orb interaction without Escape.
+- [x] Previous/next landmark comparison controls at both edges (the incomplete item 4 was interpreted as edge arrows).
+- [x] Surgery counts as the primary record; fixed 5×6 cm visualization for all records.
+- [x] Full-screen actual-size card/ADM comparison with precise ID-1 dimensions and unobtrusive calibration.
+- [x] Videos play within their own cards.
+- [x] Game leaderboard marked preparing; visible staged difficulty; a discoverable Easter egg.
+- [x] Desktop/mobile interaction, layout and regression verification; repair findings.
+- [ ] Commit, push to notoow/admerest and verify GitHub Pages deployment.
+
+Public examples remain labeled demonstrations. Entered surgery counts are user-submitted records; credential/document verification and public publication remain separate manual steps. No claims of automatic global registration.
+
+## Verification
+
+- `npm run check`: 77 passing tests, syntax and local asset/link checks. Includes fixed 5×6 case heights, zero-to-target replay, wheel speed, F while pointer locked, touch gesture release, in-card video lifecycle/races, shrinking-sheet support/mass, seven-perfect secret, and full 50-sheet progression.
+- Browser checks at 1366×900 / 1366×768, 820×1180, 412×915 and 360×640. No horizontal page overflow in checked primary flows. Existing hero chapter 03 has a 34px CTA/footer gap and zero internal scroll at 360×640.
+- Entered 3,100 then 231 cases, observed reset to zero and in-place build, registered into the full world with callout; changed visibility and comparison landmarks; verified fixed heights (4,123 → 247.38m, 1,320 → 79.2m, 231 → 13.86m).
+- Actual-size view: card left, ADM right, size controls below ADM; 0.1% calibration changes preserve physical ratios. Browser CSS pixels cannot determine a monitor's physical pixel pitch; matching a real card remains the calibration step. The ID-1 reference is 85.60×53.98mm with fractional pixel dimensions and no external stroke/shadow.
+- YouTube Shorts played inside its card and reached the in-card replay screen. Switching to a second video removed the first iframe; no modal opened. A post-check fix keeps tall videos inside the viewport when started.
+- Mobile exploration: joystick changed position from [1, 0.0136, 10] to [0.92798, 0.0136, 9.57633]; look drag changed yaw/pitch; both inputs released cleanly. Wheel changed desktop speed from ×1.0 to ×1.6. Moved altitude HUD after finding a nameplate overlap.
+- Case-only record → review → certification email draft worked; no message sent. Game start, pause/resume and Space drop/failure worked; leaderboard clearly preparing, local best separate. Mobile checks are browser viewport/gesture tests, not tests on a physical S26 Ultra.
+- Backend infrastructure/configuration untouched. The existing goal object's older backend scope remains deferred; this checklist tracks the current authorized frontend release.

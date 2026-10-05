@@ -1,6 +1,11 @@
 export const WORLD_UNIT=.008;
 export const EYE_HEIGHT=1.7*WORLD_UNIT;
 export const MOVE_SPEED=9;
+export const MIN_FLIGHT_SPEED=.4,MAX_FLIGHT_SPEED=4;
+export function wheelFlightSpeed(speed,deltaY,deltaMode=0){
+ const pixels=deltaY*(deltaMode===1?16:deltaMode===2?800:1);
+ return Math.max(MIN_FLIGHT_SPEED,Math.min(MAX_FLIGHT_SPEED,speed*Math.exp(-Math.max(-240,Math.min(240,pixels))*.002)));
+}
 export const FLIGHT_CODES=new Set(['KeyW','KeyA','KeyS','KeyD','KeyQ','KeyE','ShiftLeft','ShiftRight']);
 export function joystickVector(x,y,radius){
  const length=Math.hypot(x,y),amount=Math.min(1,length/radius);

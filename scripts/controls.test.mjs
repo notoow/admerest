@@ -5,6 +5,7 @@ import {FlightControls} from '../dist/flight.js';
 import {EYE_HEIGHT} from '../dist/flight-motion.js';
 class Element extends EventTarget{
  constructor(){super();this.style={};this.dataset={};this.classList={add(){},remove(){},toggle(){}};this.captured=new Set();this.attributes={};}
+ closest(selector){return selector==='.explorer-main'?(this.parent??=new Element()):null;}
  querySelector(){return this.knob??=new Element();}
  getBoundingClientRect(){return {left:0,top:0,width:120,height:120};}
  setPointerCapture(id){this.captured.add(id);}
@@ -14,12 +15,12 @@ class Element extends EventTarget{
  focus(){document.activeElement=this;}
 }
 const send=(target,type,props={})=>{const e=new Event(type,{cancelable:true});Object.assign(e,props);target.dispatchEvent(e);};
-function setup(){
+function setup(options={}){
  const elements=new Map(),lift=new Element();lift.dataset.flightKey='KeyQ';
  const doc=new EventTarget();doc.querySelector=s=>{if(!elements.has(s))elements.set(s,new Element());return elements.get(s);};doc.querySelectorAll=()=>[lift];doc.exitPointerLock=()=>{doc.pointerLockElement=null;send(doc,'pointerlockchange');};
  globalThis.document=doc;globalThis.window=new EventTarget();globalThis.matchMedia=()=>({matches:false});
  const camera=new PerspectiveCamera();camera.position.set(0,EYE_HEIGHT,5);const canvas=new Element();
- const controls=new FlightControls(camera,canvas);controls.setEnabled(true);controls.setWalking(true);
+ const controls=new FlightControls(camera,canvas,options);controls.setEnabled(true);controls.setWalking(true);
  return {camera,canvas,controls,joystick:doc.querySelector('#flight-joystick'),lookPad:doc.querySelector('#flight-look-pad'),lift};
 }
 test('independent touch pointers allow moving and looking together, and stop on release',()=>{
@@ -103,4 +104,21 @@ test('leaving touch exploration releases both captures and fresh entry accepts n
  send(lookPad,'pointermove',{pointerId:32,pointerType:'touch',clientX:300,clientY:100});assert.equal(controls.yaw,0);
  controls.setEnabled(true);send(lookPad,'pointerdown',{pointerId:33,pointerType:'touch',clientX:240,clientY:200});
  send(lookPad,'pointermove',{pointerId:33,pointerType:'touch',clientX:270,clientY:200});assert(controls.yaw<0);
+});
+
+test('wheel adjusts only enabled flight speed, handles all delta modes and keeps HUD synchronized',()=>{
+ const {controls,canvas}=setup(),surface=canvas.closest('.explorer-main');
+ send(surface,'wheel',{deltaY:-120,deltaMode:0});assert(controls.speed>1);assert.match(document.querySelector('#flight-speed-value').textContent,/×1.3/);
+ send(surface,'wheel',{deltaY:120,deltaMode:0});assert(Math.abs(controls.speed-1)<1e-9);
+ send(surface,'wheel',{deltaY:-3,deltaMode:1});assert(controls.speed>1);
+ controls.setSpeed(100);assert.equal(controls.speed,4);controls.setSpeed(-2);assert.equal(controls.speed,.4);
+ controls.setEnabled(false);send(surface,'wheel',{deltaY:-120,deltaMode:0});assert.equal(controls.speed,.4);
+ controls.setEnabled(true);send(surface,'wheel',{deltaY:-120,deltaMode:0,ctrlKey:true});assert.equal(controls.speed,.4,'browser pinch zoom is not movement input');clearTimeout(controls.speedTimer);
+});
+
+test('F interacts while mouse is locked without cancelling walking, and ignores repeats or inactive flight',()=>{
+ let interactions=0;const {controls,canvas}=setup({onInteract:()=>interactions++});document.pointerLockElement=canvas;
+ send(canvas,'keydown',{code:'KeyW'});send(canvas,'keydown',{code:'KeyF'});assert.equal(interactions,1);assert(controls.locked);assert(controls.keys.has('KeyW'));
+ send(canvas,'keydown',{code:'KeyF',repeat:true});send(canvas,'keydown',{code:'KeyF',ctrlKey:true});assert.equal(interactions,1);
+ controls.setEnabled(false);send(canvas,'keydown',{code:'KeyF'});assert.equal(interactions,1);
 });

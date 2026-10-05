@@ -1,22 +1,18 @@
-import {ContactDialog} from './contact-dialog.js?v=20261003-ux2';
+import {ContactDialog} from './contact-dialog.js?v=20261005-records';
 import {trackOverlay} from './overlay-navigation.js';
-import {SIZES} from './measurements.js';
 import {DOCTORS,rankRecords} from './records.js';
 import {LANDMARKS} from './landmark-data.js';
-import {DRAFT_KEY,TYPES,blankDraft,materialKey,materialTotals,readCount,validateDraft,previewRecord,draftEnvelope,restoreDraft} from './draft-record.js';
+import {DRAFT_KEY,blankDraft,materialTotals,readCount,validateDraft,previewRecord,draftEnvelope,restoreDraft} from './draft-record.js';
 
 const $=s=>document.querySelector(s),all=s=>[...document.querySelectorAll(s)],format=new Intl.NumberFormat('en-US',{maximumFractionDigits:2});
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 let step=1,preview,loading=null,stored=false;
 const contact=new ContactDialog();
-$('#material-inputs').innerHTML=Object.entries(SIZES).map(([size,s])=>`<tr><th scope="row">${s.width} × ${s.length}</th>${Object.entries(TYPES).map(([type,label])=>{const key=materialKey(size,type);return `<td><label class="sr-only" for="draft-${key}">${s.width}×${s.length}cm ${label} 사용 장수</label><input id="draft-${key}" data-material="${key}" type="text" inputmode="numeric" maxlength="12" placeholder="0" autocomplete="off" aria-describedby="error-${key}"><p id="error-${key}" class="field-error" hidden></p></td>`;}).join('')}</tr>`).join('');
 function readDraft(){return {name:$('#draft-name').value,clinic:$('#draft-clinic').value,country:$('#draft-country').value,cases:$('#draft-cases').value,materials:Object.fromEntries(all('[data-material]').map(input=>[input.dataset.material,input.value]))};}
 function fill(draft){for(const key of ['name','clinic','country','cases'])$('#draft-'+key).value=draft[key];all('[data-material]').forEach(input=>input.value=draft.materials[input.dataset.material]??'');summarize();}
 function summarize(){
- const draft=readDraft(),total=materialTotals(draft.materials),cases=readCount(draft.cases,false);
+ const draft=readDraft(),cases=readCount(draft.cases,false);
  $('#summary-name').textContent=draft.name.trim()||'당신의 기록';$('#summary-cases').textContent=cases===null?'—':format.format(cases);
- for(const id of ['summary-sheets','ledger-sheets'])$('#'+id).textContent=total?`${format.format(total.sheets)}장`:'입력 확인';
- for(const id of ['summary-length','ledger-length'])$('#'+id).textContent=total?`${format.format(total.length)} m`:'입력 확인';
  if(stored)$('#draft-storage-status').textContent='변경한 내용은 저장을 눌러야 이 기기에 남습니다.';
 }
 function errors(values={}){
@@ -26,23 +22,23 @@ function errors(values={}){
 }
 function showStep(next,focus=true){
  step=next;all('[data-step]').forEach(section=>section.hidden=Number(section.dataset.step)!==step);all('.record-steps li').forEach((el,i)=>{el.toggleAttribute('aria-current',i+1===step);if(i+1===step)el.setAttribute('aria-current','step');el.dataset.complete=String(i+1<step);});
- $('#previous-step').hidden=step===1;$('#next-step').hidden=step===3;$('#reveal-draft').hidden=step!==3;$('#next-step').textContent=step===1?'진피 기록 입력하기 →':'내 기록 확인하기 →';
- $('#draft-view-controls').hidden=step!==3;$('#preview-object-labels').hidden=step!==3||!preview;$('#preview-placeholder').hidden=step===3&&!!preview;$('#draft-canvas').hidden=step!==3;
- if(preview)preview.active=step===3;
- if(step===3){review();preparePreview();}
+ $('#previous-step').hidden=step===1;$('#next-step').hidden=step===2;$('#reveal-draft').hidden=step!==2;$('#next-step').textContent='집도 기록 확인하기 →';
+ $('#draft-view-controls').hidden=step!==2;$('#preview-object-labels').hidden=step!==2||!preview;$('#preview-placeholder').hidden=step===2&&!!preview;$('#draft-canvas').hidden=step!==2;
+ if(preview)preview.active=step===2;
+ if(step===2){review();preparePreview();}
  if(focus){const title=$(`[data-step="${step}"] h2`);title.focus({preventScroll:true});title.scrollIntoView({behavior:reduced?'instant':'smooth',block:'start'});}
 }
 function review(){
  const {record}=previewRecord(readDraft());if(!record)return;
  $('#review-name').textContent=record.name;$('#review-clinic').textContent=record.clinic||'소속 미입력';$('#review-flag').src=`./assets/${record.country}.svg`;$('#review-flag').alt=record.countryName;
- $('#review-cases').textContent=`${format.format(record.cases)}건`;$('#review-sheets').textContent=`${format.format(record.sheets)}장`;$('#review-length').textContent=`${format.format(record.length)} m`;
+ $('#review-cases').textContent=`${format.format(record.cases)}건`;
  const position=rankRecords([...DOCTORS,record]).find(d=>d.id===record.id).rank;$('#draft-rank-value').textContent=`${position}번째 / 4명`;
  comparison();
 }
 function comparison(){
  const {record}=previewRecord(readDraft());if(!record)return;const landmark=LANDMARKS[$('#draft-landmark').value];
- $('#preview-height').textContent=`${format.format(record.length)} m`;$('#landmark-height').textContent=`${landmark.name} · ${format.format(landmark.height)} m`;
- $('#draft-comparison').textContent=`내 기록의 길이는 ${landmark.name} 높이의 ${format.format(record.length/landmark.height*100)}%입니다.`;
+ $('#preview-cases').textContent=`${format.format(record.cases)}건`;$('#landmark-height').textContent=`${landmark.name} · ${format.format(landmark.height)} m`;
+ $('#draft-comparison').textContent=`내 집도 기록을 표현한 탑은 ${landmark.name} 높이의 ${format.format(record.length/landmark.height*100)}%입니다.`;
 }
 async function preparePreview(){
  $('#reveal-draft').disabled=true;$('#reveal-draft').textContent='3D 준비 중…';
@@ -51,11 +47,11 @@ async function preparePreview(){
   try{loading??=import('./draft-preview.js');const {DraftPreview}=await loading;if(!preview)preview=new DraftPreview($('#draft-canvas'),()=>{$('.draft-preview-card').scrollIntoView({behavior:reduced?'instant':'smooth',block:'center'});$('#reset-draft-view').focus({preventScroll:true});});}
   catch(error){loading=null;console.warn('Draft preview unavailable:',error.message);$('#preview-placeholder strong').textContent='3D 미리보기를 불러오지 못했습니다.';$('#preview-placeholder>span').textContent='입력과 저장은 가능합니다. 버튼을 눌러 다시 시도하세요.';$('#reveal-draft').textContent='3D 다시 불러오기 ↻';$('#reveal-draft').disabled=false;return;}
  }
- const {record}=previewRecord(readDraft());if(step!==3||!record){preview.active=false;return;}
+ const {record}=previewRecord(readDraft());if(step!==2||!record){preview.active=false;return;}
  preview.setRecord(record);preview.setLandmark($('#draft-landmark').value);preview.resize();$('#preview-placeholder').hidden=true;$('#preview-object-labels').hidden=false;
  $('#reveal-draft').disabled=false;$('#reveal-draft').textContent='내 기록의 순간 감상하기 ▶';
 }
-$('#record-form').addEventListener('submit',event=>{event.preventDefault();if(step===3)return;const problems=validateDraft(readDraft(),step);errors(problems);if(Object.keys(problems).length)return;showStep(step+1);});
+$('#record-form').addEventListener('submit',event=>{event.preventDefault();if(step===2)return;const problems=validateDraft(readDraft(),step);errors(problems);if(Object.keys(problems).length)return;showStep(step+1);});
 $('#previous-step').addEventListener('click',()=>{errors();showStep(Math.max(1,step-1));});
 $('#record-form').addEventListener('input',event=>{
  summarize();const problems=validateDraft(readDraft(),step),key=event.target.id?.replace(/^draft-/,'');

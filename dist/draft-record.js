@@ -1,4 +1,4 @@
-import {SIZES,MAX_QUANTITY} from './measurements.js';
+import {SIZES,MAX_QUANTITY,recordHeightMeters} from './measurements.js';
 
 export const DRAFT_KEY='admerest.record-draft.v1';
 export const COUNTRIES={KR:'대한민국',US:'미국',JP:'일본'};
@@ -30,7 +30,6 @@ export function validateDraft(draft,step=2){
  if(step>=2){
   for(const key of keys)if(readCount(draft.materials?.[key])===null)errors[key]='0–100,000 사이의 정수를 입력해 주세요.';
   const totals=materialTotals(draft.materials);
-  if(totals?.sheets===0)errors.materials='사용한 진피 장수를 한 칸 이상 입력해 주세요.';
   if(totals&&totals.sheets>MAX_QUANTITY)errors.materials='미리보기는 전체 진피 100,000장까지 지원합니다.';
  }
  return errors;
@@ -38,7 +37,7 @@ export function validateDraft(draft,step=2){
 export function previewRecord(draft){
  const errors=validateDraft(draft);if(Object.keys(errors).length)return {errors,record:null};
  const totals=materialTotals(draft.materials);
- return {errors:{},record:{id:'local-preview',name:draft.name.trim(),clinic:draft.clinic.trim(),country:draft.country,countryName:COUNTRIES[draft.country],cases:readCount(draft.cases,false),length:totals.length,sheets:totals.sheets,verification:'none',preview:true}};
+ return {errors:{},record:{id:'local-preview',name:draft.name.trim(),clinic:draft.clinic.trim(),country:draft.country,countryName:COUNTRIES[draft.country],cases:readCount(draft.cases,false),length:recordHeightMeters(readCount(draft.cases,false)),sheets:totals.sheets,verification:'none',preview:true}};
 }
 // Persist only editable aggregate fields. Imported/local values cannot grant verification.
 export function draftEnvelope(draft){

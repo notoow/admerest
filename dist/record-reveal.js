@@ -9,7 +9,7 @@ export class RecordReveal {
  constructor(playground,onTower){
   this.playground=playground;this.onTower=onTower;this.elapsed=0;this.reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
   this.dialog=document.createElement('dialog');this.dialog.className='record-dialog';this.dialog.setAttribute('aria-labelledby','record-title');
-  this.dialog.innerHTML=`<div class="record-stage"></div><div class="record-grain" aria-hidden="true"></div><button class="record-close" aria-label="기록 연출 닫기">닫기 ×</button><div class="record-copy"><span class="record-kicker">THE MAKING OF A RECORD · DEMO</span><p class="record-person"></p><h2 id="record-title">한 장에서 시작한 기록</h2><div class="record-count" aria-hidden="true"><b>0</b><span>건</span></div><p class="record-sr sr-only" role="status"></p><p class="record-length">진피 누적 길이 <strong>0 m</strong></p><p class="record-note">가상 전문의의 예시 기록 · 진피 소나기는 규모를 표현한 연출입니다.</p></div><div class="record-footer"><span class="record-timeline"><i></i></span><p class="record-hint">작은 한 장들이, 하나의 기록이 되는 순간.</p><div><button class="record-skip">최종 기록 보기</button><button class="record-replay" hidden>다시 감상하기 ↻</button><button class="record-tower" hidden>공개 탑 보러 가기 ↗</button></div></div>`;
+  this.dialog.innerHTML=`<div class="record-stage"></div><div class="record-grain" aria-hidden="true"></div><button class="record-close" aria-label="기록 연출 닫기">닫기 ×</button><div class="record-copy"><span class="record-kicker">THE MAKING OF A RECORD · DEMO</span><p class="record-person"></p><h2 id="record-title">한 장에서 시작한 기록</h2><div class="record-count" aria-hidden="true"><b>0</b><span>건</span></div><p class="record-sr sr-only" role="status"></p><p class="record-length">직접 집도한 수술 건수</p><p class="record-note">가상 전문의의 예시 기록 · 진피 소나기는 규모를 표현한 연출입니다.</p></div><div class="record-footer"><span class="record-timeline"><i></i></span><p class="record-hint">작은 한 장들이, 하나의 기록이 되는 순간.</p><div><button class="record-skip">최종 기록 보기</button><button class="record-replay" hidden>다시 감상하기 ↻</button><button class="record-tower" hidden>공개 탑 보러 가기 ↗</button></div></div>`;
   document.body.append(this.dialog);this.stage=this.dialog.querySelector('.record-stage');
   this.dialog.querySelector('.record-close').onclick=()=>this.close();this.dialog.addEventListener('cancel',e=>{e.preventDefault();this.close();});
   this.dialog.querySelector('.record-skip').onclick=()=>{this.elapsed=6.4;this.step(0);};
@@ -46,11 +46,11 @@ export class RecordReveal {
  state(){return {open:this.dialog.open,professionalId:this.record?.id??null,elapsedSeconds:this.elapsed,finished:revealProgress(this.elapsed,this.reduced).done};}
  step(dt){
   this.elapsed+=dt;const t=this.elapsed,p=revealProgress(t,this.reduced),mobile=this.camera.aspect<.8;
-  const count=Math.round(this.record.cases*p.count),length=p.done?this.record.length:Math.round(this.record.length*p.count*100)/100;
-  this.dialog.querySelector('.record-count b').textContent=format.format(count);this.dialog.querySelector('.record-length strong').textContent=`${decimal.format(length)} m`;
+  const count=Math.round(this.record.cases*p.count);
+  this.dialog.querySelector('.record-count b').textContent=format.format(count);
   this.dialog.querySelector('#record-title').textContent=p.phase;this.dialog.querySelector('.record-timeline i').style.transform=`scaleX(${(this.reduced?1:clamp(t/6.4))})`;
   this.dialog.querySelector('.record-skip').hidden=p.done;this.dialog.querySelector('.record-replay').hidden=!p.done;this.dialog.querySelector('.record-tower').hidden=!p.done;
-  if(p.done&&!this.announced){this.dialog.querySelector('.record-sr').textContent=`${this.record.name}, 총 수술 ${format.format(this.record.cases)}건, 진피 누적 길이 ${decimal.format(this.record.length)}미터. ${this.record.preview?'검증되지 않은 비공개 미리보기입니다.':'가상 예시입니다.'}`;this.announced=true;}
+  if(p.done&&!this.announced){this.dialog.querySelector('.record-sr').textContent=`${this.record.name}, 총 수술 ${format.format(this.record.cases)}건. ${this.record.preview?'검증되지 않은 비공개 미리보기입니다.':'가상 예시입니다.'}`;this.announced=true;}
   this.hero.visible=t<1.3&&!this.reduced;this.hero.position.set(0,2.5,0);this.hero.scale.setScalar(2.3);this.hero.rotation.set(.1,-.4+t*.9,-.16);
   this.pieces.forEach((mesh,i)=>{
    const age=t-.75-i*.055;mesh.visible=age>=0||this.reduced;

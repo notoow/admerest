@@ -56,7 +56,7 @@ export class Explorer {
    if(hit){let obj=hit.object;while(obj.parent!==this.scene&&obj.parent)obj=obj.parent;if(DOCTORS.some(d=>d.id===obj.userData.id))this.onSelect(obj.userData.id);}
   });
   this.renderer.domElement.addEventListener('keydown',e=>{if(this.flight?.enabled)return;if(['+','=','-','0'].includes(e.key)){e.preventDefault();if(e.key==='0')this.host.dispatchEvent(new CustomEvent('overview-request'));else this.zoom(e.key==='-'?1.15:.87);}});
-  this.flight=new FlightControls(this.camera,this.renderer.domElement,{groundHeight:(x,z)=>this.groundHeight(x,z),blocked:(x,z,y)=>this.blocked(x,z,y)});this.bindFlightUI();
+  this.flight=new FlightControls(this.camera,this.renderer.domElement,{groundHeight:(x,z)=>this.groundHeight(x,z),blocked:(x,z,y)=>this.blocked(x,z,y),onInteract:()=>{if(this.canDiscover())this.discover();}});this.bindFlightUI();
   this.resizeObserver=new ResizeObserver(()=>this.resize());this.resizeObserver.observe(host);this.resize();this.overview(true);this.markSelected();
   this.visible=true;this.visibilityObserver=new IntersectionObserver(([e])=>{this.visible=e.isIntersecting;},{rootMargin:'150px'});this.visibilityObserver.observe(host);
   this.loop();host.querySelector('.scene-loading')?.remove();
@@ -66,7 +66,7 @@ export class Explorer {
   const label=document.createElement('button');label.className='scene-label';label.dataset.object=id;
   const doctor=DOCTORS.find(d=>d.id===id);
   label.setAttribute('aria-label',`${name}, ${doctor?`수술 ${number.format(doctor.cases)}건, `:''}${number.format(value)}미터, 탑 보기`);
-  label.innerHTML=`<span class="label-name">${esc(name)}${country?`<img class="flag" src="./assets/${country}.svg" alt="${country}">`:''}${['demo','verified'].includes(doctor?.verification)?'<span class="verify-badge" title="자격·기록 확인 상태" aria-hidden="true">✓</span>':''}</span><div class="label-value">${number.format(doctor?doctor.cases:id==='simulation'?this.simCases:value)} <small>${doctor||id==='simulation'?'건':'m'}</small></div>${doctor||id==='simulation'?`<span class="label-length">진피 ${number.format(value)} m</span>`:''}`;
+  label.innerHTML=`<span class="label-name">${esc(name)}${country?`<img class="flag" src="./assets/${country}.svg" alt="${country}">`:''}${['demo','verified'].includes(doctor?.verification)?'<span class="verify-badge" title="자격·기록 확인 상태" aria-hidden="true">✓</span>':''}</span><div class="label-value">${number.format(doctor?doctor.cases:id==='simulation'?this.simCases:value)} <small>${doctor||id==='simulation'?'건':'m'}</small></div>${doctor||id==='simulation'?`<span class="label-length">직접 집도 건수</span>`:''}`;
   label.addEventListener('click',()=>{if(this.flight?.enabled)return;if(DOCTORS.some(d=>d.id===id))this.onSelect(id);else if(!this.comparison)this.focus(id);});
   this.host.append(label);this.labels.set(id,label);this.labelObserver.observe(label);
  }
@@ -87,7 +87,7 @@ export class Explorer {
   document.querySelector('#exit-flight').addEventListener('click',()=>this.setFlying(false));
   document.querySelector('#flight-settings').addEventListener('click',e=>{const on=this.hud.classList.toggle('settings-open');e.currentTarget.setAttribute('aria-pressed',String(on));});
   document.querySelector('#discover-light').addEventListener('click',()=>this.discover());
-  document.querySelector('#flight-speed').addEventListener('input',e=>{this.flight.speed=Number(e.target.value);document.querySelector('#flight-speed-value').textContent=`×${this.flight.speed.toFixed(1)}`;});
+  document.querySelector('#flight-speed').addEventListener('input',e=>this.flight.setSpeed(Number(e.target.value)));
   document.querySelectorAll('[data-flight-destination]').forEach(button=>button.addEventListener('click',()=>{this.visit(button.dataset.flightDestination);this.renderer.domElement.focus({preventScroll:true});}));
   document.addEventListener('keydown',e=>{
    if(!this.flight.enabled)return;
@@ -112,7 +112,7 @@ export class Explorer {
    this.main.setAttribute('role','dialog');this.main.setAttribute('aria-modal','true');this.main.setAttribute('aria-label','3D 자유 탐색');
    this.inertOutside=[];
    for(let branch=this.main;branch.parentElement&&branch!==document.body;branch=branch.parentElement){for(const sibling of branch.parentElement.children){if(sibling!==branch&&!sibling.inert){sibling.inert=true;this.inertOutside.push(sibling);}}}
-   this.orbitLabel=this.renderer.domElement.getAttribute('aria-label');this.renderer.domElement.setAttribute('aria-label','보행 탐색: WASD 이동, 마우스로 둘러보기, Shift 가속. Q 상승, E 하강. Escape로 마우스 해제, 다시 Escape로 종료.');
+   this.orbitLabel=this.renderer.domElement.getAttribute('aria-label');this.renderer.domElement.setAttribute('aria-label','보행 탐색: WASD 이동, 마우스로 둘러보기, Shift 가속, 휠로 속도 조절. Q 상승, E 하강. 구슬 근처에서 F로 상호작용. Escape로 마우스 해제, 다시 Escape로 종료.');
    this.flight.setEnabled(true);this.camera.fov=65;this.visit('city');this.flight.requestLook();
   }else{
    this.flight.setEnabled(false);this.controls.enabled=true;
@@ -125,6 +125,7 @@ export class Explorer {
   }
   this.resize(on);this.camera.updateProjectionMatrix();this.host.dispatchEvent(new CustomEvent('flight-mode-change',{detail:{enabled:on}}));
  }
+ canDiscover(){return !this.atmosphere.unlocked&&this.camera.position.distanceTo(this.atmosphere.beacon.position)<=3.5;}
  discover(){
   if(this.atmosphere.unlocked)return;this.atmosphere.unlock();document.querySelector('#discover-light').hidden=true;
   const message=document.createElement('div');message.className='egg-toast';message.setAttribute('role','status');message.innerHTML='✦ 노을을 발견했습니다.<small>조금 돌아가면, 보이는 것도 달라지죠. · notoow</small>';this.main.append(message);setTimeout(()=>message.remove(),5500);
@@ -250,7 +251,7 @@ export class Explorer {
   obj.userData.height=Math.max(.035,height);
   if(this.lastLabelValue!==this.simTarget||this.lastLabelCases!==this.simCases){
    this.labels.get('simulation').querySelector('.label-value').innerHTML=`${number.format(this.simCases)} <small>건</small>`;
-   this.labels.get('simulation').querySelector('.label-length').textContent=`진피 ${number.format(this.simTarget)} m`;
+   this.labels.get('simulation').querySelector('.label-length').textContent='직접 집도 건수';
    this.labels.get('simulation').setAttribute('aria-label',`내 탑, 수술 ${number.format(this.simCases)}건, ${number.format(this.simTarget)}미터, 탑 보기`);this.lastLabelValue=this.simTarget;this.lastLabelCases=this.simCases;
   }
   this.renderedSimTarget=this.simTarget;return true;
@@ -264,7 +265,7 @@ export class Explorer {
   if(highlight){this.simBeacon.position.copy(this.objects.get('simulation').position);this.simBeacon.position.y=.015;this.simBeacon.scale.setScalar(reduced?1:1+Math.sin(now*.004)*.13);}
   if(this.transition){const t=Math.min(1,(performance.now()-this.transition.start)/850),ease=1-Math.pow(1-t,3);this.camera.position.lerpVectors(this.transition.from,this.transition.to,ease);this.controls.target.lerpVectors(this.transition.oldTarget,this.transition.target,ease);if(t===1)this.transition=null;}
   if(this.flight.enabled){
-   this.flight.step(dt);document.querySelector('#discover-light').hidden=this.atmosphere.unlocked||this.camera.position.distanceTo(this.atmosphere.beacon.position)>3.5;if(now-(this.hudTime??0)>100){document.querySelector('#flight-altitude').textContent=number.format(Math.round(this.camera.position.y/UNIT*10)/10);document.querySelector('#flight-altitude-fill').style.height=`${Math.min(100,this.camera.position.y/(8848.86*UNIT)*100)}%`;const degrees=((this.flight.yaw*180/Math.PI)%360+360)%360;document.querySelector('#flight-heading').textContent=['N','NW','W','SW','S','SE','E','NE'][Math.round(degrees/45)%8];this.hudTime=now;}
+   this.flight.step(dt);document.querySelector('#discover-light').hidden=!this.canDiscover();if(now-(this.hudTime??0)>100){document.querySelector('#flight-altitude').textContent=number.format(Math.round(this.camera.position.y/UNIT*10)/10);document.querySelector('#flight-altitude-fill').style.height=`${Math.min(100,this.camera.position.y/(8848.86*UNIT)*100)}%`;const degrees=((this.flight.yaw*180/Math.PI)%360+360)%360;document.querySelector('#flight-heading').textContent=['N','NW','W','SW','S','SE','E','NE'][Math.round(degrees/45)%8];this.hudTime=now;}
   }else{this.controls.autoRotate=this.auto&&!reduced&&!this.transition;this.controls.autoRotateSpeed=.45;this.controls.dampingFactor=orbitDamping(dt);this.controls.update(dt);}
   const shadowSignature=[...this.objects].map(([id,o])=>`${id}:${o.visible}:${o.userData.assetStatus}:${o.position.toArray()}:${o.scale.toArray()}`).join('|');
   if(simulationChanged||shadowSignature!==this.shadowSignature){this.renderer.shadowMap.needsUpdate=true;this.shadowSignature=shadowSignature;}
@@ -290,7 +291,8 @@ export class Explorer {
    const lift=easeLabelLift(this.labelLifts.get(id),anchor-top,reduced?1:dt);this.labelLifts.set(id,lift);
    top=anchor-lift;label.style.transform=`translate3d(${left}px,${top}px,0) translate(-50%,-100%)`;
    const leader=Math.max(0,lift,-lift-metrics.height);
-   label.style.setProperty('--leader-length',`${leader}px`);label.style.setProperty('--leader-top',lift>=0?'100%':`${-leader}px`);label.style.visibility=this.flight.enabled&&top<195?'hidden':'visible';
+   const behindFlightHUD=this.flight.enabled&&(top-metrics.height<(width<760?240:195)||top>height-180);
+   label.style.setProperty('--leader-length',`${leader}px`);label.style.setProperty('--leader-top',lift>=0?'100%':`${-leader}px`);label.style.visibility=behindFlightHUD?'hidden':'visible';
   }
   this.frameSamples??=[];this.frameSamples.push({interval,cost:performance.now()-now});if(this.frameSamples.length>120)this.frameSamples.shift();
  }

@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 import {filterRanking,rankingRows} from '../dist/ranking-view.js';
 import {RANKED_DOCTORS,rankRecords} from '../dist/records.js';
 import {CONTACT_EMAIL,contactDraft} from '../dist/contact-info.js';
-test('record inquiry carries separate cases and material bins, never hidden record fields',()=>{
+test('record inquiry carries surgery counts, never hidden fields or unrelated material bins',()=>{
  const draft=contactDraft('verification',{name:'샘플 <의사>\nBcc: nobody',clinic:'예시 클리닉',country:'KR',cases:'1250',materials:{'5x6-hydrated':'500','6x12-dry':'25'},token:'secret',verification:'verified'});
- assert.match(draft.body,/총 수술 케이스: 1250건/);assert.match(draft.body,/5 × 6 cm · 수화: 500장/);assert.match(draft.body,/6 × 12 cm · 건조: 25장/);
- assert.equal(draft.body.match(/cm · (수화|건조):/g).length,8);assert(!draft.body.includes('secret'));assert(!draft.body.includes('\nBcc:'));
+ assert.match(draft.body,/직접 집도 건수: 1250건/);assert(!draft.body.includes('사용 장수'));
+ assert(!draft.body.includes('secret'));assert(!draft.body.includes('\nBcc:'));
  assert.equal(new URL(draft.href).searchParams.get('body'),draft.body);
  assert(!contactDraft('advertising',{name:'sample'}).body.includes('sample'));
 });

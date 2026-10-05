@@ -17,7 +17,7 @@ else if(BACKEND.url&&BACKEND.publishableKey&&!explicitDemo){
 }
 if(note){const banner=document.createElement('div');banner.className='data-source-notice';banner.innerHTML=`<span>${esc(note)}</span><a href="${workflow?'./admin.html?demo=1':'./'}">${workflow?'심사 시연으로 돌아가기':'다시 불러오기'} ↗</a>`;document.querySelector('#explore').prepend(banner);}
 try{
- await import('./app.js?v=20261005-v2');
+ await import('./app.js?v=20261005-records');
  await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
  dispatchEvent(new CustomEvent('admerest-load',{detail:{phase:'ready',label:'준비됐어요'}}));
 }catch(error){console.error('App startup failed:',error);dispatchEvent(new CustomEvent('admerest-load',{detail:{phase:'error',label:'3D 공간을 불러오지 못했어요'}}));}

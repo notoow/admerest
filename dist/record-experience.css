@@ -1,0 +1,31 @@
+/* World controls stay adjacent to the scene they affect. */
+.world-landmarks{margin:0 0 12px;border:1px solid #d8e3f1;border-radius:12px;background:#f6f9fe}
+.world-landmarks summary{display:flex;align-items:center;justify-content:space-between;padding:11px 15px;min-height:44px;font-size:12px;font-weight:650;cursor:pointer;color:#315884}
+.world-landmarks summary::after{content:'⌄';margin-left:10px}.world-landmarks[open] summary::after{content:'⌃'}
+#landmark-visible-count{margin-left:auto;color:#7990aa;font-variant-numeric:tabular-nums}
+.world-landmarks .landmark-bar{display:block;border:0;padding:0 12px 12px;margin:0;background:none}
+.world-landmarks .landmark-options{display:flex;flex-wrap:wrap;gap:6px;width:100%}
+.world-landmarks .landmark-chip{flex:1 1 130px;min-width:0;min-height:44px;padding:8px 10px;background:#fff;border:1px solid #d8e3f1;border-radius:8px;font-size:11px;gap:8px}
+.world-landmarks .landmark-chip.active{border-color:#5a8be9;background:#edf4ff}.world-landmarks .landmark-chip small{font-size:9px}
+.world-landmarks .landmark-glyph{display:none}.world-landmarks .chip-check{margin-left:auto}
+.explorer-main:not(:has(#all-view.active))>.world-landmarks,.is-flying>.world-landmarks{display:none}
+.flight-speed-feedback{position:absolute;top:48%;left:50%;transform:translate(-50%,-50%);padding:9px 16px;border-radius:20px;background:#15365ddb;color:#fff;font-size:13px;opacity:0;pointer-events:none;transition:opacity .15s;z-index:3}
+.flight-speed-feedback.visible{opacity:1}.discover-light kbd{border:1px solid currentColor;border-radius:4px;padding:1px 5px;margin-left:6px;font:inherit}
+.flight-altimeter{top:100px;right:35px;flex-direction:row;align-items:baseline;gap:7px;padding:9px 12px;border:1px solid #bdd1e77a;border-radius:12px;background:#f3f9ffb3;text-shadow:none}
+.flight-altimeter strong{font-size:20px}.flight-altitude-track{display:none}
+.play-size-dock[hidden]{display:none!important}
+.tower-details .cases-primary{grid-template-columns:1fr}.tower-details .simulation-disclaimer{max-width:330px}
+.live-total{justify-content:flex-start;gap:12px}.live-build{grid-template-columns:1.5fr 1fr auto}
+.comparison-panel{position:relative;padding-inline:60px}
+.comparison-edge{position:absolute;top:50%;transform:translateY(-50%);width:38px;height:60px;border:1px solid #d5e2f5;background:#fff;border-radius:10px;color:#255fc0;font-size:25px}
+.comparison-edge:hover{background:#e8f0ff}.comparison-edge:focus-visible{outline:3px solid #9abbf4;outline-offset:3px}
+#comparison-previous{left:12px}#comparison-next{right:12px}
+@media(max-width:760px){
+ .world-landmarks .landmark-chip{flex-basis:calc(50% - 6px)}
+ .comparison-panel{padding-inline:46px}.comparison-edge{width:32px;height:48px}#comparison-previous{left:6px}#comparison-next{right:6px}
+ .comparison-selectors{gap:8px}.live-build{grid-template-columns:1fr}.live-total{justify-content:space-between}
+ .flight-speed-feedback{top:43%}.discover-light kbd{display:none}
+ .flight-altimeter{top:184px;right:18px;padding:7px 10px}.flight-altimeter strong{font-size:17px}
+}
+@media(max-height:550px) and (orientation:landscape){.flight-altimeter{top:110px;right:25px}}
+@media(prefers-reduced-motion:reduce){.flight-speed-feedback{transition:none}}

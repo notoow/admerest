@@ -2,14 +2,14 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
-import {SIZES,MAX_QUANTITY,lengthMeters} from '../dist/measurements.js';
+import {SIZES,MAX_QUANTITY,recordHeightMeters} from '../dist/measurements.js';
 
 function setup(reduced=false){
  const source=readFileSync(new URL('../dist/app.js',import.meta.url),'utf8');
  const nodes=new Map(),frames=new Map(),updates=[],visits=[],views=[];let clock=0,id=0;
  const element=selector=>{if(!nodes.has(selector))nodes.set(selector,{style:{},focus(){this.focused=true;}});return nodes.get(selector);};
  const explorer={flight:{enabled:false},selected:'kim',updateSimulation(meters,cases){updates.push({meters,cases});},prepareSimulation(meters){this.finalMeters=meters;},refit(){}};
- const context=vm.createContext({quantity:2000,displayCount:2000,displayLength:120,size:'5x6',animation:null,raf:null,reduced,explorer,document:{activeElement:null},inlineStack:{update(){},prepare(){}},setPlayView(view){views.push(view);},keepPlayInView(){},SIZES,MAX_QUANTITY,lengthMeters,$:element,
+ const context=vm.createContext({quantity:2000,displayCount:2000,displayLength:120,size:'5x6',animation:null,raf:null,reduced,explorer,document:{activeElement:null},inlineStack:{update(){},prepare(){}},setPlayView(view){views.push(view);},keepPlayInView(){},SIZES,MAX_QUANTITY,recordHeightMeters,$:element,
   format:new Intl.NumberFormat('en-US'),decimal:new Intl.NumberFormat('en-US',{maximumFractionDigits:2}),performance:{now:()=>clock},
   requestAnimationFrame:fn=>{frames.set(++id,fn);return id;},refreshComparison(){},toast(){},clearError(){},error(message){context.lastError=message;},showSimulation(options){visits.push(options);explorer.selected='simulation';}});
  vm.runInContext(source.slice(source.indexOf('function syncRegisterButton('),source.indexOf('function setSize(')),context);
@@ -37,7 +37,7 @@ test('reapplying during a build replaces its target without creating two animati
 test('zero, maximum, invalid input and reduced motion keep deterministic final counts',()=>{
  const s=setup();assert.equal(s.apply(-1),false);assert.equal(s.apply(1.5),false);assert.equal(s.visits.length,0);
  s.apply(0);s.frame(0);assert.equal(s.context.displayLength,0);assert.equal(s.context.animation,null);
- s.context.size='6x12';s.apply(MAX_QUANTITY);s.frame(3650);assert.equal(s.context.displayCount,MAX_QUANTITY);assert.equal(s.context.displayLength,12000);
+ s.context.size='6x12';s.apply(MAX_QUANTITY);s.frame(3650);assert.equal(s.context.displayCount,MAX_QUANTITY);assert.equal(s.context.displayLength,6000);
  const calm=setup(true);calm.apply(231);calm.frame(0);assert.equal(calm.context.displayCount,231);assert.equal(calm.context.displayLength,13.86);assert.equal(calm.frames.size,0);
 });
 
@@ -56,7 +56,7 @@ test('registration opens the upper tower only after building a nonzero record',(
 test('quick additions use the visible unsubmitted input and reject invalid counts',()=>{
  const s=setup();s.apply(2000);s.nodes.get('#quantity').value='3100';
  assert.equal(s.context.addQuantity(100),true);assert.equal(s.context.quantity,3200);
- assert.equal(s.nodes.get('#quantity').value,'3200');assert.match(s.nodes.get('#formula').textContent,/3,200건.*192 m/);
+ assert.equal(s.nodes.get('#quantity').value,'3200');assert.equal(s.context.explorer.finalMeters,192);
  s.nodes.get('#quantity').value='-1';assert.equal(s.context.addQuantity(100),false);assert.equal(s.context.quantity,3200);
  s.nodes.get('#quantity').value='100000';assert.equal(s.context.addQuantity(10),false);assert.equal(s.context.quantity,3200);
 });
@@ -64,6 +64,6 @@ test('upper tower quick-add uses its own edited input without switching preview 
  const s=setup();s.apply(2000);s.views.length=0;s.nodes.get('#live-quantity').value='3100';
  assert.equal(s.context.addQuantity(100,{surface:'explorer'}),true);assert.equal(s.context.quantity,3200);
  assert.equal(s.nodes.get('#quantity').value,'3200');assert.equal(s.visits.length,0);assert.equal(s.views.length,0);
- s.frame(3000);assert.equal(s.nodes.get('#build-length').textContent,'192 m');
+ s.frame(3000);assert.equal(s.context.displayLength,192);
  s.nodes.get('#live-quantity').value='100000';assert.equal(s.context.addQuantity(10,{surface:'explorer'}),false);assert.equal(s.context.quantity,3200);
 });

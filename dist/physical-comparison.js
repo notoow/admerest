@@ -4,14 +4,14 @@ import {EVERYDAY_OBJECTS} from './size-comparison.js?v=20261002-physical';
 import {SCREEN_SCALE_KEY,MIN_SCALE,MAX_SCALE,physicalPixels,screenProfile,readScreenScale,writeScreenScale} from './screen-scale.js';
 
 export class PhysicalComparison {
- constructor(art,onRequestCard){
+ constructor(art){
   this.art=art;this.objectKey='card';this.mode='overview';this.scale=1;this.confirmed=false;this.persisted=false;
   this.root=document.querySelector('#physical-stage');this.panel=document.querySelector('#screen-calibration');
   this.range=document.querySelector('#screen-scale');this.status=document.querySelector('#screen-scale-status');
   this.dialog=document.querySelector('#physical-dialog');
   this.dialog.addEventListener('close',()=>{this.mode='overview';document.body.classList.remove('physical-open');this.opener?.focus({preventScroll:true});this.leaveHistory?.();});
   document.querySelector('#physical-close').onclick=()=>this.dialog.close();
-  for(const button of document.querySelectorAll('[data-open-physical]'))button.onclick=()=>{this.opener=button;if(this.objectKey==='toothbrush')onRequestCard();this.mode='physical';this.leaveHistory=trackOverlay(()=>this.dialog.close());this.dialog.showModal();this.dialog.scrollTop=0;document.body.classList.add('physical-open');document.querySelector('#physical-close').focus({preventScroll:true});};
+  for(const button of document.querySelectorAll('[data-open-physical]'))button.onclick=()=>{this.opener=button;this.setObject('card');this.mode='physical';this.leaveHistory=trackOverlay(()=>this.dialog.close());this.dialog.showModal();this.dialog.scrollTop=0;document.body.classList.add('physical-open');document.querySelector('#physical-close').focus({preventScroll:true});};
   this.profile=this.currentProfile();this.restore();
   const specimens=this.root.querySelector('.physical-sheets');
   for(const [key,size]of Object.entries(SIZES)){
@@ -26,9 +26,9 @@ export class PhysicalComparison {
   document.querySelector('#scale-save').onclick=()=>this.save();
   document.querySelector('#scale-reset').onclick=()=>{
    this.changeScale(1);try{localStorage.removeItem(SCREEN_SCALE_KEY);}catch{}
-   this.status.textContent='기본 크기로 되돌렸습니다. 실물 카드에 맞춘 뒤 저장해 주세요.';
+   this.status.textContent='실물 카드 테두리에 맞춰 주세요.';
   };
-  this.panel.addEventListener('toggle',()=>{this.dialog.classList.toggle('is-calibrating',this.panel.open);if(this.panel.open)onRequestCard();});
+  this.panel.addEventListener('toggle',()=>{this.dialog.classList.toggle('is-calibrating',this.panel.open);});
   addEventListener('resize',()=>this.checkScreen());window.visualViewport?.addEventListener('resize',()=>this.checkScreen());
   this.setObject('card');this.setSize('5x6');
  }
@@ -39,12 +39,11 @@ export class PhysicalComparison {
  }
  setSize(key){if(!SIZES[key])return;for(const button of this.root.querySelectorAll('[data-highlight-size]'))button.hidden=button.dataset.highlightSize!==key;}
  setObject(key){
-  if(!EVERYDAY_OBJECTS[key])return;this.objectKey=key;if(key!=='card')this.panel.open=false;const object=EVERYDAY_OBJECTS[key];
+  key='card';this.objectKey=key;const object=EVERYDAY_OBJECTS[key];
   const art=this.root.querySelector('#physical-object-art');
-  const markup=this.art[key].replaceAll('phone-screen','physical-phone-screen');
+  const markup='<rect width="85.60" height="53.98" rx="3.18" fill="#28445f"/><rect x="0.3" y="0.3" width="85.00" height="53.38" rx="2.88" fill="none" stroke="#93a5b5" stroke-width="0.3"/><circle cx="74" cy="12" r="4" fill="#ed6848"/><rect x="9" y="23" width="12" height="9" rx="1.7" fill="#cfb992"/><path d="M15 23V32M9 27.5H21" stroke="#948063" stroke-width="0.5"/><text x="9" y="13" fill="#f1f5f9" style="font-size:5px;font-weight:600;letter-spacing:.4px">admerest.</text><text x="9" y="44" fill="#c8d3dd" style="font-size:3.2px;letter-spacing:.3px">85.60 × 53.98 mm</text>';
   art.innerHTML=`<svg role="img" aria-label="${object.name}" viewBox="0 0 ${object.width*10} ${object.height*10}"><defs><linearGradient id="physical-phone-screen" x2="1" y2="1"><stop stop-color="#192d4d"/><stop offset="1" stop-color="#668afa"/></linearGradient></defs>${markup}</svg>`;
   this.root.querySelector('#physical-object-label').textContent=key==='card'?'카드 · 85.60 × 53.98 mm':`${object.name} · ${object.width} × ${object.height} cm`;
-  this.root.querySelector('#physical-reference-hint').textContent=key==='card'?'실제 카드를 이 도형에 겹쳐 보세요. 모서리가 일치하도록 화면 크기를 맞추면 아래 진피도 같은 배율로 보입니다.':'선택한 진피에도 같은 보정값을 사용합니다. 화면 크기를 다시 맞출 때는 카드로 돌아옵니다.';
   this.render();
  }
  changeScale(scale){this.scale=Math.round(Math.min(MAX_SCALE,Math.max(MIN_SCALE,scale))*1000)/1000;this.confirmed=false;this.persisted=false;this.render();}
@@ -57,7 +56,7 @@ export class PhysicalComparison {
   }
   this.range.value=(this.scale*100).toFixed(1);document.querySelector('#screen-scale-output').textContent=(this.scale*100).toFixed(1)+'%';
   document.querySelector('#scale-smaller').disabled=this.scale<=MIN_SCALE;document.querySelector('#scale-larger').disabled=this.scale>=MAX_SCALE;
-  this.status.textContent=(window.visualViewport?.scale??1)>1.01?'화면 확대를 원래대로 돌린 뒤 카드 크기를 맞춰 주세요.':this.confirmed?(this.persisted?'이 화면에 맞춘 크기를 저장했습니다.':'이 화면에 크기를 맞췄습니다. 저장이 차단되어 이번 방문에만 적용됩니다.'):'화면 보정 전 · 크롬 확대 100%에서 카드 테두리를 맞춰 주세요.';
+  this.status.textContent=(window.visualViewport?.scale??1)>1.01?'화면 확대를 원래대로 돌린 뒤 카드 크기를 맞춰 주세요.':this.confirmed?(this.persisted?'이 화면에 저장됨':'이번 방문에 적용됨'):'크롬 100% · 실물 카드 테두리에 맞춰 주세요.';
  }
  save(){
   if((window.visualViewport?.scale??1)>1.01){this.render();return;}

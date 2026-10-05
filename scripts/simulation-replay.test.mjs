@@ -9,7 +9,7 @@ function setup(reduced=false){
  const nodes=new Map(),frames=new Map(),updates=[],visits=[],views=[];let clock=0,id=0;
  const element=selector=>{if(!nodes.has(selector))nodes.set(selector,{style:{},focus(){this.focused=true;}});return nodes.get(selector);};
  const explorer={flight:{enabled:false},selected:'kim',updateSimulation(meters,cases){updates.push({meters,cases});},prepareSimulation(meters){this.finalMeters=meters;},refit(){}};
- const context=vm.createContext({quantity:2000,displayCount:2000,displayLength:120,size:'5x6',animation:null,raf:null,reduced,explorer,document:{activeElement:null},inlineStack:{update(){},prepare(){}},setPlayView(view){views.push(view);},SIZES,MAX_QUANTITY,lengthMeters,$:element,
+ const context=vm.createContext({quantity:2000,displayCount:2000,displayLength:120,size:'5x6',animation:null,raf:null,reduced,explorer,document:{activeElement:null},inlineStack:{update(){},prepare(){}},setPlayView(view){views.push(view);},keepPlayInView(){},SIZES,MAX_QUANTITY,lengthMeters,$:element,
   format:new Intl.NumberFormat('en-US'),decimal:new Intl.NumberFormat('en-US',{maximumFractionDigits:2}),performance:{now:()=>clock},
   requestAnimationFrame:fn=>{frames.set(++id,fn);return id;},refreshComparison(){},toast(){},clearError(){},error(message){context.lastError=message;},showSimulation(options){visits.push(options);explorer.selected='simulation';}});
  vm.runInContext(source.slice(source.indexOf('function syncRegisterButton('),source.indexOf('function setSize(')),context);
@@ -50,7 +50,7 @@ test('explorer Apply keeps its own surface and never scrolls the page',()=>{
 test('registration opens the upper tower only after building a nonzero record',()=>{
  const s=setup();s.apply(3100);assert.equal(s.context.registerBuiltTower(),false);assert.equal(s.nodes.get('#register-tower').disabled,true);assert.equal(s.visits.length,0);
  s.frame(3650);assert.equal(s.nodes.get('#register-tower').disabled,false);assert.equal(s.visits.length,0,'completion alone does not jump upward');
- assert.equal(s.context.registerBuiltTower(),true);assert.equal(s.visits.length,1);
+ assert.equal(s.context.registerBuiltTower(),true);assert.equal(s.visits.length,1);assert.equal(s.visits[0].wholeWorld,true,'registration must reveal the tower alongside landmarks');
  s.apply(0);s.frame(3650);assert.equal(s.context.registerBuiltTower(),false);assert.equal(s.nodes.get('#register-tower').disabled,true);
 });
 test('quick additions use the visible unsubmitted input and reject invalid counts',()=>{

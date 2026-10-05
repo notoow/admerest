@@ -13,10 +13,13 @@ import {readExperience,saveExperience} from './experience-session.js';
 const $=s=>document.querySelector(s),all=s=>[...document.querySelectorAll(s)];
 const format=new Intl.NumberFormat('en-US'),decimal=new Intl.NumberFormat('en-US',{maximumFractionDigits:2});
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
-let explorer,playground,reveal,inlineStack,selected=PUBLIC_DOCTORS[0]?.id??'simulation',quantity=2000,displayCount=2000,size='5x6',displayLength=120,animation=null,raf=null;
+let explorer,playground,reveal,inlineStack,selected=PUBLIC_DOCTORS[0]?.id??'simulation',quantity=0,displayCount=0,size='5x6',displayLength=0,animation=null,raf=null;
 let towerAdded=false;
+const loadStage=label=>dispatchEvent(new CustomEvent('admerest-load',{detail:{phase:'scene',label,detail:'화면을 준비하는 중입니다. 잠시만 기다려 주세요.'}}));
+const yieldPaint=()=>new Promise(resolve=>requestAnimationFrame(()=>setTimeout(resolve,0)));
+loadStage('세상의 높이를 펼치고 있어요');await yieldPaint();
 new ContactDialog();
-$('#comparison-source').innerHTML=PUBLIC_DOCTORS.map(d=>`<option value="${esc(d.id)}">${esc(d.name)} · ${esc(d.countryName)}</option>`).join('')+'<option value="simulation">내 체험 탑</option>';
+$('#comparison-source').innerHTML=PUBLIC_DOCTORS.map(d=>`<option value="${esc(d.id)}">${esc(d.name)} · ${esc(d.countryName)}</option>`).join('')+'<option value="simulation">내 탑</option>';
 if(DATA_SOURCE!=='demo'){
  $('.demo-tag').textContent=DATA_SOURCE==='live'?'RECORDS OF EXPERIENCE':'REHEARSAL';
  $('.hero-cases>span>b').textContent=DATA_SOURCE==='live'?'PUBLIC':'시연';
@@ -33,7 +36,7 @@ $('#explorer-canvas').after($('#live-build'));$('.explorer-main').append($('#fli
 try{new ScrollJourney($('#journey'));}catch(error){console.warn('Scroll scene unavailable:',error.message);$('#journey').classList.add('journey-static');}
 function person(d){return `<span class="person-line">${esc(d.name)}<img class="flag" src="./assets/${d.country}.svg" alt="국적 ${d.countryName}">${isTowerPublished(d)?`<button class="verify-trigger" data-verification-id="${d.id}" aria-label="${esc(d.name)} ${d.verification==='demo'?'데모 ':''}인증 정보 보기">${badge}</button>`:''}</span>`;}
 function toast(message){const el=$('#toast');el.textContent=message;el.classList.add('visible');clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.classList.remove('visible'),3000);}
-function selectDoctor(id){if(!PUBLIC_DOCTORS.some(d=>d.id===id))return;if(explorer?.flight.enabled)explorer.setFlying(false);selected=id;all('.doctor-card').forEach(card=>{const on=card.dataset.doctor===id;card.classList.toggle('selected',on);card.querySelector('.doctor-select').setAttribute('aria-pressed',String(on));});explorer?.focus(id);$('#all-view').classList.toggle('active',!explorer?.comparison);$('#my-tower').classList.remove('active');$('#comparison-source').value=id;$('#live-build').hidden=true;$('#simulation-playback').hidden=true;$('#tower-registration').hidden=true;refreshComparison();}
+function selectDoctor(id){$('#tower-placement').hidden=true;if(!PUBLIC_DOCTORS.some(d=>d.id===id))return;if(explorer?.flight.enabled)explorer.setFlying(false);selected=id;all('.doctor-card').forEach(card=>{const on=card.dataset.doctor===id;card.classList.toggle('selected',on);card.querySelector('.doctor-select').setAttribute('aria-pressed',String(on));});explorer?.focus(id);$('#all-view').classList.toggle('active',!explorer?.comparison);$('#my-tower').classList.remove('active');$('#comparison-source').value=id;$('#live-build').hidden=true;$('#simulation-playback').hidden=true;$('#tower-registration').hidden=true;refreshComparison();}
 $('#doctor-list').innerHTML=PUBLIC_DOCTORS.map(d=>`<div class="doctor-card ${d.id===selected?'selected':''}" data-doctor="${d.id}"><button class="doctor-select" aria-label="${esc(d.name)}, 수술 ${format.format(d.cases)}건, ${format.format(d.length)}미터 탑 보기" aria-pressed="${d.id===selected}"></button><div class="doctor-details">${person(d)}<span class="person-value"><small>수술</small><b>${format.format(d.cases)}</b><small>건</small></span><span class="person-length">진피 누적 길이 <b>${format.format(d.length)} m</b></span></div></div>`).join('');
 if(!PUBLIC_DOCTORS.length)$('#doctor-list').innerHTML='<p class="empty-public-towers">첫 번째 인증 탑을 기다리고 있습니다.<br>내 기록으로 먼저 체험해 보세요.</p>';
 $('#public-tower-count').textContent=String(PUBLIC_DOCTORS.length).padStart(2,'0');
@@ -50,38 +53,61 @@ function renderRanking(){
  all('[data-record]').forEach(b=>{b.disabled=!reveal;b.addEventListener('click',()=>openRecord(b.dataset.record));});attachBadges();
 }
 $('#country-filter').addEventListener('change',renderRanking);$('#verified-only').addEventListener('change',renderRanking);$('#ranking-content').addEventListener('click',event=>{if(event.target.closest('[data-reset-ranking]')){$('#verified-only').checked=false;$('#country-filter').value='all';renderRanking();}});renderRanking();
-$('#play-content').innerHTML=`<div class="play-grid"><div class="play-visual"><div class="material-label"><b>THE SMALL PIECE</b><span id="material-dimensions">5 × 6 cm · 3 mm</span></div><div id="play-canvas" class="play-canvas" role="group" aria-label="ADM 낙하 및 재질 체험"></div><div id="material-views" class="material-views" role="group" aria-label="진피 상세 시점" hidden><button data-material-view="front" aria-pressed="false">정면</button><button data-material-view="oblique" aria-pressed="true">사선</button><button data-material-view="back" aria-pressed="false">뒷면</button><button data-material-view="edge" aria-pressed="false">3mm 옆면</button></div><div class="free-play-tools"><span class="free-play-kicker">JUST PLAY · 자유 낙하</span><div><button data-drop="1">한 장 +</button><button data-drop="8">한 움큼 +8</button><button data-drop="40">쏟아붓기 +40</button><button id="empty-tray" aria-label="박스 비우기">비우기 ↻</button></div><p id="free-play-status" role="status">박스에 진피를 떨어뜨려 보세요.</p></div><div class="material-caption"><button id="inspect-material" aria-pressed="false">진피 자세히 보기 ↗</button><span>드래그하여 회전</span></div></div><div class="play-controls"><form id="quantity-form" novalidate><label class="control-title" for="quantity">이번에는, 기록을 계산해 볼까요?<small>0–100,000건</small></label><div class="input-row"><div class="quantity-field"><input id="quantity" type="number" inputmode="numeric" min="0" max="100000" step="1" value="2000" aria-describedby="input-error"><span>건</span></div><button type="submit" class="primary-button">적용</button></div><p id="input-error" class="input-error" role="alert" hidden></p></form><div class="quick-buttons" aria-label="체험 수량 더하기">${[10,100,500,1000].map(n=>`<button data-add="${n}">+${format.format(n)}</button>`).join('')}</div><div class="reset-row"><button id="reset-count">↻ 처음부터 다시</button></div><div class="rule"></div><div class="control-title">진피 사이즈 <small>기준 5×6 · 두께 3mm</small></div><div class="size-options" role="group" aria-label="진피 사이즈">${Object.entries(SIZES).map(([key,s])=>`<button data-size="${key}" aria-pressed="${key===size}" class="${key===size?'active':''}">${s.width} × ${s.length}</button>`).join('')}</div><p class="case-assumption">체험 가정 · 수술 1건당 진피 1장</p><div class="metric-row cases-primary"><div><div class="metric-value"><span id="count-value">2,000</span><small>건</small></div><p class="metric-label">체험 수술 케이스</p></div><div><div class="metric-value"><span id="length-value">120</span><small>m</small></div><p class="metric-label">긴 변으로 이은 길이</p></div></div><p class="formula" id="formula">2,000건 × 1장 × 6 cm = 120 m</p><div class="simulation-status"><span class="progress-track"><i id="sim-progress"></i></span><span id="sim-status" role="status" aria-live="polite">수술 건수를 입력해 탑의 길이를 계산하세요</span></div><button id="compare-sim" class="compare-sim">내 체험 탑을 랜드마크와 비교하기 ↗</button><p class="simulation-disclaimer">기준 모델은 5×6cm · 두께 3mm입니다. 다른 규격은 이 모델의 외곽 비율을 바꾼 예시로, 실제 제품의 천공 형태·두께를 나타내지 않습니다. 체험은 1건당 1장으로 가정합니다. 실제 수술 건수와 진피 사용 장수는 별도로 집계합니다.</p></div></div>`;
+$('#play-content').innerHTML=`<div class="play-grid"><div class="play-visual"><div class="material-label"><b>THE SMALL PIECE</b><span id="material-dimensions">5 × 6 cm · 3 mm</span></div><div id="play-canvas" class="play-canvas" role="group" aria-label="ADM 낙하 및 재질 체험"></div><div id="material-views" class="material-views" role="group" aria-label="진피 상세 시점" hidden><button data-material-view="front" aria-pressed="false">정면</button><button data-material-view="oblique" aria-pressed="true">사선</button><button data-material-view="back" aria-pressed="false">뒷면</button><button data-material-view="edge" aria-pressed="false">3mm 옆면</button></div><div class="free-play-tools"><span class="free-play-kicker">JUST PLAY · 자유 낙하</span><div><button data-drop="1">한 장 +</button><button data-drop="8">한 움큼 +8</button><button data-drop="40">쏟아붓기 +40</button><button id="empty-tray" aria-label="박스 비우기">비우기 ↻</button></div><p id="free-play-status" role="status">낙하 체험을 준비하고 있어요…</p></div><div class="material-caption"><button id="inspect-material" aria-pressed="false">진피 자세히 보기 ↗</button><span>드래그하여 회전</span></div></div><div class="play-controls"><form id="quantity-form" novalidate><label class="control-title" for="quantity">이번에는, 기록을 계산해 볼까요?<small>0–100,000건</small></label><div class="input-row"><div class="quantity-field"><input id="quantity" type="number" inputmode="numeric" min="0" max="100000" step="1" value="0" aria-describedby="input-error"><span>건</span></div><button type="submit" class="primary-button">적용</button></div><p id="input-error" class="input-error" role="alert" hidden></p></form><div class="quick-buttons" aria-label="체험 수량 더하기">${[10,100,500,1000].map(n=>`<button data-add="${n}">+${format.format(n)}</button>`).join('')}</div><div class="reset-row"><button id="reset-count">↻ 처음부터 다시</button></div><div class="rule"></div><div class="control-title">진피 사이즈 <small>기준 5×6 · 두께 3mm</small></div><div class="size-options" role="group" aria-label="진피 사이즈">${Object.entries(SIZES).map(([key,s])=>`<button data-size="${key}" aria-pressed="${key===size}" class="${key===size?'active':''}">${s.width} × ${s.length}</button>`).join('')}</div><p class="case-assumption">체험 가정 · 수술 1건당 진피 1장</p><div class="metric-row cases-primary"><div><div class="metric-value"><span id="count-value">0</span><small>건</small></div><p class="metric-label">체험 수술 케이스</p></div><div><div class="metric-value"><span id="length-value">0</span><small>m</small></div><p class="metric-label">긴 변으로 이은 길이</p></div></div><p class="formula" id="formula">0건 × 1장 × 6 cm = 0 m</p><div class="simulation-status"><span class="progress-track"><i id="sim-progress"></i></span><span id="sim-status" role="status" aria-live="polite">수술 건수를 입력해 탑의 길이를 계산하세요</span></div><button id="compare-sim" class="compare-sim">내 탑을 랜드마크와 비교하기 ↗</button><p class="simulation-disclaimer">기준 모델은 5×6cm · 두께 3mm입니다. 다른 규격은 이 모델의 외곽 비율을 바꾼 예시로, 실제 제품의 천공 형태·두께를 나타내지 않습니다. 체험은 1건당 1장으로 가정합니다. 실제 수술 건수와 진피 사용 장수는 별도로 집계합니다.</p></div></div>`;
 const playVisual=$('.play-visual'),playStage=document.createElement('div');playStage.className='play-stage';
-const previewTabs=document.createElement('div');previewTabs.className='play-preview-tabs';previewTabs.setAttribute('role','group');previewTabs.setAttribute('aria-label','미리보기 화면');previewTabs.innerHTML='<button data-play-view="free" aria-pressed="true">박스 놀이</button><button data-play-view="tower" aria-pressed="false">내 기록 탑</button>';
+const previewTabs=document.createElement('div');previewTabs.className='play-preview-tabs';previewTabs.setAttribute('role','group');previewTabs.setAttribute('aria-label','미리보기 화면');previewTabs.innerHTML='<button data-play-view="free" aria-pressed="true">박스 놀이</button><button data-play-view="tower" aria-pressed="false">내 탑 기록</button>';
 playVisual.prepend(previewTabs,playStage);playStage.append($('.material-label'),$('#play-canvas'),$('#material-views'),$('.material-caption'));
-const inlineReadout=document.createElement('div');inlineReadout.id='inline-build';inlineReadout.className='inline-build';inlineReadout.hidden=true;inlineReadout.innerHTML='<span id="inline-build-status" role="status">내 기록 탑</span><strong><b id="inline-build-count">2,000</b><small> / <span id="inline-build-target">2,000</span>장</small></strong><span>긴 변으로 이은 길이 <b id="inline-build-length">120 m</b></span><i><b id="inline-build-progress"></b></i><em>쌓기 연출 · 실제 장수는 숫자로 표시</em>';playStage.append(inlineReadout);
+const inlineReadout=document.createElement('div');inlineReadout.id='inline-build';inlineReadout.className='inline-build';inlineReadout.hidden=true;inlineReadout.innerHTML='<span id="inline-build-status" role="status">내 탑 기록</span><strong><b id="inline-build-count">0</b><small> / <span id="inline-build-target">0</span>장</small></strong><span>긴 변으로 이은 길이 <b id="inline-build-length">0 m</b></span><i><b id="inline-build-progress"></b></i><em>쌓기 연출 · 실제 장수는 숫자로 표시</em>';playStage.append(inlineReadout);
 const sizeDock=document.createElement('div');sizeDock.className='play-size-dock';const sizeOptions=$('.size-options');sizeDock.append(sizeOptions.previousElementSibling,sizeOptions);const inlineActions=document.createElement('div');inlineActions.className='inline-actions';inlineActions.hidden=true;inlineActions.innerHTML='<button id="replay-inline">다시 쌓기 ↻</button><div class="register-inline"><button id="register-tower">탑에 등록하기 ↑</button><small>내 화면에 추가 · 전체 공개는 인증 후</small></div>';playVisual.append(inlineActions,sizeDock);
 const playInputs=document.createElement('div');playInputs.className='play-inputs';playInputs.append($('#quantity-form'),$('.quick-buttons'),$('.reset-row'));
+const towerDetails=document.createElement('div');towerDetails.className='tower-details';towerDetails.append(...$('.play-controls').children);$('.play-controls').append(towerDetails);
+const boxPanel=document.createElement('div');boxPanel.className='box-controls';boxPanel.innerHTML=`<span class="box-eyebrow">JUST PLAY / 자유롭게 던져보세요</span><h3>이번엔 몇 장?</h3><form id="drop-form" novalidate><label class="control-title" for="drop-quantity">박스에 던질 장수 <small>한 번에 1–80장</small></label><div class="input-row"><div class="quantity-field"><input id="drop-quantity" type="number" inputmode="numeric" min="1" max="80" step="1" value="0" aria-describedby="drop-error"><span>장</span></div><button id="drop-submit" type="submit" class="primary-button" disabled>던지기 ↓</button></div><p id="drop-error" class="input-error" role="alert" hidden></p></form><div class="box-total"><span>총 던진 진피</span><strong><b id="box-total">0</b><small>장</small></strong></div><p class="box-note">빈 박스부터 시작해요. 진피가 많아지면 먼저 들어온 진피가 밖으로 밀려납니다.</p>`;
+boxPanel.querySelector('.box-total').before($('.free-play-tools'));$('.play-controls').prepend(boxPanel);
 const mobilePlay=matchMedia('(max-width:760px)');
-function placePlayInputs(){if(mobilePlay.matches)playVisual.append(playInputs);else $('.play-controls').prepend(playInputs);}
+function placePlayInputs(){if(mobilePlay.matches)playVisual.append(boxPanel,playInputs);else $('.play-controls').prepend(boxPanel,playInputs);}
 mobilePlay.addEventListener('change',placePlayInputs);placePlayInputs();
+function keepPlayInView(){
+ if(!mobilePlay.matches)return;
+ requestAnimationFrame(()=>{const rect=playVisual.getBoundingClientRect(),top=$('.site-header').getBoundingClientRect().bottom+12;if(rect.height<=innerHeight-top-10&&(rect.top<top||rect.bottom>innerHeight))playVisual.scrollIntoView({behavior:reduced?'instant':'smooth',block:'start'});});
+}
 let playView='free';
 function setPlayView(view){
- playView=view==='tower'?'tower':'free';const tower=playView==='tower';
+ playView=view==='tower'?'tower':'free';const tower=playView==='tower';boxPanel.hidden=tower;playInputs.hidden=!tower;towerDetails.hidden=!tower;$('.play-grid').dataset.view=playView;
  if(tower){playground?.setInspect(false);inlineStack?.open();}else inlineStack?.close();
  all('[data-play-view]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.playView===playView)));
  $('#inline-build').hidden=!tower;$('.free-play-tools').hidden=tower;$('.inline-actions').hidden=!tower;$('.material-caption').hidden=tower;$('.material-label').hidden=tower;
  if(tower){$('#material-views').hidden=true;$('#inspect-material').setAttribute('aria-pressed','false');$('#inspect-material').textContent='진피 자세히 보기 ↗';}
  playVisual.dataset.view=playView;
- playground?.renderer.domElement.setAttribute('aria-label',tower?'내 기록 탑: 드래그하여 회전':'진피 낙하 체험: 드래그하여 회전');
+ playground?.renderer.domElement.setAttribute('aria-label',tower?'내 탑 기록: 드래그하여 회전':'진피 낙하 체험: 드래그하여 회전');
  $('#play-canvas').setAttribute('aria-label',tower?'입력한 수술 기록의 누적 길이 탑':'ADM 낙하 및 재질 체험');
+ playground?.refreshVisibility();
 }
 all('[data-play-view]').forEach(b=>b.addEventListener('click',()=>setPlayView(b.dataset.playView)));
+setPlayView('free');
+loadStage('탑과 랜드마크를 배치하고 있어요');await yieldPaint();
 try{explorer=new Explorer($('#explorer-canvas'),id=>selectDoctor(id));}catch(error){console.error(error);$('#explorer-canvas').innerHTML='<div class="scene-error">3D 화면을 열 수 없습니다.<br>브라우저의 하드웨어 가속을 확인해 주세요.</div>';}
+loadStage('직접 쌓을 공간을 준비하고 있어요');await yieldPaint();
 try{playground=new PhysicsPlayground($('#play-canvas'));}catch(error){console.error(error);$('#play-canvas').innerHTML='<div class="scene-error">3D 재질 체험을 불러오지 못했습니다.<br>수량과 길이 계산은 계속 사용할 수 있습니다.</div>';}
 if(playground)inlineStack=new InlineStack(playground);
 if(playground)reveal=new RecordReveal(playground,id=>{$('#explore').scrollIntoView({behavior:'instant'});selectDoctor(id);});
 all('[data-record]').forEach(b=>b.disabled=!reveal);
 function openRecord(id){const record=PUBLIC_DOCTORS.find(d=>d.id===id);if(!record||!reveal)return;setPlayView('free');if(explorer?.flight.enabled)explorer.setFlying(false);reveal.open(record);}
-all('[data-drop]').forEach(b=>{b.disabled=true;b.addEventListener('click',()=>{setInspection(false);playground?.drop(Number(b.dataset.drop));});});
-$('#empty-tray').addEventListener('click',()=>playground?.clear());
-$('#play-canvas').addEventListener('playground-change',e=>{all('[data-drop]').forEach(b=>b.disabled=!e.detail.ready||e.detail.queued+Number(b.dataset.drop)>80);$('#free-play-status').textContent=`이번에 떨어뜨린 진피 ${format.format(e.detail.totalDropped)}장${e.detail.queued?` · ${e.detail.queued}장 더 떨어지는 중`:''} · 수술 기록과 별개의 놀이터`;});
-$('#play-canvas').addEventListener('physics-unavailable',()=>{$('#sim-status').textContent='물리 연출을 불러오지 못했습니다. 길이 계산은 가능합니다.';});
+function dropSheets(count){
+ const error=$('#drop-error');
+ if(!Number.isInteger(count)||count<1||count>80){error.textContent='1부터 80까지의 장수로 입력해 주세요.';error.hidden=false;return false;}
+ if(!playground?.ready){error.textContent='낙하 체험을 준비하고 있어요. 잠시 후 다시 눌러 주세요.';error.hidden=false;return false;}
+ if(playground.queue+count>80){error.textContent='던지는 중이에요. 진피가 내려오면 다시 던져 주세요.';error.hidden=false;return false;}
+ error.hidden=true;setInspection(false);const accepted=playground.drop(count);if(document.activeElement===$('#drop-quantity'))document.activeElement.blur();keepPlayInView();return accepted;
+}
+all('[data-drop]').forEach(b=>{b.disabled=true;b.addEventListener('click',()=>dropSheets(Number(b.dataset.drop)));});
+$('#drop-form').addEventListener('submit',e=>{e.preventDefault();dropSheets(Number($('#drop-quantity').value));});
+$('#empty-tray').addEventListener('click',()=>{playground?.clear();$('#drop-quantity').value='0';$('#drop-error').hidden=true;});
+$('#play-canvas').addEventListener('playground-change',e=>{
+ all('[data-drop]').forEach(b=>b.disabled=!e.detail.ready||e.detail.queued+Number(b.dataset.drop)>80);$('#drop-submit').disabled=!e.detail.ready;
+ $('#box-total').textContent=format.format(e.detail.totalDropped);
+ $('#free-play-status').textContent=e.detail.queued?`${format.format(e.detail.queued)}장 더 떨어지는 중…`:e.detail.totalDropped?'원하는 만큼 더 던져보세요.':'0장 · 첫 진피를 던져보세요.';
+});
+$('#play-canvas').addEventListener('physics-unavailable',()=>{$('#free-play-status').textContent='낙하 체험을 불러오지 못했어요. 새로고침해 주세요.';$('#sim-status').textContent='물리 연출을 불러오지 못했습니다. 길이 계산은 가능합니다.';});
 function error(message){for(const id of ['input-error','live-error']){$('#'+id).textContent=message;$('#'+id).hidden=false;}$('#quantity').setAttribute('aria-invalid','true');$('#live-quantity').setAttribute('aria-invalid','true');}
 function clearError(){for(const id of ['input-error','live-error'])$('#'+id).hidden=true;$('#quantity').removeAttribute('aria-invalid');$('#live-quantity').removeAttribute('aria-invalid');}
 function syncRegisterButton(){
@@ -114,13 +140,13 @@ function setQuantity(next,{replay=false,surface='inline'}={}){
  if(replay){
   if(explorer?.flight.enabled)explorer.setFlying(false);
   displayCount=0;displayLength=0;paintMetrics(0);animateMetrics(next?3200:0,{delay:next?450:0});if(surface==='explorer')showSimulation({instant:true,scroll:false});else setPlayView('tower');
-  if(document.activeElement===$('#quantity')||document.activeElement===$('#live-quantity'))document.activeElement.blur();
+  if(document.activeElement===$('#quantity')||document.activeElement===$('#live-quantity'))document.activeElement.blur();if(surface==='inline')keepPlayInView();
  }else animateMetrics(delta>0?2400:650);
  return true;
 }
 function registerBuiltTower(){
  if(animation||quantity<1)return false;
- showSimulation();toast('내 화면에 체험 탑을 추가했습니다. 전체 공개는 서류 확인 후 진행됩니다.');return true;
+ showSimulation({wholeWorld:true});$('#tower-placement').hidden=false;toast('전체 공간에 내 탑을 추가했습니다. 파란 표시를 찾아보세요.');return true;
 }
 function addQuantity(amount,{surface='inline'}={}){
  const raw=$(surface==='explorer'?'#live-quantity':'#quantity').value.trim(),base=raw===''?quantity:Number(raw);
@@ -149,20 +175,22 @@ function refreshComparison(){
  $('#comparison-note').textContent=$('#comparison-landmark').value==='everest'?'에베레스트는 해발고도 기준의 개념 지형입니다. 높이는 같은 비율, 탑의 폭은 확대해 표현합니다.':'같은 기준선에서 높이를 비교합니다. 탑의 폭은 식별을 위해 확대했습니다.';
 }
 function syncPairButton(){const on=!!explorer?.comparison;$('#compare-pair').setAttribute('aria-pressed',String(on));$('#compare-pair').textContent=on?'전체 공간으로 ↙':'나란히 보기 ↗';}
-function showSimulation({instant=false,scroll=true}={}){
+function showSimulation({instant=false,scroll=true,wholeWorld=false}={}){
  towerAdded=true;
- selected='simulation';$('#tower-registration').hidden=false;explorer?.showSimulation(instant);$('#simulation-playback').hidden=false;$('#comparison-source').value='simulation';$('#live-build').hidden=false;
+ selected='simulation';$('#tower-registration').hidden=false;explorer?.showSimulation(instant,wholeWorld);$('#simulation-playback').hidden=false;$('#comparison-source').value='simulation';$('#live-build').hidden=false;
  all('.doctor-card').forEach(c=>{c.classList.remove('selected');c.querySelector('.doctor-select').setAttribute('aria-pressed','false');});
- $('#all-view').classList.remove('active');$('#my-tower').classList.add('active');refreshComparison();syncPairButton();if(scroll)$('.explorer-main').scrollIntoView({behavior:instant||reduced?'instant':'smooth',block:'start'});
+ if(wholeWorld){$('#live-build').hidden=true;$('#tower-registration').hidden=true;$('#simulation-playback').hidden=true;}
+ $('#all-view').classList.toggle('active',wholeWorld);$('#my-tower').classList.toggle('active',!wholeWorld);$('#tower-placement').hidden=!wholeWorld;refreshComparison();syncPairButton();if(scroll)$('.explorer-main').scrollIntoView({behavior:instant||reduced?'instant':'smooth',block:'start'});
 }
 function enterComparison(){
  explorer?.compare($('#comparison-source').value,$('#comparison-landmark').value);
  $('#all-view').classList.remove('active');syncPairButton();refreshComparison();$('.explorer-main').scrollIntoView({behavior:reduced?'instant':'smooth',block:'start'});
 }
-function overview(){if(explorer?.flight.enabled)explorer.setFlying(false);explorer?.overview();$('#live-build').hidden=true;$('#simulation-playback').hidden=true;$('#tower-registration').hidden=true;$('#all-view').classList.add('active');$('#my-tower').classList.remove('active');syncPairButton();}
+function overview(){$('#tower-placement').hidden=true;if(explorer?.flight.enabled)explorer.setFlying(false);explorer?.overview();$('#live-build').hidden=true;$('#simulation-playback').hidden=true;$('#tower-registration').hidden=true;$('#all-view').classList.add('active');$('#my-tower').classList.remove('active');syncPairButton();}
 $('#compare-sim').addEventListener('click',()=>{$('#explore').scrollIntoView({behavior:reduced?'instant':'smooth'});showSimulation();enterComparison();});
 $('#all-view').addEventListener('click',overview);$('#reset-camera').addEventListener('click',overview);$('#explorer-canvas').addEventListener('overview-request',overview);
-$('#my-tower').addEventListener('click',showSimulation);
+$('#my-tower').addEventListener('click',()=>showSimulation());
+$('#locate-my-tower').addEventListener('click',()=>{explorer?.showSimulation(false,true);$('#all-view').classList.add('active');$('#my-tower').classList.remove('active');});
 $('#compare-pair').addEventListener('click',()=>{if(explorer?.comparison)overview();else enterComparison();});
 $('#comparison-source').addEventListener('change',e=>{if(e.target.value==='simulation')showSimulation();else selectDoctor(e.target.value);enterComparison();});
 $('#comparison-landmark').addEventListener('change',enterComparison);
@@ -195,7 +223,7 @@ if(previousExperience){
  playground?.setSize(SIZES[size]);explorer?.setSize(SIZES[size]);explorer?.prepareSimulation(displayLength);inlineStack?.prepare(quantity,SIZES[size]);paintMetrics(1);setPlayView(previousExperience.playView);
  $('#material-dimensions').textContent=`${SIZES[size].width} × ${SIZES[size].length} cm · 3 mm${size==='5x6'?'':' · 예시'}`;
  $('#formula').textContent=`${format.format(quantity)}건 × 1장 × ${SIZES[size].length} cm = ${decimal.format(displayLength)} m`;
- $('#sim-status').textContent='이 탭에서 체험하던 기록을 이어갑니다.';$('#build-status').textContent=$('#inline-build-status').textContent=quantity?'내 기록 탑':'진피 0장 · 새 수량을 입력해 보세요';
+ $('#sim-status').textContent='이 탭에서 체험하던 기록을 이어갑니다.';$('#build-status').textContent=$('#inline-build-status').textContent=quantity?'내 탑 기록':'진피 0장 · 새 수량을 입력해 보세요';
  if(previousExperience.towerAdded){showSimulation({instant:true,scroll:false});if(!previousExperience.towerOpen)overview();}
 }
 syncRegisterButton();

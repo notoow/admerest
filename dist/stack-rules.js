@@ -1,4 +1,13 @@
 export const SHEET_WIDTH=5,SHEET_THICKNESS=.3,PERFECT_MARGIN=.18,STACK_GOAL=50;
+export function stackDifficulty(score){
+ const level=Math.min(5,1+Math.floor(Math.max(0,score)/10)),speed=3.6+(level-1)*.9;
+ return {level,speed,multiplier:Number((speed/3.6).toFixed(2)),gust:level<3?0:.1+(level-3)*.06,nextAt:level<5?level*10:50};
+}
+export function incomingSpeed(score,elapsed){
+ const d=stackDifficulty(score);
+ // A smooth gust changes timing, never the landing position or direction.
+ return d.speed*(1+d.gust*Math.sin(elapsed*2.1+score*.7));
+}
 export function assessBalance(stack){
  let sum=0,worst={risk:0,index:0,edge:0,direction:1};
  for(let i=stack.length-1;i>=0;i--){
@@ -23,7 +32,7 @@ export class StackRound{
   if(!Number.isFinite(dt)||dt<=0||['paused','ready','over','clear'].includes(this.status))return;
   dt=Math.min(dt,.05);this.elapsed+=dt;
   if(this.status==='moving'){
-   this.incoming.x+=this.incoming.direction*(3.9+Math.min(this.score*.16,5))*dt;
+   this.incoming.x+=this.incoming.direction*incomingSpeed(this.score,this.elapsed)*dt;
    if(Math.abs(this.incoming.x)>9){this.incoming.x=Math.sign(this.incoming.x)*(18-Math.abs(this.incoming.x));this.incoming.direction*=-1;}
   }else if(this.status==='dropping'&&this.elapsed>=.34){
    const below=this.stack.at(-1)?.x??0;
@@ -36,5 +45,5 @@ export class StackRound{
  }
  pause(){if(['moving','dropping','settling'].includes(this.status)){this.previousStatus=this.status;this.status='paused';return true;}return false;}
  resume(){if(this.status==='paused'){this.status=this.previousStatus;return true;}return false;}
- snapshot(){return {status:this.status,score:this.score,goal:STACK_GOAL,perfects:this.perfects,combo:this.combo,heightCm:Number((this.score*SHEET_THICKNESS).toFixed(1)),balanceRisk:Number(Math.min(1,this.risk).toFixed(3)),incomingX:Number(this.incoming.x.toFixed(3)),targetX:this.stack.at(-1)?.x??0,failure:this.failure?.reason??null};}
+ snapshot(){return {status:this.status,score:this.score,goal:STACK_GOAL,difficulty:stackDifficulty(this.score),speed:Number(incomingSpeed(this.score,this.elapsed).toFixed(3)),perfects:this.perfects,combo:this.combo,heightCm:Number((this.score*SHEET_THICKNESS).toFixed(1)),balanceRisk:Number(Math.min(1,this.risk).toFixed(3)),incomingX:Number(this.incoming.x.toFixed(3)),targetX:this.stack.at(-1)?.x??0,failure:this.failure?.reason??null};}
 }

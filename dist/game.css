@@ -4,3 +4,8 @@
 @media(prefers-reduced-motion:reduce){.game-feedback,.balance-track i{transition:none}}
 
 .stack-stage[data-aligned=true] .game-direction{color:#ffc28b;font-weight:700}
+
+.game-difficulty{padding:12px 24px;background:#1b3b59;display:grid;grid-template-columns:1fr auto;gap:5px 12px;font-size:11px;color:#b8cde4}.game-difficulty>div{display:flex;gap:12px;align-items:center}.game-difficulty b{color:#ffc595;letter-spacing:.08em}.game-difficulty small{grid-column:1/-1;color:#839fbb;font-size:10px}.stack-stage[data-level="3"],.stack-stage[data-level="4"],.stack-stage[data-level="5"]{background:radial-gradient(ellipse at 50% 58%,#436988,#1c3e5d 65%,#142e4a)}
+@media(max-width:760px){.game-difficulty{padding:10px 17px;font-size:10px}.game-difficulty>div{gap:8px}.stack-stage{height:clamp(230px,39svh,360px)}}
+
+.game-shell{scroll-margin-top:12px}

@@ -27,7 +27,7 @@ export class ScrollJourney {
   requestAnimationFrame(()=>this.loop());if(!this.visible||sceneSuspended('journey'))return;
   const p=this.progress,t=performance.now()*.001,assemble=smooth((p-.12)/.34),summit=smooth((p-.57)/.3),x=this.mobile?0:2.8;
   const phase=p<.32?0:p<.73?1:2;
-  if(this.phase!==phase){this.phase=phase;this.section.dataset.phase=String(phase);this.copy.forEach((copy,i)=>{copy.classList.toggle('active',i===phase);copy.inert=i!==phase;copy.setAttribute('aria-hidden',String(i!==phase));});this.steps.forEach((button,i)=>{button.classList.toggle('active',i===phase);button.setAttribute('aria-pressed',String(i===phase));});}
+  if(this.phase!==phase){this.phase=phase;this.section.dataset.phase=String(phase);this.section.querySelector('.journey-scroll span').textContent=phase===2?'이제 아래에서 탑을 만나보세요':'스크롤해서 올라가세요';this.copy.forEach((copy,i)=>{copy.classList.toggle('active',i===phase);copy.inert=i!==phase;copy.setAttribute('aria-hidden',String(i!==phase));});this.steps.forEach((button,i)=>{button.classList.toggle('active',i===phase);button.setAttribute('aria-pressed',String(i===phase));});}
   if(this.lastProgress!==p){
    this.stage.style.setProperty('--alpine-opacity',String(.16+summit*.84));this.stage.style.setProperty('--panorama-shift',`${(1-p)*4}%`);
    this.section.querySelector('#journey-progress-bar').style.transform=`scaleX(${p})`;this.host.style.opacity=String(1-summit);this.lastProgress=p;

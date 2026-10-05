@@ -1,0 +1,58 @@
+/* Content and navigation occupy separate rows, including short viewports. */
+.journey-stage{display:grid;grid-template-rows:auto minmax(0,1fr) auto;grid-template-columns:minmax(0,1fr);padding:24px 5.2%;gap:20px;min-height:680px}
+.journey-topline{grid-row:1;padding:0}
+.journey-copy{display:none;position:relative;inset:auto!important;grid-row:2;grid-column:1;align-self:center;max-width:min(620px,58%);transform:none}
+.journey-copy.active{display:block}
+.journey-copy h1,.journey-copy h2{font-size:clamp(44px,5.3vw,80px)}
+.journey-kicker{margin-bottom:16px}.journey-copy p{margin:18px 0}.journey-reference{margin-bottom:20px}
+.journey-bottom{position:relative;inset:auto;grid-row:3;grid-column:1}
+.journey-copy[data-chapter="0"] .specimen-spec{display:none}
+.journey[data-phase="2"] .journey-scroll b{animation:none}
+.play-visual{scroll-margin-top:12px}
+.box-controls[hidden],.play-inputs[hidden],.tower-details[hidden]{display:none!important}
+.box-eyebrow{display:block;font-size:10px;letter-spacing:.12em;color:#778ea9;margin-bottom:12px}
+.box-controls h3{font-size:30px;letter-spacing:-1px;color:#204778;margin-bottom:25px}
+.box-controls .free-play-tools{position:static;padding:18px 0 0}
+.box-controls .free-play-kicker{display:none}
+.box-controls .free-play-tools>div{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.box-controls .free-play-tools button{min-height:44px;border:1px solid #d2e1f7;background:#f4f8ff;color:#215dd4;border-radius:8px;font-size:11px;padding:8px 2px}
+.box-controls #free-play-status{font-size:11px;margin-top:12px;color:#7186a2;line-height:1.5}
+.box-total{display:flex;align-items:baseline;justify-content:space-between;border-top:1px solid #dce5f2;margin-top:30px;padding-top:24px;color:#667e9c;font-size:13px}
+.box-total strong{font-size:40px;color:#215cd5;letter-spacing:-1px}.box-total small{font-size:14px;margin-left:7px}
+.box-note{font-size:12px;line-height:1.8;color:#7b8fa9;margin-top:16px}
+.tower-placement{position:absolute;right:16px;bottom:16px;z-index:4;padding:15px 18px;border:1px solid #9ebfea;border-radius:14px;background:#f8fbffed;box-shadow:0 8px 28px #20529220;max-width:290px}
+.tower-placement[hidden],.is-flying .tower-placement{display:none}
+.placement-kicker{font-size:9px;letter-spacing:.04em;color:#4d79ae;display:block;margin-bottom:7px}
+.tower-placement>strong{font-size:17px;line-height:1.5;color:#164a8b;display:block}.tower-placement>small{display:block;font-size:9px;color:#7289a5;margin-top:7px}
+.tower-placement>div{display:flex;gap:7px;margin-top:10px}.tower-placement button{min-height:40px;padding:8px 12px;border:1px solid #cadbf3;border-radius:7px;font-size:12px;color:#3465a9;background:white}
+.tower-placement .placement-verify{background:#175de0;color:#fff;border-color:#175de0}
+.scene-label[data-object="simulation"]{border:2px solid #2a72eb;background:#f3f8ff;z-index:3}
+.scene-label.new-tower{outline:6px solid #3577f02b;box-shadow:0 0 0 12px #3577f015}
+.scene-label.new-tower .label-name{color:#075ddd;font-weight:750}
+.scene-label.new-tower .label-name:before{content:'↓';color:#1264ed;font-size:17px}
+@media(max-width:760px){
+ .journey-stage{height:calc(100svh - 99px);min-height:520px;top:99px;padding:20px 6% 18px;gap:16px}
+ .journey-topline{font-size:8px;letter-spacing:.1em}.journey-topline span:last-child{display:none}
+ .journey-copy{max-width:100%}.journey-copy h1,.journey-copy h2{font-size:clamp(38px,10vw,60px)}
+ .journey-kicker{font-size:9px;margin-bottom:12px}.journey-copy p{font-size:12px;margin:14px 0}
+ .journey-number{font-size:46px}.journey-reference{font-size:10px;margin:7px 0 16px}
+ .journey-bottom{display:grid;gap:9px}.journey-scroll{margin:0;font-size:10px}.journey-chapters{gap:18px}
+ .box-controls{padding:10px 12px 12px;background:#fff;border-top:1px solid #dae4f1}
+ .box-eyebrow,.box-controls h3,.box-note{display:none}
+ .box-controls .control-title{font-size:12px;margin-bottom:7px}.box-controls .control-title small{font-size:10px}
+ .box-controls .quantity-field input{font-size:24px;padding:9px 0}.box-controls .primary-button{font-size:12px;padding:10px 15px}
+ .box-controls .free-play-tools{padding:8px 0 0;height:auto}.box-controls #free-play-status{font-size:10px;margin:7px 0 0}
+ .box-total{padding-top:8px;margin-top:8px;font-size:11px}.box-total strong{font-size:22px}.box-total small{font-size:11px}
+ .play-grid[data-view="free"]>.play-controls{display:none}
+ .tower-placement{left:12px;right:12px;bottom:12px;max-width:none;padding:12px 14px}
+ .tower-placement>strong{font-size:14px}.tower-placement>strong br{display:none}
+ .tower-placement>div{margin-top:8px}.tower-placement button{min-height:40px;flex:1}
+ .explorer-main:has(.tower-placement:not([hidden])) .scene-host{height:clamp(395px,calc(100svh - 280px),600px)}
+}
+@media(max-height:600px) and (min-width:761px){
+ .journey-stage{min-height:490px;gap:12px;padding-top:15px;padding-bottom:15px}
+ .journey-copy h1,.journey-copy h2{font-size:42px}.journey-copy p{margin:10px 0;font-size:13px}.journey-kicker{margin-bottom:10px}.journey-number{font-size:40px}
+ .journey-cta{padding:11px 18px}.hero-cases{margin:12px 0}.hero-cases>strong{font-size:45px}.journey-text-link{margin-top:10px}
+}
+
+@media(min-width:761px) and (min-height:601px) and (max-height:760px){.journey-stage{min-height:550px}.journey-copy h1,.journey-copy h2{font-size:56px}.hero-cases{margin:14px 0}.hero-cases>strong{font-size:50px}}

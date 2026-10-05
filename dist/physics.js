@@ -12,7 +12,7 @@ export class PhysicsPlayground {
   this.controls=new OrbitControls(this.camera,this.renderer.domElement);this.controls.target.set(0,1,0);this.controls.enableDamping=true;this.controls.enableZoom=false;this.controls.enablePan=false;this.controls.minPolarAngle=.3;this.controls.maxPolarAngle=1.3;this.controls.update();
   this.renderer.domElement.addEventListener('pointerdown',()=>{this.cameraTransition=null;});
   this.renderer.domElement.setAttribute('aria-label','진피 낙하 체험: 드래그하여 진피의 관통 구멍과 옆면 살펴보기');
-  this.scene.background=new THREE.Color(0xf4f7fc);this.pieces=[];this.queue=0;this.size={width:5,length:6};this.displaySize={width:5,length:6};this.visible=false;this.ready=false;this.seedCount=8;this.totalDropped=0;this.limit=this.renderer.userData.profile.pieces;
+  this.scene.background=new THREE.Color(0xf4f7fc);this.pieces=[];this.queue=0;this.size={width:5,length:6};this.displaySize={width:5,length:6};this.visible=false;this.ready=false;this.seedCount=0;this.totalDropped=0;this.limit=this.renderer.userData.profile.pieces;
   this.trayGroup=new THREE.Group();this.scene.add(this.trayGroup);this.tray();
   // Detail and motion meshes share the same measured proportions and material maps.
   this.specimen=createSheet(true);this.specimen.scale.setScalar(2.6);this.specimen.position.set(0,2.3,0);this.specimen.rotation.set(-.7,-.2,.15);this.specimen.visible=false;this.scene.add(this.specimen);
@@ -26,13 +26,18 @@ export class PhysicsPlayground {
   box(6.4,.16,4.7,0,-.08,0,floorMat);box(6.6,.32,.13,0,.08,-2.4,rimMat);box(6.6,.32,.13,0,.08,2.4,rimMat);box(.13,.32,4.7,-3.25,.08,0,rimMat);box(.13,.32,4.7,3.25,.08,0,rimMat);
   const floor=new THREE.Mesh(new THREE.PlaneGeometry(50,50),new THREE.ShadowMaterial({opacity:.10}));floor.rotation.x=-Math.PI/2;floor.position.y=-.2;floor.receiveShadow=true;this.trayGroup.add(floor);
  }
+ refreshVisibility(){
+  const rect=this.host.getBoundingClientRect();this.visible=rect.width>0&&rect.height>0&&rect.bottom>0&&rect.top<innerHeight;
+  this.host.dataset.inViewport=String(this.visible);if(this.visible&&!this.loading)this.init();
+ }
  async init(){
+  if(this.loading)return;
   this.loading=true;
   try{
    const {default:R}=await import('./vendor/rapier.mjs');await R.init();this.R=R;this.world=new R.World({x:0,y:-9.81,z:0});this.world.timestep=1/60;
    const fixed=(x,y,z,hx,hy,hz)=>this.world.createCollider(R.ColliderDesc.cuboid(hx,hy,hz).setTranslation(x,y,z).setFriction(.8));
    fixed(0,-.08,0,3.3,.08,2.5);fixed(0,.08,-2.4,3.3,.16,.08);fixed(0,.08,2.4,3.3,.16,.08);fixed(-3.25,.08,0,.08,.16,2.4);fixed(3.25,.08,0,.08,.16,2.4);
-   this.ready=true;this.seed(this.seedCount);this.host.dataset.physics='ready';
+   this.ready=true;this.seed(this.seedCount);this.host.dataset.physics='ready';this.report();
   }catch(error){console.error('Physics unavailable',error);this.host.dataset.physics='unavailable';this.host.dispatchEvent(new CustomEvent('physics-unavailable'));}
  }
  dimensions(){return {w:this.displaySize.width*.23,l:this.displaySize.length*.23,t:.069};}
@@ -47,7 +52,7 @@ export class PhysicsPlayground {
   const mesh=new THREE.Group(),sheet=createLightSheet();sheet.rotation.x=-Math.PI/2;sheet.scale.set(w/MODEL_WIDTH,l,t/MODEL_DEPTH);mesh.add(sheet);mesh.position.set(x,y,z);mesh.quaternion.copy(q);this.scene.add(mesh);this.pieces.push({body,collider,mesh,sheet});if(falling)this.totalDropped++;this.report();
  }
  seed(count){this.seedCount=count;if(!this.ready)return;this.queue=0;for(const p of this.pieces){this.world.removeRigidBody(p.body);this.scene.remove(p.mesh);}this.pieces=[];const n=Math.min(this.limit,count);for(let i=0;i<n;i++)this.spawn(false,i);this.specimen.visible=!!this.inspect;}
- drop(count){if(!this.ready||this.queue+count>80)return;this.setInspect(false);if(reduced){const total=this.totalDropped+count;this.seed(Math.min(this.limit,this.pieces.length+count));this.totalDropped=total;this.report();return;}this.queue+=count;this.nextDrop=performance.now();this.report();}
+ drop(count){if(!this.ready||!Number.isInteger(count)||count<1||this.queue+count>80)return false;this.setInspect(false);if(reduced){const total=this.totalDropped+count;this.seed(Math.min(this.limit,this.pieces.length+count));this.totalDropped=total;this.report();return true;}this.queue+=count;this.nextDrop=performance.now();this.report();return true;}
  clear(){this.seed(0);this.totalDropped=0;this.report();}
  report(){this.host.dispatchEvent(new CustomEvent('playground-change',{detail:this.state()}));}
  state(){return {ready:this.ready,totalDropped:this.totalDropped,activePieces:this.pieces.length,queued:this.queue,mode:this.presentation?(this.presentation.kind??'record'):this.inspect?'inspect':'free'};}

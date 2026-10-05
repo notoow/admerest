@@ -1,6 +1,6 @@
 import {SIZES,MAX_QUANTITY} from './measurements.js';
 
-const KEY='admerest:experience:v1';
+const KEY='admerest:experience:v2';
 function snapshot(value){
  if(!value||value.version!==1||!Number.isInteger(value.quantity)||value.quantity<0||value.quantity>MAX_QUANTITY)return null;
  if(!Object.hasOwn(SIZES,value.size)||!['free','tower'].includes(value.playView))return null;

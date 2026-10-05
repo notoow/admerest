@@ -20,7 +20,7 @@ const number=new Intl.NumberFormat('en-US',{maximumFractionDigits:2});
 export class Explorer {
  constructor(host,onSelect){
   this.host=host;this.onSelect=onSelect;this.selected=PUBLIC_DOCTORS[0]?.id??'simulation';this.auto=false;
-  this.objects=new Map();this.labels=new Map();this.home=new Map();this.simCases=2000;this.simTarget=120;this.simFinalTarget=120;this.simWidth=.92;this.simWidthTarget=.92;
+  this.objects=new Map();this.labels=new Map();this.home=new Map();this.simCases=0;this.simTarget=0;this.simFinalTarget=0;this.simWidth=.92;this.simWidthTarget=.92;
   this.labelMetrics=new Map();this.labelLifts=new Map();this.labelPoint=new THREE.Vector3();
   this.labelObserver=new ResizeObserver(entries=>{for(const {target}of entries){const {width,height}=target.getBoundingClientRect();if(width&&height)this.labelMetrics.set(target.dataset.object,{width,height});}});
   this.renderer=rendererFor(host);this.scene=new THREE.Scene();lighting(this.scene,this.renderer);this.atmosphere=createAtmosphere(this.scene);
@@ -42,7 +42,8 @@ export class Explorer {
   this.addObject('shanghai',extraLandmark('shanghai'),[6.4,0,0],LANDMARKS.shanghai.name,632);
   this.addObject('eiffel',extraLandmark('eiffel'),[8.8,0,0],LANDMARKS.eiffel.name,330);
   this.addObject('everest',everest(),[55,0,-85],LANDMARKS.everest.name,8848.86);this.objects.get('everest').visible=false;
-  this.addObject('simulation',tower(120),[-7.5,0,0],'내 체험 탑',120);this.objects.get('simulation').visible=false;
+  this.addObject('simulation',tower(0),[-7.5,0,0],'내 탑',0);this.objects.get('simulation').visible=false;
+  this.simBeacon=new THREE.Mesh(new THREE.RingGeometry(.9,1.1,48),new THREE.MeshBasicMaterial({color:0x1966ff,transparent:true,opacity:.5,side:THREE.DoubleSide,depthWrite:false}));this.simBeacon.rotation.x=-Math.PI/2;this.simBeacon.visible=false;this.scene.add(this.simBeacon);
   this.guide=new THREE.Line(new THREE.BufferGeometry(),new THREE.LineDashedMaterial({color:0x5987dc,dashSize:.16,gapSize:.11,transparent:true,opacity:.65}));
   this.guide.visible=false;this.scene.add(this.guide);
   this.raycaster=new THREE.Raycaster();let down;
@@ -221,14 +222,15 @@ export class Explorer {
  }
  markSelected(){for(const [id,o]of this.objects){if(o.userData.base)o.userData.base.material.color.set(id===this.selected?0x3975ff:0xdfe7f3);this.labels.get(id)?.classList.toggle('selected',id===this.selected);}}
  toggleLandmark(id,on){this.clearComparison();this.objects.get(id).visible=on;this.overview();}
- showSimulation(instant=false){
+ showSimulation(instant=false,wholeWorld=false){
+  if(wholeWorld){this.clearComparison();this.objects.get('simulation').visible=true;this.selected='simulation';this.markSelected();this.highlightUntil=performance.now()+12000;this.host.dataset.view='all';this.frameVisible(instant);return;}
   if(this.comparison){this.restoreVisibility.set('simulation',true);this.compare('simulation',this.comparison.landmarkId);if(instant)this.frameVisible(true);}
   else{this.objects.get('simulation').visible=true;this.focus('simulation',instant);}
  }
- prepareSimulation(meters){this.simFinalTarget=meters;if(this.selected==='simulation'&&!this.flight.enabled){if(this.comparison)this.frameVisible();else this.focus('simulation');}}
+ prepareSimulation(meters){this.simFinalTarget=meters;if(this.selected==='simulation'&&!this.flight.enabled)this.refit();}
  updateSimulation(meters,cases=this.simCases){this.simTarget=Math.max(0,meters);this.simCases=cases;}
  setSize({width,length}){this.simWidthTarget=PANEL_HEIGHT*width/length;}
- refit(){if(this.flight.enabled)return;if(this.comparison)this.frameVisible();else if(this.selected==='simulation')this.focus('simulation');}
+ refit(){if(this.flight.enabled)return;if(this.comparison||this.host.dataset.view==='all')this.frameVisible();else if(this.selected==='simulation')this.focus('simulation');}
  renderSimulation(){
   const obj=this.objects.get('simulation'),height=this.simTarget*UNIT,now=performance.now();
   if(!obj.visible)return false;
@@ -249,7 +251,7 @@ export class Explorer {
   if(this.lastLabelValue!==this.simTarget||this.lastLabelCases!==this.simCases){
    this.labels.get('simulation').querySelector('.label-value').innerHTML=`${number.format(this.simCases)} <small>건</small>`;
    this.labels.get('simulation').querySelector('.label-length').textContent=`진피 ${number.format(this.simTarget)} m`;
-   this.labels.get('simulation').setAttribute('aria-label',`내 체험 탑, 수술 ${number.format(this.simCases)}건, ${number.format(this.simTarget)}미터, 탑 보기`);this.lastLabelValue=this.simTarget;this.lastLabelCases=this.simCases;
+   this.labels.get('simulation').setAttribute('aria-label',`내 탑, 수술 ${number.format(this.simCases)}건, ${number.format(this.simTarget)}미터, 탑 보기`);this.lastLabelValue=this.simTarget;this.lastLabelCases=this.simCases;
   }
   this.renderedSimTarget=this.simTarget;return true;
  }
@@ -257,6 +259,9 @@ export class Explorer {
   requestAnimationFrame(()=>this.loop());const now=performance.now(),interval=now-(this.loopTime??now),dt=Math.min(.05,interval/1000);this.loopTime=now;if((!this.visible&&!this.flight.enabled)||sceneSuspended('explorer'))return;
   if(this.renderer.userData.profile.compact){const ratio=this.budget.sample(interval);if(ratio!==null)this.renderer.setPixelRatio(ratio);}
   const simulationChanged=this.renderSimulation();
+  const highlight=now<(this.highlightUntil??0)&&this.objects.get('simulation').visible&&!this.flight.enabled;
+  this.labels.get('simulation').classList.toggle('new-tower',highlight);this.simBeacon.visible=highlight;
+  if(highlight){this.simBeacon.position.copy(this.objects.get('simulation').position);this.simBeacon.position.y=.015;this.simBeacon.scale.setScalar(reduced?1:1+Math.sin(now*.004)*.13);}
   if(this.transition){const t=Math.min(1,(performance.now()-this.transition.start)/850),ease=1-Math.pow(1-t,3);this.camera.position.lerpVectors(this.transition.from,this.transition.to,ease);this.controls.target.lerpVectors(this.transition.oldTarget,this.transition.target,ease);if(t===1)this.transition=null;}
   if(this.flight.enabled){
    this.flight.step(dt);document.querySelector('#discover-light').hidden=this.atmosphere.unlocked||this.camera.position.distanceTo(this.atmosphere.beacon.position)>3.5;if(now-(this.hudTime??0)>100){document.querySelector('#flight-altitude').textContent=number.format(Math.round(this.camera.position.y/UNIT*10)/10);document.querySelector('#flight-altitude-fill').style.height=`${Math.min(100,this.camera.position.y/(8848.86*UNIT)*100)}%`;const degrees=((this.flight.yaw*180/Math.PI)%360+360)%360;document.querySelector('#flight-heading').textContent=['N','NW','W','SW','S','SE','E','NE'][Math.round(degrees/45)%8];this.hudTime=now;}

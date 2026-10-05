@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {createSheet} from './material.js';
 import {rendererFor,lighting} from './scene.js';
-import {StackRound,SHEET_WIDTH,SHEET_THICKNESS,STACK_GOAL,PERFECT_MARGIN} from './stack-rules.js';
+import {StackRound,SHEET_WIDTH,SHEET_THICKNESS,STACK_GOAL,PERFECT_MARGIN,stackDifficulty} from './stack-rules.js?v=20261005-v2';
 
 const $=s=>document.querySelector(s),reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const round=new StackRound(),host=$('#game-canvas'),overlay=$('#game-overlay');
@@ -17,6 +17,7 @@ function updateUI(){
  const status=round.status,activeRound=['moving','dropping','settling','paused'].includes(status);
  $('#game-score').innerHTML=round.score+'<small>장</small>';$('#game-perfect').textContent=round.perfects;$('#game-best').innerHTML=best+'<small>장</small>';
  if(!storageAvailable)$('#game-best').previousElementSibling.textContent='이번 세션 최고';
+ const difficulty=stackDifficulty(round.score);$('#game-level').textContent=`STAGE ${difficulty.level} / 5`;$('#game-speed').textContent=`속도 ×${difficulty.multiplier.toFixed(2)}`;$('#game-next').textContent=round.score>=50?'50장 완성!':difficulty.level===5?'마지막 10장 · 강한 바람':`${difficulty.nextAt-round.score}장 뒤 ${difficulty.level===2?'바람 등장':'속도 UP'}`;$('#game-wind').textContent=difficulty.gust?'바람에 따라 빨라졌다 느려져요':'일정한 속도로 타이밍을 익혀요';$('#stack-stage').dataset.level=String(difficulty.level);
  $('#game-height').textContent=(round.score*SHEET_THICKNESS).toFixed(1)+' cm';$('#game-progress').textContent=round.score+' / '+STACK_GOAL;
  const risk=Math.min(1,round.risk),meter=$('.balance-track');meter.setAttribute('aria-valuenow',Math.round(risk*100));
  $('#game-balance-fill').style.width=risk*100+'%';$('#game-balance-fill').style.background=risk>.78?'#f08764':risk>.5?'#e9c57c':'#82c6b8';
@@ -26,13 +27,13 @@ function updateUI(){
  $('#game-place').disabled=!ready||status==='dropping'||status==='settling'||status==='over'&&failTime<1.15;
  overlay.hidden=!['ready','paused','over','clear'].includes(status)||status==='over'&&failTime<1.15;
  if(!overlay.hidden){
-  const copy=status==='ready'?['ONE MORE PIECE','타이밍을 맞춰요.','좌우로 움직이는 진피가 가운데 왔을 때\n스페이스바나 화면을 눌러주세요.','게임 시작']:status==='paused'?['TAKE YOUR TIME','잠시 쉬어가요.','계속하기를 누르면 멈춘 위치에서 이어집니다.','계속하기']:status==='clear'?['50 / 50 · COMPLETE','균형의 달인!','50장을 모두 쌓았어요.\nPERFECT '+round.perfects+'회 · 높이 15.0 cm','한 번 더 도전']:['ONE MORE TRY',round.failure.reason==='miss'?'앗, 빗나갔어요.':'균형이 무너졌어요.',round.score+'장 성공 · PERFECT '+round.perfects+'회\n'+(round.failure.reason==='miss'?'바로 아래 진피와 겹치도록 놓아보세요.':'무게중심이 받쳐주는 면을 벗어났어요.'),'다시 도전'];
+  const copy=status==='ready'?['ONE MORE PIECE','타이밍을 맞춰요.','좌우로 움직이는 진피가 가운데 왔을 때\n스페이스바나 화면을 눌러주세요.\n10장마다 속도 UP · 20장부터 바람 등장','게임 시작']:status==='paused'?['TAKE YOUR TIME','잠시 쉬어가요.','계속하기를 누르면 멈춘 위치에서 이어집니다.','계속하기']:status==='clear'?['50 / 50 · COMPLETE','균형의 달인!','50장을 모두 쌓았어요.\nPERFECT '+round.perfects+'회 · 높이 15.0 cm','한 번 더 도전']:['ONE MORE TRY',round.failure.reason==='miss'?'앗, 빗나갔어요.':'균형이 무너졌어요.',round.score+'장 성공 · PERFECT '+round.perfects+'회\n'+(round.failure.reason==='miss'?'바로 아래 진피와 겹치도록 놓아보세요.':'무게중심이 받쳐주는 면을 벗어났어요.'),'다시 도전'];
   $('#game-overlay-kicker').textContent=copy[0];$('#game-overlay-title').textContent=copy[1];$('#game-overlay-copy').textContent=copy[2];$('#game-start').textContent=copy[3];$('#game-start').disabled=!ready;
  }
  dirty=true;
 }
 function clearVisuals(){for(const item of visuals)item.removeFromParent();visuals=[];if(fallGroup){scene.remove(fallGroup);fallGroup=null;}towerGroup.rotation.z=0;failureStarted=false;failTime=0;cameraY=0;$('#game-feedback').classList.remove('visible');}
-function start(){if(!ready)return;clearVisuals();round.reset();lastFrame=performance.now();updateUI();renderer.domElement.focus({preventScroll:true});$('#game-status').textContent='게임 시작. 첫 진피가 왼쪽에서 날아옵니다.';}
+function start(){if(!ready)return;const shell=$('.game-shell');if(innerWidth<=760&&shell.getBoundingClientRect().bottom>innerHeight)shell.scrollIntoView({behavior:reduced?'instant':'smooth',block:'start'});clearVisuals();round.reset();lastFrame=performance.now();updateUI();renderer.domElement.focus({preventScroll:true});$('#game-status').textContent='게임 시작. 첫 진피가 왼쪽에서 날아옵니다.';}
 function action(){
  if(!ready)return false;
  if(round.status==='ready'||round.status==='clear'||round.status==='over'&&failTime>=1.15){start();return true;}
@@ -56,7 +57,7 @@ function frame(now){
  requestAnimationFrame(frame);const dt=Math.min(.04,Math.max(0,(now-lastFrame)/1000));lastFrame=now;
  if(!ready||document.hidden)return;
  const statusBefore=round.status;round.step(dt);syncVisuals();
- if(round.event){writeBest();if(round.event==='perfect')feedback('PERFECT'+(round.combo>1?' ×'+round.combo:''));else if(round.event==='landed')feedback('+'+1+'  ·  '+round.score+'장');if(['perfect','landed'].includes(round.event))$('#game-status').textContent=round.score+'장 성공. '+(round.event==='perfect'?'퍼펙트! ':'')+'균형 '+Math.round((1-round.risk)*100)+'퍼센트.';round.event=null;updateUI();}
+ if(round.event){writeBest();if(round.event==='perfect')feedback('PERFECT'+(round.combo>1?' ×'+round.combo:''));else if(round.event==='landed')feedback('+'+1+'  ·  '+round.score+'장');if(round.score>0&&round.score<50&&round.score%10===0)feedback(round.score===20?'STAGE 3 · 바람 등장':'STAGE '+stackDifficulty(round.score).level+' · SPEED UP');if(['perfect','landed'].includes(round.event))$('#game-status').textContent=round.score+'장 성공. '+(round.event==='perfect'?'퍼펙트! ':'')+'균형 '+Math.round((1-round.risk)*100)+'퍼센트.';round.event=null;updateUI();}
  if(statusBefore!==round.status)updateUI();
  if(round.status==='over'&&!failureStarted)beginFailure();
  if(round.status==='over'){const prior=failTime;failTime+=dt;if(prior<1.15&&failTime>=1.15)updateUI();}

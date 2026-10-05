@@ -7,9 +7,11 @@ import {admGeometry} from './adm-geometry.js';
 export const MODEL_WIDTH=5/6;
 export const MODEL_DEPTH=.05; // 3 mm / 60 mm, including the rounded lip.
 let specimen,detailSpecimen,fallbackGeometry,materials,lightGeometry;
+const loadStatus=detail=>dispatchEvent(new CustomEvent('admerest-load',{detail}));
+loadStatus({phase:'model',label:'진피 모델을 불러오고 있어요'});
 try{
  const draco=new DRACOLoader().setDecoderPath(new URL('./vendor/libs/draco/gltf/',import.meta.url).href).setWorkerLimit(2);
- const gltf=await new GLTFLoader().setDRACOLoader(draco).loadAsync(new URL('./assets/models/adm-sheet.glb',import.meta.url).href);
+ const gltf=await new GLTFLoader().setDRACOLoader(draco).loadAsync(new URL('./assets/models/adm-sheet.glb',import.meta.url).href,event=>loadStatus({phase:'model',label:event.loaded===event.total?'진피의 질감을 준비하고 있어요':'진피 모델을 불러오고 있어요',loaded:event.loaded,total:event.total}));
  draco.dispose();
  specimen=gltf.scene.getObjectByName('ADM_Motion');detailSpecimen=gltf.scene.getObjectByName('ADM_Detail');
  if(!specimen||!detailSpecimen)throw new Error('Missing ADM detail or motion model');

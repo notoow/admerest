@@ -8,7 +8,7 @@ const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 // Shares the playground renderer. Displayed layers summarize large record counts.
 export class InlineStack {
  constructor(playground){
-  Object.assign(this,{playground,inline:true,kind:'simulation',panels:[],count:2000,target:2000,size:{width:5,length:6},dirty:true});
+  Object.assign(this,{playground,inline:true,kind:'simulation',panels:[],count:0,target:0,size:{width:5,length:6},dirty:true});
   this.scene=new THREE.Scene();this.scene.background=new THREE.Color(0xeaf1fa);lighting(this.scene);
   this.camera=new THREE.PerspectiveCamera(35,playground.camera.aspect,.01,100);
   this.controls=new OrbitControls(this.camera,playground.renderer.domElement);Object.assign(this.controls,{enabled:false,enableDamping:true,enableZoom:false,enablePan:false,minPolarAngle:.3,maxPolarAngle:1.5});

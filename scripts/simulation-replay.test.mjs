@@ -7,12 +7,13 @@ import {SIZES,MAX_QUANTITY,recordHeightMeters} from '../dist/measurements.js';
 function setup(reduced=false){
  const source=readFileSync(new URL('../dist/app.js',import.meta.url),'utf8');
  const nodes=new Map(),frames=new Map(),updates=[],visits=[],views=[];let clock=0,id=0;
- const element=selector=>{if(!nodes.has(selector))nodes.set(selector,{style:{},focus(){this.focused=true;}});return nodes.get(selector);};
+ const element=selector=>{if(!nodes.has(selector))nodes.set(selector,{style:{},focus(options){this.focused=true;this.focusOptions=options;},scrollIntoView(options){this.scrolled=options;}});return nodes.get(selector);};
  const explorer={flight:{enabled:false},selected:'kim',updateSimulation(meters,cases){updates.push({meters,cases});},prepareSimulation(meters){this.finalMeters=meters;},refit(){}};
  const context=vm.createContext({quantity:2000,displayCount:2000,displayLength:120,size:'5x6',animation:null,raf:null,reduced,explorer,document:{activeElement:null},inlineStack:{update(){},prepare(){}},setPlayView(view){views.push(view);},keepPlayInView(){},SIZES,MAX_QUANTITY,recordHeightMeters,$:element,
   format:new Intl.NumberFormat('en-US'),decimal:new Intl.NumberFormat('en-US',{maximumFractionDigits:2}),performance:{now:()=>clock},
   requestAnimationFrame:fn=>{frames.set(++id,fn);return id;},refreshComparison(){},toast(){},clearError(){},error(message){context.lastError=message;},showSimulation(options){visits.push(options);explorer.selected='simulation';}});
  vm.runInContext(source.slice(source.indexOf('function syncRegisterButton('),source.indexOf('function setSize(')),context);
+ vm.runInContext(source.slice(source.indexOf('function openCaseRecord('),source.indexOf("all('[data-play-view]').forEach(b=>b.addEventListener")),context);
  const frame=time=>{clock=time;const pending=[...frames.values()];frames.clear();pending.forEach(fn=>fn(time));};
  return {context,nodes,updates,visits,views,frames,frame,apply:(count,replay=true)=>context.setQuantity(count,{replay})};
 }
@@ -41,10 +42,13 @@ test('zero, maximum, invalid input and reduced motion keep deterministic final c
  const calm=setup(true);calm.apply(231);calm.frame(0);assert.equal(calm.context.displayCount,231);assert.equal(calm.context.displayLength,13.86);assert.equal(calm.frames.size,0);
 });
 
-test('explorer Apply keeps its own surface and never scrolls the page',()=>{
- const s=setup();s.context.setQuantity(231,{replay:true,surface:'explorer'});
- assert.equal(s.visits.length,1);assert.equal(s.visits[0].instant,true);assert.equal(s.visits[0].scroll,false);assert.equal(s.views.length,0);
- s.frame(3650);assert.equal(s.context.displayCount,231);
+test('My tower opens the lower case editor without resetting or applying an unsubmitted count',()=>{
+ const s=setup();s.apply(2000);s.frame(3650);s.views.length=0;s.nodes.get('#quantity').value='3100';
+ s.context.openCaseRecord();assert.deepEqual(s.views,['tower']);s.frame(3700);
+ assert.equal(s.nodes.get('#case-record').scrolled.block,'start');assert.equal(s.nodes.get('#case-record').scrolled.behavior,'smooth');
+ assert.equal(s.nodes.get('[data-play-view="tower"]').focused,true);assert.equal(s.nodes.get('[data-play-view="tower"]').focusOptions.preventScroll,true);
+ assert.equal(s.nodes.get('#quantity').focused,undefined,'opening the editor must not summon a phone keyboard');
+ assert.equal(s.nodes.get('#quantity').value,'3100');assert.equal(s.context.quantity,2000);assert.equal(s.context.animation,null);assert.equal(s.visits.length,0,'navigation must not register a tower or open upper controls');
 });
 
 test('registration opens the upper tower only after building a nonzero record',()=>{
@@ -60,10 +64,10 @@ test('quick additions use the visible unsubmitted input and reject invalid count
  s.nodes.get('#quantity').value='-1';assert.equal(s.context.addQuantity(100),false);assert.equal(s.context.quantity,3200);
  s.nodes.get('#quantity').value='100000';assert.equal(s.context.addQuantity(10),false);assert.equal(s.context.quantity,3200);
 });
-test('upper tower quick-add uses its own edited input without switching preview or scrolling',()=>{
- const s=setup();s.apply(2000);s.views.length=0;s.nodes.get('#live-quantity').value='3100';
- assert.equal(s.context.addQuantity(100,{surface:'explorer'}),true);assert.equal(s.context.quantity,3200);
- assert.equal(s.nodes.get('#quantity').value,'3200');assert.equal(s.visits.length,0);assert.equal(s.views.length,0);
- s.frame(3000);assert.equal(s.context.displayLength,192);
- s.nodes.get('#live-quantity').value='100000';assert.equal(s.context.addQuantity(10,{surface:'explorer'}),false);assert.equal(s.context.quantity,3200);
+test('opening the case editor exits immersion and respects reduced motion with an empty record',()=>{
+ const s=setup(true);s.apply(0);s.frame(0);s.context.explorer.flight.enabled=true;
+ s.context.explorer.setFlying=enabled=>{s.context.explorer.flight.enabled=enabled;};
+ s.context.openCaseRecord();s.frame(1);
+ assert.equal(s.context.explorer.flight.enabled,false);assert.equal(s.nodes.get('#case-record').scrolled.behavior,'instant');
+ assert.equal(s.context.quantity,0);assert.equal(s.context.registerBuiltTower(),false);assert.equal(s.visits.length,0);
 });

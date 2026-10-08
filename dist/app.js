@@ -32,11 +32,11 @@ const totals=recordTotals(DOCTORS);
 all('[data-total-cases]').forEach(el=>el.textContent=format.format(totals.cases));
 all('[data-total-length]').forEach(el=>el.textContent=format.format(totals.length));
 const badge='<span class="verify-badge" aria-hidden="true">✓</span>';
-$('#explorer-canvas').after($('#live-build'));$('.explorer-main').append($('#flight-hud'));
+$('.explorer-main').append($('#flight-hud'));
 try{new ScrollJourney($('#journey'));}catch(error){console.warn('Scroll scene unavailable:',error.message);$('#journey').classList.add('journey-static');}
 function person(d){return `<span class="person-line">${esc(d.name)}<img class="flag" src="./assets/${d.country}.svg" alt="국적 ${d.countryName}">${isTowerPublished(d)?`<button class="verify-trigger" data-verification-id="${d.id}" aria-label="${esc(d.name)} ${d.verification==='demo'?'데모 ':''}인증 정보 보기">${badge}</button>`:''}</span>`;}
 function toast(message){const el=$('#toast');el.textContent=message;el.classList.add('visible');clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.classList.remove('visible'),3000);}
-function selectDoctor(id){$('#tower-placement').hidden=true;if(!PUBLIC_DOCTORS.some(d=>d.id===id))return;if(explorer?.flight.enabled)explorer.setFlying(false);selected=id;all('.doctor-card').forEach(card=>{const on=card.dataset.doctor===id;card.classList.toggle('selected',on);card.querySelector('.doctor-select').setAttribute('aria-pressed',String(on));});explorer?.focus(id);$('#all-view').classList.toggle('active',!explorer?.comparison);$('#my-tower').classList.remove('active');$('#comparison-source').value=id;$('#live-build').hidden=true;$('#simulation-playback').hidden=true;$('#tower-registration').hidden=true;refreshComparison();}
+function selectDoctor(id){$('#tower-placement').hidden=true;if(!PUBLIC_DOCTORS.some(d=>d.id===id))return;if(explorer?.flight.enabled)explorer.setFlying(false);selected=id;all('.doctor-card').forEach(card=>{const on=card.dataset.doctor===id;card.classList.toggle('selected',on);card.querySelector('.doctor-select').setAttribute('aria-pressed',String(on));});explorer?.focus(id);$('#all-view').classList.toggle('active',!explorer?.comparison);$('#comparison-source').value=id;$('#simulation-playback').hidden=true;$('#tower-registration').hidden=true;refreshComparison();}
 $('#doctor-list').innerHTML=PUBLIC_DOCTORS.map(d=>`<div class="doctor-card ${d.id===selected?'selected':''}" data-doctor="${d.id}"><button class="doctor-select" aria-label="${esc(d.name)}, 수술 ${format.format(d.cases)}건, 집도 기록 보기" aria-pressed="${d.id===selected}"></button><div class="doctor-details">${person(d)}<span class="person-value"><small>수술</small><b>${format.format(d.cases)}</b><small>건</small></span><span class="person-length">직접 집도한 수술 기록</span></div></div>`).join('');
 if(!PUBLIC_DOCTORS.length)$('#doctor-list').innerHTML='<p class="empty-public-towers">첫 번째 인증 탑을 기다리고 있습니다.<br>내 기록으로 먼저 체험해 보세요.</p>';
 $('#public-tower-count').textContent=String(PUBLIC_DOCTORS.length).padStart(2,'0');
@@ -53,7 +53,7 @@ function renderRanking(){
  all('[data-record]').forEach(b=>{b.disabled=!reveal;b.addEventListener('click',()=>openRecord(b.dataset.record));});attachBadges();
 }
 $('#country-filter').addEventListener('change',renderRanking);$('#verified-only').addEventListener('change',renderRanking);$('#ranking-content').addEventListener('click',event=>{if(event.target.closest('[data-reset-ranking]')){$('#verified-only').checked=false;$('#country-filter').value='all';renderRanking();}});renderRanking();
-$('#play-content').innerHTML=`<div class="play-grid"><div class="play-visual"><div class="material-label"><b>THE SMALL PIECE</b><span id="material-dimensions">5 × 6 cm · 3 mm</span></div><div id="play-canvas" class="play-canvas" role="group" aria-label="ADM 낙하 및 재질 체험"></div><div id="material-views" class="material-views" role="group" aria-label="진피 상세 시점" hidden><button data-material-view="front" aria-pressed="false">정면</button><button data-material-view="oblique" aria-pressed="true">사선</button><button data-material-view="back" aria-pressed="false">뒷면</button><button data-material-view="edge" aria-pressed="false">3mm 옆면</button></div><div class="free-play-tools"><span class="free-play-kicker">JUST PLAY · 자유 낙하</span><div><button data-drop="1">한 장 +</button><button data-drop="8">한 움큼 +8</button><button data-drop="40">쏟아붓기 +40</button><button id="empty-tray" aria-label="박스 비우기">비우기 ↻</button></div><p id="free-play-status" role="status">낙하 체험을 준비하고 있어요…</p></div><div class="material-caption"><button id="inspect-material" aria-pressed="false">진피 자세히 보기 ↗</button><span>드래그하여 회전</span></div></div><div class="play-controls"><form id="quantity-form" novalidate><label class="control-title" for="quantity">지금까지 직접 집도한 수술은?<small>0–100,000건</small></label><div class="input-row"><div class="quantity-field"><input id="quantity" type="number" inputmode="numeric" min="0" max="100000" step="1" value="0" aria-describedby="input-error"><span>건</span></div><button type="submit" class="primary-button">적용</button></div><p id="input-error" class="input-error" role="alert" hidden></p></form><div class="quick-buttons" aria-label="집도 건수 더하기">${[10,100,500,1000].map(n=>`<button data-add="${n}">+${format.format(n)}</button>`).join('')}</div><div class="reset-row"><button id="reset-count">↻ 처음부터 다시</button></div><div class="rule"></div><div class="control-title">진피 사이즈 <small>기준 5×6 · 두께 3mm</small></div><div class="size-options" role="group" aria-label="진피 사이즈">${Object.entries(SIZES).map(([key,s])=>`<button data-size="${key}" aria-pressed="${key===size}" class="${key===size?'active':''}">${s.width} × ${s.length}</button>`).join('')}</div><div class="metric-row cases-primary"><div><div class="metric-value"><span id="count-value">0</span><small>건</small></div><p class="metric-label">직접 집도 건수</p></div></div><div class="simulation-status"><span class="progress-track"><i id="sim-progress"></i></span><span id="sim-status" role="status" aria-live="polite">직접 집도한 수술 건수를 입력해 주세요</span></div><button id="compare-sim" class="compare-sim">내 집도 기록 비교하기 ↗</button><p class="simulation-disclaimer">모든 집도 기록은 5×6cm 진피로 통일해 표현합니다. 인증 후 전 세계에 공개할 수 있습니다.</p></div></div>`;
+$('#play-content').innerHTML=`<div id="case-record" class="play-grid"><div class="play-visual"><div class="material-label"><b>THE SMALL PIECE</b><span id="material-dimensions">5 × 6 cm · 3 mm</span></div><div id="play-canvas" class="play-canvas" role="group" aria-label="ADM 낙하 및 재질 체험"></div><div id="material-views" class="material-views" role="group" aria-label="진피 상세 시점" hidden><button data-material-view="front" aria-pressed="false">정면</button><button data-material-view="oblique" aria-pressed="true">사선</button><button data-material-view="back" aria-pressed="false">뒷면</button><button data-material-view="edge" aria-pressed="false">3mm 옆면</button></div><div class="free-play-tools"><span class="free-play-kicker">JUST PLAY · 자유 낙하</span><div><button data-drop="1">한 장 +</button><button data-drop="8">한 움큼 +8</button><button data-drop="40">쏟아붓기 +40</button><button id="empty-tray" aria-label="박스 비우기">비우기 ↻</button></div><p id="free-play-status" role="status">낙하 체험을 준비하고 있어요…</p></div><div class="material-caption"><button id="inspect-material" aria-pressed="false">진피 자세히 보기 ↗</button><span>드래그하여 회전</span></div></div><div class="play-controls"><form id="quantity-form" novalidate><label class="control-title" for="quantity">지금까지 직접 집도한 수술은?<small>0–100,000건</small></label><div class="input-row"><div class="quantity-field"><input id="quantity" type="number" inputmode="numeric" min="0" max="100000" step="1" value="0" aria-describedby="input-error"><span>건</span></div><button type="submit" class="primary-button">적용</button></div><p id="input-error" class="input-error" role="alert" hidden></p></form><div class="quick-buttons" aria-label="집도 건수 더하기">${[10,100,500,1000].map(n=>`<button data-add="${n}">+${format.format(n)}</button>`).join('')}</div><div class="reset-row"><button id="reset-count">↻ 처음부터 다시</button></div><div class="rule"></div><div class="control-title">진피 사이즈 <small>기준 5×6 · 두께 3mm</small></div><div class="size-options" role="group" aria-label="진피 사이즈">${Object.entries(SIZES).map(([key,s])=>`<button data-size="${key}" aria-pressed="${key===size}" class="${key===size?'active':''}">${s.width} × ${s.length}</button>`).join('')}</div><div class="metric-row cases-primary"><div><div class="metric-value"><span id="count-value">0</span><small>건</small></div><p class="metric-label">직접 집도 건수</p></div></div><div class="simulation-status"><span class="progress-track"><i id="sim-progress"></i></span><span id="sim-status" role="status" aria-live="polite">직접 집도한 수술 건수를 입력해 주세요</span></div><button id="compare-sim" class="compare-sim">내 집도 기록 비교하기 ↗</button><p class="simulation-disclaimer">모든 집도 기록은 5×6cm 진피로 통일해 표현합니다. 인증 후 전 세계에 공개할 수 있습니다.</p></div></div>`;
 const playVisual=$('.play-visual'),playStage=document.createElement('div');playStage.className='play-stage';
 const previewTabs=document.createElement('div');previewTabs.className='play-preview-tabs';previewTabs.setAttribute('role','group');previewTabs.setAttribute('aria-label','미리보기 화면');previewTabs.innerHTML='<button data-play-view="free" aria-pressed="true">박스 놀이</button><button data-play-view="tower" aria-pressed="false">직접 집도 건수</button>';
 playVisual.prepend(previewTabs,playStage);playStage.append($('.material-label'),$('#play-canvas'),$('#material-views'),$('.material-caption'));
@@ -82,6 +82,16 @@ function setPlayView(view){
  $('#play-canvas').setAttribute('aria-label',tower?'직접 집도한 수술 건수를 표현한 탑':'ADM 낙하 및 재질 체험');
  playground?.refreshVisibility();
 }
+function openCaseRecord(){
+ if(explorer?.flight.enabled)explorer.setFlying(false);
+ setPlayView('tower');
+ requestAnimationFrame(()=>{
+  // Focus the selected tab, not the input: opening this section should not
+  // bring up a phone keyboard and cover the stack before the visitor types.
+  $('[data-play-view="tower"]').focus({preventScroll:true});
+  $('#case-record').scrollIntoView({behavior:reduced?'instant':'smooth',block:'start'});
+ });
+}
 all('[data-play-view]').forEach(b=>b.addEventListener('click',()=>setPlayView(b.dataset.playView)));
 setPlayView('free');
 loadStage('탑과 랜드마크를 배치하고 있어요');await yieldPaint();
@@ -108,15 +118,15 @@ $('#play-canvas').addEventListener('playground-change',e=>{
  $('#free-play-status').textContent=e.detail.queued?`${format.format(e.detail.queued)}장 더 떨어지는 중…`:e.detail.totalDropped?'원하는 만큼 더 던져보세요.':'0장 · 첫 진피를 던져보세요.';
 });
 $('#play-canvas').addEventListener('physics-unavailable',()=>{$('#free-play-status').textContent='낙하 체험을 불러오지 못했어요. 새로고침해 주세요.';$('#sim-status').textContent='물리 연출을 불러오지 못했습니다. 길이 계산은 가능합니다.';});
-function error(message){for(const id of ['input-error','live-error']){$('#'+id).textContent=message;$('#'+id).hidden=false;}$('#quantity').setAttribute('aria-invalid','true');$('#live-quantity').setAttribute('aria-invalid','true');}
-function clearError(){for(const id of ['input-error','live-error'])$('#'+id).hidden=true;$('#quantity').removeAttribute('aria-invalid');$('#live-quantity').removeAttribute('aria-invalid');}
+function error(message){$('#input-error').textContent=message;$('#input-error').hidden=false;$('#quantity').setAttribute('aria-invalid','true');}
+function clearError(){$('#input-error').hidden=true;$('#quantity').removeAttribute('aria-invalid');}
 function syncRegisterButton(){
  $('#register-tower').disabled=!!animation||quantity<1;$('#register-tower').textContent=animation?'쌓는 중…':'탑에 등록하기 ↑';
 }
 function paintMetrics(progress){
  $('#registered-cases').textContent=format.format(displayCount);
  $('#count-value').textContent=format.format(displayCount);$('#sim-progress').style.width=`${progress*100}%`;
- explorer?.updateSimulation(displayLength,displayCount);$('#live-cases').innerHTML=`${format.format(displayCount)}<small>건</small>`;
+ explorer?.updateSimulation(displayLength,displayCount);
  inlineStack?.update(displayCount);$('#inline-build-count').textContent=format.format(displayCount);$('#inline-build-target').textContent=format.format(quantity);$('#inline-build-progress').style.width=`${progress*100}%`;
  $('#build-count').textContent=format.format(displayCount);$('#build-target').textContent=format.format(quantity);$('#build-progress').style.width=`${progress*100}%`;refreshComparison();
 }
@@ -134,13 +144,13 @@ function tick(now){
   if(explorer?.selected==='simulation')explorer.refit();
  }
 }
-function setQuantity(next,{replay=false,surface='inline'}={}){
+function setQuantity(next,{replay=false}={}){
  if(!Number.isInteger(next)||next<0||next>MAX_QUANTITY){error('0부터 100,000까지의 정수로 입력해 주세요.');return false;}
- clearError();const delta=next-quantity;quantity=next;$('#quantity').value=String(next);$('#live-quantity').value=String(next);
+ clearError();const delta=next-quantity;quantity=next;$('#quantity').value=String(next);
  if(replay){
   if(explorer?.flight.enabled)explorer.setFlying(false);
-  displayCount=0;displayLength=0;paintMetrics(0);animateMetrics(next?3200:0,{delay:next?450:0});if(surface==='explorer')showSimulation({instant:true,scroll:false});else setPlayView('tower');
-  if(document.activeElement===$('#quantity')||document.activeElement===$('#live-quantity'))document.activeElement.blur();if(surface==='inline')keepPlayInView();
+  displayCount=0;displayLength=0;paintMetrics(0);animateMetrics(next?3200:0,{delay:next?450:0});setPlayView('tower');
+  if(document.activeElement===$('#quantity'))document.activeElement.blur();keepPlayInView();
  }else animateMetrics(delta>0?2400:650);
  return true;
 }
@@ -148,11 +158,11 @@ function registerBuiltTower(){
  if(animation||quantity<1)return false;
  showSimulation({wholeWorld:true});$('#tower-placement').hidden=false;return true;
 }
-function addQuantity(amount,{surface='inline'}={}){
- const raw=$(surface==='explorer'?'#live-quantity':'#quantity').value.trim(),base=raw===''?quantity:Number(raw);
+function addQuantity(amount){
+ const raw=$('#quantity').value.trim(),base=raw===''?quantity:Number(raw);
  if(!Number.isInteger(base)||base<0||base>MAX_QUANTITY){error('0부터 100,000까지의 정수로 입력해 주세요.');return false;}
  if(!setQuantity(base+amount))return false;
- if(surface==='inline')setPlayView('tower');return true;
+ setPlayView('tower');return true;
 }
 function setSize(key){if(!SIZES[key])return false;size=key;all('[data-size]').forEach(b=>{const on=b.dataset.size===key;b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));});playground?.setSize(SIZES[key]);$('#material-dimensions').textContent=`${SIZES[key].width} × ${SIZES[key].length} cm · 3 mm${key==='5x6'?'':' · 예시'}`;return true;}
 $('#register-tower').addEventListener('click',registerBuiltTower);
@@ -177,10 +187,10 @@ function refreshComparison(){
 function syncPairButton(){const on=!!explorer?.comparison;$('#compare-pair').setAttribute('aria-pressed',String(on));$('#compare-pair').textContent=on?'전체 공간으로 ↙':'나란히 보기 ↗';}
 function showSimulation({instant=false,scroll=true,wholeWorld=false}={}){
  towerAdded=true;
- selected='simulation';$('#tower-registration').hidden=false;explorer?.showSimulation(instant,wholeWorld);$('#simulation-playback').hidden=false;$('#comparison-source').value='simulation';$('#live-build').hidden=false;
+ selected='simulation';$('#tower-registration').hidden=false;explorer?.showSimulation(instant,wholeWorld);$('#simulation-playback').hidden=false;$('#comparison-source').value='simulation';
  all('.doctor-card').forEach(c=>{c.classList.remove('selected');c.querySelector('.doctor-select').setAttribute('aria-pressed','false');});
- if(wholeWorld){$('#live-build').hidden=true;$('#tower-registration').hidden=true;$('#simulation-playback').hidden=true;}
- $('#all-view').classList.toggle('active',wholeWorld);$('#my-tower').classList.toggle('active',!wholeWorld);$('#tower-placement').hidden=!wholeWorld;refreshComparison();syncPairButton();
+ if(wholeWorld){$('#tower-registration').hidden=true;$('#simulation-playback').hidden=true;}
+ $('#all-view').classList.toggle('active',wholeWorld);$('#tower-placement').hidden=!wholeWorld;refreshComparison();syncPairButton();
  // Wait for the controls' new layout before choosing the destination. Otherwise
  // closing the landmark panel can anchor the smooth scroll below the scene.
  if(scroll)requestAnimationFrame(()=>$('.explorer-main').scrollIntoView({behavior:instant||reduced?'instant':'smooth',block:'start'}));
@@ -189,21 +199,18 @@ function enterComparison(){
  explorer?.compare($('#comparison-source').value,$('#comparison-landmark').value);
  $('#all-view').classList.remove('active');syncPairButton();refreshComparison();$('.explorer-main').scrollIntoView({behavior:reduced?'instant':'smooth',block:'start'});
 }
-function overview(){$('#tower-placement').hidden=true;if(explorer?.flight.enabled)explorer.setFlying(false);explorer?.overview();$('#live-build').hidden=true;$('#simulation-playback').hidden=true;$('#tower-registration').hidden=true;$('#all-view').classList.add('active');$('#my-tower').classList.remove('active');syncPairButton();}
-$('#compare-sim').addEventListener('click',()=>{$('#explore').scrollIntoView({behavior:reduced?'instant':'smooth'});showSimulation();enterComparison();});
+function overview(){$('#tower-placement').hidden=true;if(explorer?.flight.enabled)explorer.setFlying(false);explorer?.overview();$('#simulation-playback').hidden=true;$('#tower-registration').hidden=true;$('#all-view').classList.add('active');syncPairButton();}
+$('#compare-sim').addEventListener('click',()=>{showSimulation({scroll:false});enterComparison();});
 $('#all-view').addEventListener('click',overview);$('#reset-camera').addEventListener('click',overview);$('#explorer-canvas').addEventListener('overview-request',overview);
-$('#my-tower').addEventListener('click',()=>showSimulation());
+$('#my-tower').addEventListener('click',openCaseRecord);
 $('#locate-my-tower').addEventListener('click',()=>showSimulation({wholeWorld:true}));
 $('#compare-pair').addEventListener('click',()=>{if(explorer?.comparison)overview();else enterComparison();});
-$('#comparison-source').addEventListener('change',e=>{if(e.target.value==='simulation')showSimulation();else selectDoctor(e.target.value);enterComparison();});
+$('#comparison-source').addEventListener('change',e=>{if(e.target.value==='simulation')showSimulation({scroll:false});else selectDoctor(e.target.value);enterComparison();});
 $('#comparison-landmark').addEventListener('change',enterComparison);
 for(const [id,step]of [['comparison-previous',-1],['comparison-next',1]])$('#'+id).addEventListener('click',()=>{const select=$('#comparison-landmark');select.selectedIndex=(select.selectedIndex+step+select.options.length)%select.options.length;enterComparison();});
 $('#auto-rotate').addEventListener('click',e=>{if(!explorer)return;explorer.auto=!explorer.auto;e.currentTarget.setAttribute('aria-pressed',String(explorer.auto));});
-function toggleLandmark(id,on){const b=$(`[data-landmark="${id}"]`);if(!b)return;b.setAttribute('aria-pressed',String(on));b.classList.toggle('active',on);b.querySelector('.chip-check').textContent=on?'✓':'＋';explorer?.toggleLandmark(id,on);syncPairButton();$('#all-view').classList.add('active');$('#my-tower').classList.remove('active');$('#landmark-visible-count').textContent=`${all('[data-landmark][aria-pressed="true"]').length} / 5`;}
+function toggleLandmark(id,on){const b=$(`[data-landmark="${id}"]`);if(!b)return;b.setAttribute('aria-pressed',String(on));b.classList.toggle('active',on);b.querySelector('.chip-check').textContent=on?'✓':'＋';explorer?.toggleLandmark(id,on);syncPairButton();$('#all-view').classList.add('active');$('#landmark-visible-count').textContent=`${all('[data-landmark][aria-pressed="true"]').length} / 5`;}
 all('[data-landmark]').forEach(b=>b.addEventListener('click',()=>toggleLandmark(b.dataset.landmark,b.getAttribute('aria-pressed')!=='true')));
-$('#live-quantity-form').addEventListener('submit',e=>{e.preventDefault();const raw=$('#live-quantity').value;if(raw.trim()==='')return error('직접 집도한 수술 건수를 입력해 주세요.');setQuantity(Number(raw),{replay:true,surface:'explorer'});});
-all('[data-live-add]').forEach(b=>b.addEventListener('click',()=>addQuantity(Number(b.dataset.liveAdd),{surface:'explorer'})));
-$('#live-reset').addEventListener('click',()=>setQuantity(0));
 const flightCues=new IntersectionObserver(entries=>{for(const e of entries)e.target.classList.toggle('flight-cue-visible',e.isIntersecting);},{threshold:.8});
 all('[data-start-flight]').forEach(button=>{button.disabled=!explorer;flightCues.observe(button);button.addEventListener('click',()=>{if(!explorer)return;explorer.setFlying(true);document.body.classList.add('flight-experienced');syncPairButton();});});
 refreshComparison();
@@ -222,7 +229,7 @@ if(document.modelContext?.registerTool){
 const previousExperience=readExperience();
 if(previousExperience){
  quantity=displayCount=previousExperience.quantity;size=previousExperience.size;displayLength=recordHeightMeters(quantity);
- $('#quantity').value=$('#live-quantity').value=String(quantity);
+ $('#quantity').value=String(quantity);
  all('[data-size]').forEach(b=>{const on=b.dataset.size===size;b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));});
  playground?.setSize(SIZES[size]);explorer?.prepareSimulation(displayLength);inlineStack?.prepare(quantity,SIZES['5x6']);paintMetrics(1);setPlayView(previousExperience.playView);
  $('#material-dimensions').textContent=`${SIZES[size].width} × ${SIZES[size].length} cm · 3 mm${size==='5x6'?'':' · 예시'}`;
@@ -231,7 +238,7 @@ if(previousExperience){
  if(previousExperience.towerAdded){showSimulation({instant:true,scroll:false});if(!previousExperience.towerOpen)overview();}
 }
 syncRegisterButton();
-function rememberExperience(){saveExperience({quantity,size,playView,towerAdded,towerOpen:!$('#live-build').hidden});}
+function rememberExperience(){saveExperience({quantity,size,playView,towerAdded,towerOpen:explorer?.selected==='simulation'&&explorer?.host.dataset.view==='focus'});}
 addEventListener('pagehide',rememberExperience);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')rememberExperience();});
 

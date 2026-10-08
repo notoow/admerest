@@ -9,7 +9,9 @@ body:not(.flight-experienced) [data-start-flight].flight-cue-visible:not(:disabl
 [data-start-flight] .flight-cta-copy{display:grid;gap:5px;text-align:left;font-size:15px;line-height:1.25}
 .flight-cta-copy strong{font-weight:700}.flight-cta-copy small{font-size:11px;font-weight:450;color:#e2edff}
 [data-start-flight] .flight-cta-arrow{font-size:25px;line-height:1}
-.enter-flight .flight-cta-copy{font-size:13px}.enter-flight .flight-cta-copy small{display:none}
+.enter-flight{height:33px;min-height:33px;padding:6px 10px;gap:6px;border-radius:7px}
+.enter-flight .flight-cta-copy{font-size:12px}.enter-flight .flight-cta-copy small{display:none}
+.enter-flight .flight-cta-arrow{font-size:18px}
 @keyframes flight-invitation{0%,70%,100%{opacity:0;transform:scale(1)}10%{opacity:.5}50%{opacity:0;transform:scale(1.12,1.25)}}
 @media(prefers-reduced-motion:reduce){[data-start-flight]::after{animation:none!important}body:not(.flight-experienced) [data-start-flight]:not(:disabled)::after{opacity:.2}}
 
@@ -48,7 +50,7 @@ body.flight-open{overscroll-behavior:none}
  .scene-toolbar .segmented button{min-height:44px;padding:8px}
  .scene-actions{flex:1;min-width:0;justify-content:flex-end}
  .scene-actions #reset-camera{display:none}
- .enter-flight{flex:1;justify-content:space-between;padding:10px 12px;border-radius:11px;min-height:48px;margin:0;gap:8px}
+ .enter-flight{flex:1;justify-content:space-between;padding:8px 12px;border-radius:7px;height:44px;min-height:44px;margin:0;gap:8px}
  .enter-flight .flight-cta-copy{font-size:12px}
  .enter-flight .flight-cta-arrow{font-size:20px}
 }

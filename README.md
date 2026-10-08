@@ -67,7 +67,9 @@ PC는 클릭 시 브라우저의 Pointer Lock을 요청하며 마우스 이동�
 
 ### 외부 건물 모델
 
-4개 건물은 CC BY 4.0 자산입니다. 사이트 하단 **3D 모델 출처**에 원본 모델, 제작자, 라이선스와 변경 내역을 표시합니다. 원작자의 서비스 보증이나 제휴를 뜻하지 않습니다. 상세 출처와 SHA-256은 [`dist/assets/models/credits.json`](dist/assets/models/credits.json), Blender 재수입 검증은 [`models/landmark-validation.json`](models/landmark-validation.json)에 있습니다.
+4개 건물과 사람 모델은 CC BY 4.0 자산입니다. 사이트 하단 **3D 모델 출처**에 원본 모델, 제작자, 라이선스와 변경 내역을 표시합니다. 원작자의 서비스 보증이나 제휴를 뜻하지 않습니다. 상세 출처와 SHA-256은 [`dist/assets/models/credits.json`](dist/assets/models/credits.json), Blender 재수입 검증은 [`models/landmark-validation.json`](models/landmark-validation.json)과 [`models/human-validation.json`](models/human-validation.json)에 있습니다.
+
+사람은 사용자가 제공한 doctortex의 Human 모델입니다. 머리카락과 신발을 포함한 모델 전체 높이를 **180cm**로 보정합니다. `scripts/optimize-human.py`는 팔을 내린 자세를 고정하고 512px WebP 텍스처와 Draco 압축으로 경량화합니다. 사람 비교를 선택하거나 표시 토글을 켤 때 모델을 불러옵니다. 30건 × 6cm = 180cm 비교와 확대, 전체 공간 복귀를 검증합니다.
 
 롯데월드타워는 Sketchfab 공식 GLB 다운로드, 나머지는 원작자 크레딧을 포함하는 [Smart UI 공개 데모](https://www.htmlelements.com/demos/3d-chart/custom-models/index.htm)의 배포본입니다. `scripts/optimize-landmarks.py`는 `qa/<id>-source.glb`를 Blender에서 읽어 변환합니다. 원본은 저장소에 중복 포함하지 않습니다. 에펠탑 모델의 외형은 제작 당시 표현이며, 비교 높이는 [현재 330m](https://www.toureiffel.paris/en/news/history-and-culture/300-330-meters-story-towers-height)로 맞춥니다.
 

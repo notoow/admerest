@@ -179,10 +179,12 @@ function refreshComparison(){
  const source=$('#comparison-source').value,landmark=LANDMARKS[$('#comparison-landmark').value];
  const meters=source==='simulation'?displayLength:(DOCTORS.find(d=>d.id===source)?.length??0);
  const info=compareHeight(meters,landmark.height);
- $('#comparison-percent').innerHTML=`${info.percent.toFixed(1)}<small>%</small>`;
- $('#comparison-description').textContent=Math.abs(info.difference)<.005?`${landmark.name}와 같은 높이예요`:`${landmark.name}보다 ${decimal.format(Math.abs(info.difference))}m ${info.difference>0?'높아요':'낮아요'}`;
+ const human=$('#comparison-landmark').value==='human';
+ $('#comparison-percent').innerHTML=human?`${decimal.format(meters/landmark.height)}<small>배</small>`:`${info.percent.toFixed(1)}<small>%</small>`;
+ $('#comparison-description').textContent=Math.abs(info.difference)<.005?`${landmark.name}${human?'과':'와'} 같은 높이예요`:`${landmark.name}보다 ${decimal.format(Math.abs(info.difference))}m ${info.difference>0?'높아요':'낮아요'}`;
  $('#comparison-progress').style.width=`${Math.min(100,info.percent)}%`;
- $('#comparison-note').textContent=$('#comparison-landmark').value==='everest'?'에베레스트는 해발고도 기준의 개념 지형입니다. 높이는 같은 비율, 탑의 폭은 확대해 표현합니다.':'같은 기준선에서 높이를 비교합니다. 탑의 폭은 식별을 위해 확대했습니다.';
+ $('#comparison-note').textContent=human?'사람은 키 180cm 기준입니다. 높이는 같은 비율이며, 탑의 폭은 알아보기 쉽게 조정했습니다.':$('#comparison-landmark').value==='everest'?'에베레스트는 해발고도 기준의 개념 지형입니다. 높이는 같은 비율, 탑의 폭은 확대해 표현합니다.':'같은 기준선에서 높이를 비교합니다. 탑의 폭은 식별을 위해 확대했습니다.';
+ $('#human-closeup').hidden=!human;$('#human-closeup').textContent='사람 확대 ↗';
 }
 function syncPairButton(){const on=!!explorer?.comparison;$('#compare-pair').setAttribute('aria-pressed',String(on));$('#compare-pair').textContent=on?'전체 공간으로 ↙':'나란히 보기 ↗';}
 function showSimulation({instant=false,scroll=true,wholeWorld=false}={}){
@@ -197,6 +199,7 @@ function showSimulation({instant=false,scroll=true,wholeWorld=false}={}){
 }
 function enterComparison(){
  explorer?.compare($('#comparison-source').value,$('#comparison-landmark').value);
+ $('#simulation-playback').hidden=true;$('#tower-registration').hidden=true;$('#tower-placement').hidden=true;
  $('#all-view').classList.remove('active');syncPairButton();refreshComparison();$('.explorer-main').scrollIntoView({behavior:reduced?'instant':'smooth',block:'start'});
 }
 function overview(){$('#tower-placement').hidden=true;if(explorer?.flight.enabled)explorer.setFlying(false);explorer?.overview();$('#simulation-playback').hidden=true;$('#tower-registration').hidden=true;$('#all-view').classList.add('active');syncPairButton();}
@@ -207,9 +210,14 @@ $('#locate-my-tower').addEventListener('click',()=>showSimulation({wholeWorld:tr
 $('#compare-pair').addEventListener('click',()=>{if(explorer?.comparison)overview();else enterComparison();});
 $('#comparison-source').addEventListener('change',e=>{if(e.target.value==='simulation')showSimulation({scroll:false});else selectDoctor(e.target.value);enterComparison();});
 $('#comparison-landmark').addEventListener('change',enterComparison);
+ $('#human-closeup').addEventListener('click',()=>{
+  if(explorer?.selected==='human'&&explorer?.host.dataset.view==='focus'){enterComparison();return;}
+  if(explorer?.comparison?.landmarkId!=='human')enterComparison();
+  explorer?.focus('human');$('#human-closeup').textContent='두 높이 함께 보기 ↙';$('.explorer-main').scrollIntoView({behavior:reduced?'instant':'smooth',block:'start'});
+ });
 for(const [id,step]of [['comparison-previous',-1],['comparison-next',1]])$('#'+id).addEventListener('click',()=>{const select=$('#comparison-landmark');select.selectedIndex=(select.selectedIndex+step+select.options.length)%select.options.length;enterComparison();});
 $('#auto-rotate').addEventListener('click',e=>{if(!explorer)return;explorer.auto=!explorer.auto;e.currentTarget.setAttribute('aria-pressed',String(explorer.auto));});
-function toggleLandmark(id,on){const b=$(`[data-landmark="${id}"]`);if(!b)return;b.setAttribute('aria-pressed',String(on));b.classList.toggle('active',on);b.querySelector('.chip-check').textContent=on?'✓':'＋';explorer?.toggleLandmark(id,on);syncPairButton();$('#all-view').classList.add('active');$('#landmark-visible-count').textContent=`${all('[data-landmark][aria-pressed="true"]').length} / 5`;}
+function toggleLandmark(id,on){const b=$(`[data-landmark="${id}"]`);if(!b)return;b.setAttribute('aria-pressed',String(on));b.classList.toggle('active',on);b.querySelector('.chip-check').textContent=on?'✓':'＋';explorer?.toggleLandmark(id,on);syncPairButton();$('#all-view').classList.add('active');$('#landmark-visible-count').textContent=`${all('[data-landmark][aria-pressed="true"]').length} / ${Object.keys(LANDMARKS).length}`;}
 all('[data-landmark]').forEach(b=>b.addEventListener('click',()=>toggleLandmark(b.dataset.landmark,b.getAttribute('aria-pressed')!=='true')));
 const flightCues=new IntersectionObserver(entries=>{for(const e of entries)e.target.classList.toggle('flight-cue-visible',e.isIntersecting);},{threshold:.8});
 all('[data-start-flight]').forEach(button=>{button.disabled=!explorer;flightCues.observe(button);button.addEventListener('click',()=>{if(!explorer)return;explorer.setFlying(true);document.body.classList.add('flight-experienced');syncPairButton();});});

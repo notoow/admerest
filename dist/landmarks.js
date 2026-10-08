@@ -9,11 +9,12 @@ function load(id){
  if(!cache.has(id))cache.set(id,loader.loadAsync(new URL(`./assets/models/${LANDMARKS[id].model}`,import.meta.url).href).then(gltf=>{
   gltf.scene.traverse(node=>{
    if(!node.isMesh)return;
-   node.castShadow=true;node.receiveShadow=true;
+   node.castShadow=id!=='human';node.receiveShadow=id!=='human';
    for(const mat of Array.isArray(node.material)?node.material:[node.material]){
     // Preserve authored surfaces while avoiding mirror aliasing at phone resolution.
     mat.roughness=Math.max(mat.roughness??.35,.28);mat.envMapIntensity=.85;
     if(id==='eiffel'){mat.color.set(0x8d7968);mat.roughness=.48;mat.metalness=.65;}
+    if(id==='human'){mat.metalness=0;mat.roughness=Math.max(mat.roughness,.65);mat.envMapIntensity=.4;if(!/hair|eyewear/i.test(mat.name)){mat.transparent=false;mat.alphaTest=.4;}}
    }
   });
   return gltf.scene;
@@ -41,6 +42,14 @@ export function hydrateLandmark(group,id){
 
 export function extraLandmark(id){
  const h=LANDMARKS[id].height*.008,group=new THREE.Group();
+ if(id==='human'){
+  const material=new THREE.MeshStandardMaterial({color:0x537593,roughness:.8});
+  const body=new THREE.Mesh(new THREE.CapsuleGeometry(h*.13,h*.58,4,8),material);
+  body.position.y=h*.42;group.add(body);
+  const head=new THREE.Mesh(new THREE.SphereGeometry(h*.09,12,8),material);head.position.y=h*.91;group.add(head);
+  group.userData={height:h,halfWidth:h*.2,halfDepth:h*.12,assetStatus:'idle',load:()=>{if(group.userData.assetStatus==='idle')hydrateLandmark(group,id);}};
+  return group;
+ }
  const material=new THREE.MeshStandardMaterial({color:id==='eiffel'?0x8d7968:0xa1b5c4,roughness:.5,metalness:.4});
  const body=new THREE.Mesh(new THREE.CylinderGeometry(id==='eiffel'?.02:.15,id==='eiffel'?.45:.22,h,12),material);
  body.position.y=h/2;body.castShadow=true;group.add(body);

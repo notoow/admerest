@@ -42,6 +42,7 @@ export class Explorer {
   this.addObject('shanghai',extraLandmark('shanghai'),[6.4,0,0],LANDMARKS.shanghai.name,632);
   this.addObject('eiffel',extraLandmark('eiffel'),[8.8,0,0],LANDMARKS.eiffel.name,330);
   this.addObject('everest',everest(),[55,0,-85],LANDMARKS.everest.name,8848.86);this.objects.get('everest').visible=false;
+  this.addObject('human',extraLandmark('human'),[-1.5,0,.15],LANDMARKS.human.name,LANDMARKS.human.height);this.objects.get('human').visible=false;
   this.addObject('simulation',tower(0),[-7.5,0,0],'내 탑',0);this.objects.get('simulation').visible=false;
   this.simBeacon=new THREE.Mesh(new THREE.RingGeometry(.9,1.1,48),new THREE.MeshBasicMaterial({color:0x1966ff,transparent:true,opacity:.5,side:THREE.DoubleSide,depthWrite:false}));this.simBeacon.rotation.x=-Math.PI/2;this.simBeacon.visible=false;this.scene.add(this.simBeacon);
   this.guide=new THREE.Line(new THREE.BufferGeometry(),new THREE.LineDashedMaterial({color:0x5987dc,dashSize:.16,gapSize:.11,transparent:true,opacity:.65}));
@@ -67,7 +68,8 @@ export class Explorer {
   const doctor=DOCTORS.find(d=>d.id===id);
   label.setAttribute('aria-label',`${name}, ${doctor?`수술 ${number.format(doctor.cases)}건, `:''}${number.format(value)}미터, 탑 보기`);
   label.innerHTML=`<span class="label-name">${esc(name)}${country?`<img class="flag" src="./assets/${country}.svg" alt="${country}">`:''}${['demo','verified'].includes(doctor?.verification)?'<span class="verify-badge" title="자격·기록 확인 상태" aria-hidden="true">✓</span>':''}</span><div class="label-value">${number.format(doctor?doctor.cases:id==='simulation'?this.simCases:value)} <small>${doctor||id==='simulation'?'건':'m'}</small></div>${doctor||id==='simulation'?`<span class="label-length">직접 집도 건수</span>`:''}`;
-  label.addEventListener('click',()=>{if(this.flight?.enabled)return;if(DOCTORS.some(d=>d.id===id))this.onSelect(id);else if(!this.comparison)this.focus(id);});
+  if(id==='human'){label.querySelector('.label-value').innerHTML='180 <small>cm</small>';label.setAttribute('aria-label','키 180cm 사람 자세히 보기');}
+  label.addEventListener('click',()=>{if(this.flight?.enabled)return;if(DOCTORS.some(d=>d.id===id))this.onSelect(id);else if(!this.comparison||id==='human')this.focus(id);});
   this.host.append(label);this.labels.set(id,label);this.labelObserver.observe(label);
  }
  ensureDoctor(id){
@@ -181,13 +183,17 @@ export class Explorer {
  }
  clearComparison(){
   if(!this.comparison)return;
-  for(const [id,o]of this.objects){o.position.copy(this.home.get(id));o.scale.set(1,1,1);o.visible=this.restoreVisibility.get(id);}
+  for(const [id,o]of this.objects){o.position.copy(this.home.get(id));o.scale.set(1,1,1);o.visible=this.restoreVisibility.get(id);if(o.userData.base)o.userData.base.visible=true;}
+  this.controls.minDistance=4;this.camera.near=.003;this.camera.updateProjectionMatrix();
   this.comparison=null;this.guide.visible=false;this.host.dataset.view='all';
  }
  frameVisible(instant=false){
-  const box=new THREE.Box3();
+  const box=new THREE.Box3(),human=this.comparison?.landmarkId==='human';
   for(const [id,o]of this.objects)if(o.visible){
-   if(id==='simulation'){
+   if(human&&id===this.comparison.towerId){
+    const h=(id==='simulation'?Math.max(this.simTarget,this.simFinalTarget):DOCTORS.find(d=>d.id===id)?.length??0)*UNIT;
+    box.union(new THREE.Box3(o.position.clone().add(new THREE.Vector3(-this.humanTowerWidth/2,0,-.001)),o.position.clone().add(new THREE.Vector3(this.humanTowerWidth/2,h,.001))));
+   }else if(id==='simulation'){
     // Pooled panels remain in the group after shrinking; only frame the visible height.
     const halfWidth=Math.max(.57,this.simWidth/2)*o.scale.x,halfDepth=.36*o.scale.z;
     box.union(new THREE.Box3(o.position.clone().add(new THREE.Vector3(-halfWidth,0,-halfDepth)),o.position.clone().add(new THREE.Vector3(halfWidth,Math.max(.035,this.simTarget*UNIT,this.simFinalTarget*UNIT),halfDepth))));
@@ -197,32 +203,44 @@ export class Explorer {
   const angle=THREE.MathUtils.degToRad(this.camera.fov/2);
   const distance=Math.max(size.y/(2*Math.tan(angle)),size.x/(2*Math.tan(angle)*this.camera.aspect))*1.34+size.z*.5;
   const direction=this.comparison?new THREE.Vector3(0,.04,1):new THREE.Vector3(this.host.clientWidth<600?.12:.22,.12,1);
-  this.animateCamera(center.clone().add(direction.normalize().multiplyScalar(Math.max(6,distance))),center,instant);
+  this.animateCamera(center.clone().add(direction.normalize().multiplyScalar(Math.max(human?.04:6,distance))),center,instant);
  }
- overview(instant=false){this.clearComparison();this.host.dataset.view='all';this.frameVisible(instant);}
+ overview(instant=false){this.clearComparison();this.controls.minDistance=4;this.camera.near=.003;this.camera.updateProjectionMatrix();this.host.dataset.view='all';this.frameVisible(instant);}
  compare(towerId,landmarkId){
   if(!this.objects.has(towerId)||!LANDMARKS[landmarkId])return;
   if(!this.comparison)this.restoreVisibility=new Map([...this.objects].map(([id,o])=>[id,o.visible]));
   this.comparison={towerId,landmarkId};this.selected=towerId;
-  for(const [id,o]of this.objects){o.position.copy(this.home.get(id));o.scale.set(1,1,1);o.visible=id===towerId||id===landmarkId;}
+  for(const [id,o]of this.objects){o.position.copy(this.home.get(id));o.scale.set(1,1,1);o.visible=id===towerId||id===landmarkId;if(o.userData.base)o.userData.base.visible=true;}
   const mountain=landmarkId==='everest',a=this.objects.get(towerId),b=this.objects.get(landmarkId);
+  const human=landmarkId==='human';b.userData.load?.();
+  this.controls.minDistance=human?.02:4;this.camera.near=human?.0001:.003;this.camera.updateProjectionMatrix();
   a.position.set(mountain?-32:-1.7,0,0);b.position.set(mountain?20:1.7,0,0);
   // Widths are illustrative; the vertical scale stays identical for both objects.
   if(mountain){a.scale.set(3,1,2);b.scale.set(.8,1,.8);}
+  if(human){
+   const h=(towerId==='simulation'?Math.max(this.simTarget,this.simFinalTarget):DOCTORS.find(d=>d.id===towerId)?.length??0)*UNIT;
+   this.humanTowerWidth=THREE.MathUtils.clamp(h*.16,.0048,.24);
+   const gap=this.humanTowerWidth/2+.008+Math.min(h*.06,.08);
+   a.position.x=-gap/2;b.position.x=gap/2;
+   a.scale.set(this.humanTowerWidth/(towerId==='simulation'?this.simWidth:.92),1,.0016/.13);
+   if(a.userData.base)a.userData.base.visible=false;
+  }
   const y=LANDMARKS[landmarkId].height*UNIT;
-  this.guide.geometry.dispose();this.guide.geometry=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(a.position.x-(mountain?3:1),y,.5),new THREE.Vector3(b.position.x,y,.5)]);
+  this.guide.material.dashSize=human?.0016:.16;this.guide.material.gapSize=human?.001:.11;
+  this.guide.geometry.dispose();this.guide.geometry=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(a.position.x-(human?this.humanTowerWidth/2:mountain?3:1),y,human?.0024:.5),new THREE.Vector3(b.position.x,y,human?.0024:.5)]);
   this.guide.computeLineDistances();this.guide.visible=true;this.markSelected();this.host.dataset.view='comparison';this.frameVisible();
  }
  focus(id,instant=false){
   this.ensureDoctor(id);
   if(this.comparison&&(DOCTORS.some(d=>d.id===id)||id==='simulation')){this.compare(id,this.comparison.landmarkId);return;}
   const obj=this.objects.get(id);if(!obj?.visible)return;
+  this.controls.minDistance=id==='human'?.02:this.comparison?.landmarkId==='human'?.02:4;this.camera.near=id==='human'||this.comparison?.landmarkId==='human'?.0001:.003;this.camera.updateProjectionMatrix();
   this.selected=id;this.host.dataset.view='focus';this.markSelected();const h=id==='simulation'?Math.max(.035,this.simFinalTarget*UNIT):obj.userData.height;
-  const center=obj.position.clone().add(new THREE.Vector3(0,h*.48,0)),distance=Math.max(h*2.25,id==='simulation'?4:8);
+  const center=obj.position.clone().add(new THREE.Vector3(0,h*.48,0)),distance=Math.max(h*2.25,id==='human'?.04:id==='simulation'?4:8);
   this.animateCamera(center.clone().add(new THREE.Vector3(distance*.3,distance*.12,distance)),center,instant);
  }
  markSelected(){for(const [id,o]of this.objects){if(o.userData.base)o.userData.base.material.color.set(id===this.selected?0x3975ff:0xdfe7f3);this.labels.get(id)?.classList.toggle('selected',id===this.selected);}}
- toggleLandmark(id,on){this.clearComparison();this.objects.get(id).visible=on;this.overview();}
+ toggleLandmark(id,on){this.clearComparison();const obj=this.objects.get(id);obj.visible=on;if(on)obj.userData.load?.();this.overview();}
  showSimulation(instant=false,wholeWorld=false){
   if(wholeWorld){this.clearComparison();this.objects.get('simulation').visible=true;this.selected='simulation';this.markSelected();this.highlightUntil=performance.now()+12000;this.host.dataset.view='all';this.frameVisible(instant);return;}
   if(this.comparison){this.restoreVisibility.set('simulation',true);this.compare('simulation',this.comparison.landmarkId);if(instant)this.frameVisible(true);}
@@ -279,7 +297,10 @@ export class Explorer {
   for(const [id,obj]of this.objects){
    const label=this.labels.get(id),metrics=this.labelMetrics.get(id);
    if(!metrics||!obj.visible||(!this.flight.enabled&&!this.comparison&&farMountain&&id!=='everest'&&id!==this.selected)||(!this.flight.enabled&&!this.comparison&&width<600&&DOCTORS.some(d=>d.id===id)&&id!==this.selected)){label.style.visibility='hidden';this.labelLifts.delete(id);continue;}
-   const point=this.labelPoint.copy(obj.position);point.y+=obj.userData.height+.42;point.project(this.camera);
+   const humanScale=id==='human'||this.comparison?.landmarkId==='human';
+   const labelHeight=humanScale&&id==='simulation'?this.simTarget*UNIT:obj.userData.height;
+   const labelGap=humanScale?Math.min(.42,Math.max(.001,this.camera.position.distanceTo(this.controls.target)*Math.tan(this.camera.fov*Math.PI/360)*32/height)):.42;
+   const point=this.labelPoint.copy(obj.position);point.y+=labelHeight+labelGap;point.project(this.camera);
    if(point.z>=1||point.z<=-1||Math.abs(point.x)>=1.15||Math.abs(point.y)>=1.1){label.style.visibility='hidden';this.labelLifts.delete(id);continue;}
    const halfLabel=metrics.width/2+8;
    const left=THREE.MathUtils.clamp((point.x*.5+.5)*width,halfLabel,width-halfLabel),anchor=(-point.y*.5+.5)*height;

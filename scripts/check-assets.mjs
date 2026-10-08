@@ -50,9 +50,12 @@ for(const [id,landmark]of Object.entries(LANDMARKS)){
  assert.equal(credits[id].license,'CC BY 4.0');
  assert(Math.abs(credits[id].bounds_y_up.min[1])<.0001&&Math.abs(credits[id].bounds_y_up.max[1]-1)<.0001,`${id}: normalized and grounded after Draco roundtrip`);
  const doc=read('index.html');
- assert(doc.includes(`data-landmark="${id}"`)&&doc.includes(`<option value="${id}">`),`${id}: visibility and comparison controls`);
+ assert(doc.includes(`data-landmark="${id}"`)&&doc.includes(`<option value="${id}"`),`${id}: visibility and comparison controls`);
  assert(doc.includes(credits[id].source.split('/').at(-1)),`${id}: public attribution`);
 }
-assert(landmarkBytes<2_000_000,'Four landmark assets under 2 MB');
+assert(landmarkBytes<3_000_000,'Five comparison assets under 3 MB');
+assert.equal(credits.human.display_height_meters,LANDMARKS.human.height);
+assert(Math.abs((credits.human.bounds_y_up.max[1]-credits.human.bounds_y_up.min[1])*LANDMARKS.human.height-1.8)<.0001,'Human decodes to exactly 180 cm at scene scale');
+assert(credits.human.output_bytes<1_000_000,'Human asset under 1 MB');
 assert(existsSync(new URL('vendor/RoomEnvironment.js',root)),'Bundled reflection environment');
-console.log(`4 licensed, grounded landmark GLBs: ${(landmarkBytes/1024).toFixed(0)} KiB total.`);
+console.log(`5 licensed, grounded comparison GLBs: ${(landmarkBytes/1024).toFixed(0)} KiB total; human calibrated to 180 cm.`);

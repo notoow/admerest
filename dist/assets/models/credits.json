@@ -114,5 +114,33 @@
     "distribution": "Smart UI public model demo with Sketchfab author attribution",
     "distribution_url": "https://www.htmlelements.com/demos/images/free__la_tour_eiffel.glb",
     "downloaded_on": "2026-10-01"
+  },
+  "human": {
+    "title": "Human",
+    "author": "doctortex",
+    "source": "https://sketchfab.com/3d-models/human-5913acb8485d4ef09d0770d8d7d831ba",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "input_sha256": "b99b5111ea826f7b020fbf70f0a3aac9dc6c44e67ff7bee52448dc825225008f",
+    "output_sha256": "7b71a5176b96b03b417462850712e9208d7df786aec453a77f0dd2e9b3d9c179",
+    "input_bytes": 17844072,
+    "output_bytes": 927968,
+    "triangles": 44059,
+    "meshes": 8,
+    "display_height_meters": 1.8,
+    "bounds_y_up": {
+      "min": [
+        -0.19450902938842773,
+        0.0,
+        -0.10407870262861252
+      ],
+      "max": [
+        0.19451123476028442,
+        0.999999463558197,
+        0.10408010333776474
+      ]
+    },
+    "modifications": "Arms lowered from T-pose; skin deformations baked to static meshes; uniform height normalization and grounding; textures limited to 512 px and encoded as WebP quality 85; Draco compression. Displayed at 180 cm including hair and footwear.",
+    "distribution": "User-supplied GLB; source attribution and license embedded in the original asset."
   }
 }
